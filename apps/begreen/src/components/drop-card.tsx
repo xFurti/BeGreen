@@ -1,0 +1,104 @@
+import { router } from "expo-router";
+import { useEffect, useState } from "react";
+import { Text, View } from "react-native";
+
+import { Icon } from "@/components/icon";
+import { AvatarStack, LiveDot, Mono, Press, SdgTags } from "@/components/ui";
+import { ACTIONS } from "@/data/actions";
+import { USERS } from "@/data/seed";
+import type { Drop } from "@/services/drop";
+import { C, F, R } from "@/theme/tokens";
+
+const pad = (n: number) => String(n).padStart(2, "0");
+
+// Time left until midnight: the Drop is a daily thing.
+export function useCountdown() {
+  const calc = () => {
+    const n = new Date();
+    const end = new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1).getTime();
+    const s = Math.max(0, Math.floor((end - n.getTime()) / 1000));
+    return `${pad(Math.floor(s / 3600))}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`;
+  };
+  const [t, setT] = useState(calc);
+  useEffect(() => {
+    const id = setInterval(() => setT(calc()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return t;
+}
+
+const crowd = ["giulia", "aisha", "nico"].map((id) => USERS[id]);
+
+export function DropCard({
+  drop,
+  done,
+  place,
+  doneCount,
+  ready = true,
+}: {
+  drop: Drop;
+  done: boolean;
+  place: string;
+  doneCount: number;
+  ready?: boolean;
+}) {
+  const action = ACTIONS[drop.action];
+  const left = useCountdown();
+
+  return (
+    <Press
+      scale={0.985}
+      disabled={!ready}
+      accessibilityLabel={`Today's Drop: ${drop.title}`}
+      onPress={() => router.push("/drop")}
+      style={{ backgroundColor: C.night, borderRadius: R.xl, borderCurve: "continuous", padding: 20, gap: 18, overflow: "hidden" }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <LiveDot color={done ? C.nightMute : C.red} />
+        <Mono color={C.white}>{done ? "Drop done" : "Today’s Drop"}</Mono>
+        <Mono color={C.nightMute}>· {place}</Mono>
+        <View style={{ flex: 1 }} />
+        <Mono color={C.nightMute} style={{ fontVariant: ["tabular-nums"] }}>
+          {left}
+        </Mono>
+      </View>
+
+      <Text style={{ fontFamily: F.medium, fontSize: 32, lineHeight: 34, letterSpacing: -1.4, color: C.white }}>
+        {ready ? drop.title : `Reading ${place}…`}
+      </Text>
+
+      {ready ? (
+        <View style={{ gap: 14 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <Icon name={action.icon} size={14} color={C.white} />
+            <Text style={{ fontFamily: F.medium, fontSize: 14, color: C.white }}>{action.label}</Text>
+            <Text style={{ flex: 1, fontFamily: F.regular, fontSize: 14, color: C.nightMute }} numberOfLines={1}>
+              · {drop.metric}
+            </Text>
+            <SdgTags goals={action.sdgs.slice(0, 1)} dark />
+          </View>
+          <View style={{ height: 1, backgroundColor: C.nightLine }} />
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <AvatarStack people={crowd} size={22} ring={C.night} />
+            <Text style={{ flex: 1, fontFamily: F.regular, fontSize: 13, color: C.nightMute }} numberOfLines={1}>
+              {done ? (
+                <Text style={{ color: C.white, fontFamily: F.medium }}>You’re in. +10 bonus</Text>
+              ) : (
+                <>
+                  <Text style={{ color: C.white, fontFamily: F.medium }}>{doneCount.toLocaleString("en")}</Text> did it today
+                </>
+              )}
+            </Text>
+            <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: C.white, alignItems: "center", justifyContent: "center" }}>
+              <Icon name={done ? "check" : "arrowRight"} size={13} color={C.ink} />
+            </View>
+          </View>
+        </View>
+      ) : (
+        <Text style={{ fontFamily: F.regular, fontSize: 14, lineHeight: 20, color: C.nightMute }}>
+          Air, water, soil and nature data are loading. Your mission drops in a second.
+        </Text>
+      )}
+    </Press>
+  );
+}
