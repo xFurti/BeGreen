@@ -4,6 +4,7 @@ import Animated, { FadeIn, FadeInDown, FadeInUp } from "react-native-reanimated"
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Icon } from "@/components/icon";
+import { LeafMark } from "@/components/nature";
 import { Mono, Segmented, SourceBadge } from "@/components/ui";
 import type { SourceId } from "@/data/sources";
 import type { Explain } from "@/data/types";
@@ -56,9 +57,9 @@ export default function Leaf() {
         <View style={{ paddingHorizontal: 20, paddingTop: 26, paddingBottom: 14, gap: 14, backgroundColor: C.bg }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
             <View
-              style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: C.ink, alignItems: "center", justifyContent: "center" }}
+              style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: C.forest, alignItems: "center", justifyContent: "center" }}
             >
-              <Icon name="sparkle" size={17} color={C.white} />
+              <LeafMark size={20} color={C.lime} vein={C.forest} />
             </View>
             <View style={{ flex: 1, gap: 2 }}>
               <Text style={[T.title, { fontSize: 24 }]}>Leaf</Text>
@@ -83,7 +84,7 @@ export default function Leaf() {
               style={{
                 alignSelf: m.from === "me" ? "flex-end" : "flex-start",
                 maxWidth: "88%",
-                backgroundColor: m.from === "me" ? C.ink : C.card,
+                backgroundColor: m.from === "me" ? C.forest : C.mint,
                 borderRadius: 20,
                 borderBottomRightRadius: m.from === "me" ? 6 : 20,
                 borderBottomLeftRadius: m.from === "me" ? 20 : 6,
@@ -106,7 +107,7 @@ export default function Leaf() {
           {busy && (
             <Animated.View
               entering={FadeIn}
-              style={{ alignSelf: "flex-start", backgroundColor: C.card, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 12 }}
+              style={{ alignSelf: "flex-start", backgroundColor: C.mint, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 12 }}
             >
               <Mono>Leaf is reading the data…</Mono>
             </Animated.View>
@@ -118,9 +119,9 @@ export default function Leaf() {
                   key={s}
                   onPress={() => ask(s)}
                   accessibilityRole="button"
-                  style={{ paddingHorizontal: 14, paddingVertical: 10, borderRadius: R.pill, borderWidth: 1, borderColor: C.line }}
+                  style={{ paddingHorizontal: 14, paddingVertical: 10, borderRadius: R.pill, borderWidth: 1, borderColor: C.mint2 }}
                 >
-                  <Text style={{ fontFamily: F.medium, fontSize: 14, letterSpacing: -0.15 }}>{s}</Text>
+                  <Text style={{ fontFamily: F.medium, fontSize: 14, letterSpacing: -0.15, color: C.forest }}>{s}</Text>
                 </Pressable>
               ))}
             </View>
@@ -147,12 +148,12 @@ export default function Leaf() {
             width: 48,
             height: 48,
             borderRadius: 24,
-            backgroundColor: q.trim() ? C.ink : C.card,
+            backgroundColor: q.trim() ? C.forest : C.card,
             alignItems: "center",
             justifyContent: "center",
           }}
         >
-          <Icon name="send" size={17} color={q.trim() ? C.white : C.faint} />
+          <Icon name="send" size={17} color={q.trim() ? C.lime : C.faint} />
         </Pressable>
       </View>
     </KeyboardAvoidingView>
