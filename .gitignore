@@ -1,0 +1,19 @@
+# Agent state; shared skills are explicitly tracked symlinks
+.pi/*
+!.pi/skills
+.agents/*
+!.agents/skills
+.claude/
+.codex/
+.cursor/
+.windsurf/
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+.DS_Store
+*.log
+
