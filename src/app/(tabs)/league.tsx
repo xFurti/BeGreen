@@ -104,7 +104,7 @@ function RacerRow({ r, rank, index }: { r: Racer; rank: number; index: number })
             height: 30,
             borderRadius: R.pill,
             borderWidth: 1,
-            borderColor: C.line,
+            borderColor: C.mint2,
           }}
         >
           <Icon name="hand" size={12} color={C.leaf} />

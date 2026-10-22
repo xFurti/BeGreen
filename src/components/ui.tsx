@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { create } from "zustand";
 
 import { Icon, type IconName } from "@/components/icon";
-import { LeafMark } from "@/components/nature";
+import { LeafMark, SwayingLeaf } from "@/components/nature";
 import { SOURCE_KINDS, SOURCES, type SourceId } from "@/data/sources";
 import type { Media } from "@/data/types";
 import { C, F, R, shadow, T } from "@/theme/tokens";
@@ -24,8 +24,8 @@ import { haptic } from "@/utils/format";
 // ---------- Wordmark ----------
 
 // "Be" in ink, "Green" in green, with a leaf growing from the n. On dark, Green turns lime;
-// any other ink colour (a muted footer) keeps the wordmark in one colour.
-export function Logo({ size = 28, color = C.ink, dark }: { size?: number; color?: string; dark?: boolean }) {
+// any other ink colour (a muted footer) keeps the wordmark in one colour. `sway` lets the leaf move in the breeze.
+export function Logo({ size = 28, color = C.ink, dark, sway }: { size?: number; color?: string; dark?: boolean; sway?: boolean }) {
   const green = dark ? C.lime : color === C.ink ? C.leaf : color;
   return (
     <View accessible accessibilityRole="header" accessibilityLabel="BeGreen" style={{ flexDirection: "row", alignItems: "flex-start" }}>
@@ -33,7 +33,11 @@ export function Logo({ size = 28, color = C.ink, dark }: { size?: number; color?
         Be<Text style={{ color: green }}>Green</Text>
       </Text>
       <View style={{ marginLeft: size * 0.02, marginTop: -size * 0.06 }}>
-        <LeafMark size={size * 0.42} color={green} vein={dark ? C.forest : C.white} rotate={8} />
+        {sway ? (
+          <SwayingLeaf size={size * 0.42} color={green} vein={dark ? C.forest : C.white} rotate={8} />
+        ) : (
+          <LeafMark size={size * 0.42} color={green} vein={dark ? C.forest : C.white} rotate={8} />
+        )}
       </View>
     </View>
   );
@@ -354,7 +358,7 @@ export function Segmented<V extends string>({
               boxShadow: on && !dark ? "0 1px 3px rgba(0,0,0,0.08), 0 1px 1px rgba(0,0,0,0.04)" : undefined,
             }}
           >
-            <Text style={{ fontFamily: F.medium, fontSize: 14, letterSpacing: -0.15, color: on ? C.ink : dark ? C.nightMute : C.mute }}>
+            <Text style={{ fontFamily: F.medium, fontSize: 14, letterSpacing: -0.15, color: on ? C.forest : dark ? C.nightMute : C.mute }}>
               {o.label}
             </Text>
           </Pressable>

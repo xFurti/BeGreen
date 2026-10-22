@@ -93,6 +93,29 @@ export function LeafScatter({ color = C.leaf, style }: { color?: string; style?:
   );
 }
 
+// A leaf moving in a light breeze, pivoting on its stem.
+export function SwayingLeaf({ size = 18, color = C.leaf, vein = C.white, rotate = 0 }: { size?: number; color?: string; vein?: string; rotate?: number }) {
+  const t = useSharedValue(0);
+  useEffect(() => {
+    t.set(withRepeat(withTiming(1, { duration: 2600, easing: Easing.inOut(Easing.sin) }), -1, true));
+  }, [t]);
+  // Rotate around the bottom-left stem rather than the centre.
+  const a = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: -size / 2 },
+      { translateY: size / 2 },
+      { rotate: `${rotate - 8 + t.value * 16}deg` },
+      { translateX: size / 2 },
+      { translateY: -size / 2 },
+    ],
+  }));
+  return (
+    <Animated.View style={a}>
+      <LeafMark size={size} color={color} vein={vein} />
+    </Animated.View>
+  );
+}
+
 // A switch whose knob turns green and sprouts a leaf when on.
 // Inspired by Creatlydev's leaf toggle on uiverse.io (white-vampirebat-27).
 export function LeafSwitch({ value, onValueChange, label }: { value: boolean; onValueChange: (v: boolean) => void; label: string }) {
@@ -139,25 +162,25 @@ function FlyingLeaf({ angle, delay, color }: { angle: number; delay: number; col
     t.set(withDelay(delay, withTiming(1, { duration: 700, easing: Easing.out(Easing.cubic) })));
   }, [t, delay]);
   const a = useAnimatedStyle(() => {
-    const r = 10 + t.value * 34;
+    const r = 8 + t.value * 52;
     return {
       opacity: 1 - t.value * t.value,
       transform: [
         { translateX: Math.cos(angle) * r },
-        { translateY: Math.sin(angle) * r + t.value * t.value * 10 },
+        { translateY: Math.sin(angle) * r + t.value * t.value * 18 },
         { rotate: `${(angle * 180) / Math.PI + t.value * 120}deg` },
-        { scale: 0.6 + (1 - t.value) * 0.5 },
+        { scale: 0.7 + (1 - t.value) * 0.6 },
       ],
     };
   });
   return (
-    <Animated.View style={[{ position: "absolute", left: -6, top: -6 }, a]}>
-      <LeafMark size={12} color={color} vein="transparent" />
+    <Animated.View style={[{ position: "absolute", left: -8, top: -8 }, a]}>
+      <LeafMark size={16} color={color} vein="transparent" />
     </Animated.View>
   );
 }
 
-export function LeafBurst({ id, count = 7 }: { id: number; count?: number }) {
+export function LeafBurst({ id, count = 9 }: { id: number; count?: number }) {
   const colors = [C.leaf, C.lime, C.forest];
   return (
     <View key={id} pointerEvents="none" style={{ position: "absolute", left: "50%", top: "50%", width: 0, height: 0 }}>

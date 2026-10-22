@@ -54,7 +54,7 @@ function HeroCollage({ width }: { width: number }) {
   return (
     <View style={{ height: w * 1.45, width: "100%" }}>
       <View style={{ position: "absolute", inset: -20, borderRadius: 48, overflow: "hidden" } as never}>
-        <Blobs colors={[C.mint2, C.lime]} opacity={0.5} size={width * 0.75} />
+        <Blobs colors={[C.mint2, C.mint2]} opacity={0.7} size={width * 0.75} />
       </View>
       <LeafScatter style={{ position: "absolute", right: 4, bottom: 0, zIndex: 6 }} />
       <Tile src={HERO_PHOTOS[2]} rotate="-8deg" x={width * 0.02} y={34} z={1} w={w * 0.84} />
@@ -289,7 +289,7 @@ export default function Onboarding() {
     <KeyboardAvoidingView behavior={process.env.EXPO_OS === "ios" ? "padding" : undefined} style={{ flex: 1, backgroundColor: C.bg }}>
       <View style={{ paddingTop: top + 10, paddingHorizontal: 20, gap: 14 }}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          <Logo size={24} />
+          <Logo size={24} sway />
           {page < last ? (
             <Pressable onPress={() => go(last)} hitSlop={10} accessibilityRole="button">
               <Mono color={C.ink}>Skip</Mono>

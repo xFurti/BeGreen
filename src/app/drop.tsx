@@ -23,11 +23,11 @@ export default function DropSheet() {
     <ScrollView contentContainerStyle={{ padding: 22, paddingTop: 30, gap: 30 }}>
       <View style={{ gap: 14 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <LiveDot color={C.red} />
-          <Mono color={C.ink}>Today’s Drop</Mono>
+          <LiveDot color={C.leaf} />
+          <Mono color={C.forest}>Today’s Drop</Mono>
           <Mono>· {pulse.place.name}</Mono>
           <View style={{ flex: 1 }} />
-          <Mono color={C.ink} style={{ fontVariant: ["tabular-nums"] }}>
+          <Mono color={C.forest} style={{ fontVariant: ["tabular-nums"] }}>
             {left}
           </Mono>
         </View>
@@ -54,14 +54,14 @@ export default function DropSheet() {
           { icon: "checkSeal" as const, t: "3 friends verify", d: "Then it counts for your streak, squad and city." },
         ].map((s, i) => (
           <View key={i} style={{ flexDirection: "row", gap: 14, alignItems: "flex-start", paddingVertical: 10 }}>
-            <Mono color={C.ink} style={{ width: 20, paddingTop: 3 }}>
+            <Mono color={C.leaf} style={{ width: 20, paddingTop: 3 }}>
               {String(i + 1).padStart(2, "0")}
             </Mono>
             <View style={{ flex: 1, gap: 2 }}>
               <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3 }}>{s.t}</Text>
               <Text style={[T.callout, { fontSize: 14, lineHeight: 20 }]}>{s.d}</Text>
             </View>
-            <Icon name={s.icon} size={16} color={C.mute} />
+            <Icon name={s.icon} size={16} color={C.leaf} />
           </View>
         ))}
       </Animated.View>
@@ -71,7 +71,7 @@ export default function DropSheet() {
       </Text>
 
       <View style={{ gap: 8 }}>
-        <Button label={`Do it: ${a.label}`} trailing={`+${a.seeds + 10}`} icon={a.icon} onPress={() => go("/capture")} />
+        <Button label={`Do it: ${a.label}`} kind="green" trailing={`+${a.seeds + 10}`} icon={a.icon} onPress={() => go("/capture")} />
         <Button label="Show me how" kind="ghost" icon="book" onPress={() => go("/guide")} />
       </View>
     </ScrollView>

@@ -259,7 +259,7 @@ export default function PulseScreen() {
         {!ready ? (
           <View style={{ gap: 12 }}>
             {[110, 200, 200].map((h, i) => (
-              <View key={i} style={{ height: h, borderRadius: R.lg, backgroundColor: C.card, alignItems: "center", justifyContent: "center", gap: 10 }}>
+              <View key={i} style={{ height: h, borderRadius: R.lg, backgroundColor: C.mint, alignItems: "center", justifyContent: "center", gap: 10 }}>
                 {i === 0 && (
                   <>
                     <ActivityIndicator color={C.leaf} />
