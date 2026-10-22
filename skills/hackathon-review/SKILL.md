@@ -1,9 +1,9 @@
 ---
 name: hackathon-review
-description: Revisiona le pull request di AU cercando difetti concreti e regressioni, con rilievi riferiti al commit analizzato. Usa per review, senza applicare correzioni automatiche.
+description: Revisiona le pull request di BeGreen cercando difetti concreti e regressioni, con rilievi riferiti al commit analizzato. Usa per review, senza applicare correzioni automatiche.
 ---
 
-# Review di AU
+# Review di BeGreen
 
 Leggi diff e review esistenti. Collega ogni rilievo a un comportamento, una condizione riproducibile e un file o una riga. Non duplicare problemi già segnalati, salvo nuovi elementi utili.
 

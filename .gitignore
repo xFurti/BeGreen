@@ -1,3 +1,5 @@
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
 # Agent state; shared skills are explicitly tracked symlinks
 .pi/*
 !.pi/skills
@@ -7,13 +9,45 @@
 .codex/
 .cursor/
 .windsurf/
+
+# dependencies
 node_modules/
+
+# Expo
+.expo/
 dist/
-coverage/
-*.tsbuildinfo
+web-build/
+expo-env.d.ts
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files
 .env
 .env.*
 !.env.example
-.DS_Store
-*.log
 
+# typescript
+*.tsbuildinfo
+
+# generated native folders
+/ios
+/android

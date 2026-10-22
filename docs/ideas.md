@@ -1,6 +1,6 @@
 # Idee e backlog
 
-Nessuna idea di prodotto è stata ancora scelta. Registra qui le proposte oppure apri una issue con il template Idea.
+Il prodotto scelto è BeGreen (vedi `README.md` e `decisions.md`). Registra qui le proposte di nuove funzionalità oppure apri una issue con il template Idea.
 
 Per ogni proposta indica:
 
@@ -14,7 +14,7 @@ Per ogni proposta indica:
 
 ## MVP scelto
 
-Da definire dopo il confronto delle proposte e la verifica del regolamento ufficiale dell'hackathon. Annotare la decisione in `decisions.md`.
+BeGreen: Drop giornaliera generata dai dati locali, foto + prova video di 5 secondi, verifica da parte degli amici, Pulse con dati ambientali live e assistente Leaf con fonti citate. Dettagli e limiti del prototipo in `README.md`.
 
 ## Aggiunte future
 
