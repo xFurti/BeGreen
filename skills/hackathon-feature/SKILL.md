@@ -1,9 +1,9 @@
 ---
 name: hackathon-feature
-description: Implementa funzionalità, bug fix e aggiunte future in AU, coordinando il lavoro del team e consegnando una modifica verificata per una PR verso main.
+description: Implementa funzionalità, bug fix e aggiunte future in BeGreen, coordinando il lavoro del team e consegnando una modifica verificata per una PR verso main.
 ---
 
-# Sviluppo in AU
+# Sviluppo in BeGreen
 
 Leggi `AGENTS.md`, l'issue e i documenti pertinenti. Ricava il comportamento atteso e una condizione osservabile di completamento; se la richiesta amplia l'MVP, rendi esplicita la scelta prima di includere il lavoro aggiuntivo.
 

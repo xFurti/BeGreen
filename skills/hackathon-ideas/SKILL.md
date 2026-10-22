@@ -1,9 +1,9 @@
 ---
 name: hackathon-ideas
-description: Proponi e confronta idee per l'hackathon AU e riducile a un MVP dimostrabile. Usa per ideazione e selezione del prodotto, non per implementare una funzionalità già scelta.
+description: Proponi e confronta idee per l'hackathon BeGreen e riducile a un MVP dimostrabile. Usa per ideazione e selezione del prodotto, non per implementare una funzionalità già scelta.
 ---
 
-# Idee per AU
+# Idee per BeGreen
 
 Leggi `docs/ideas.md`, `docs/decisions.md` e gli eventuali vincoli ufficiali dell'evento forniti dal team. Il gruppo è di sei persone; non assumere durata, competenze, tema o criteri della giuria non confermati.
 

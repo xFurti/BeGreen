@@ -1,9 +1,9 @@
 ---
 name: hackathon-pitch
-description: Prepara e aggiorna pitch, struttura delle slide e percorso della demo per l'hackathon AU, usando il prodotto reale e i vincoli della presentazione.
+description: Prepara e aggiorna pitch, struttura delle slide e percorso della demo per l'hackathon BeGreen, usando il prodotto reale e i vincoli della presentazione.
 ---
 
-# Presentazione di AU
+# Presentazione di BeGreen
 
 Leggi `docs/presentation.md`, `docs/decisions.md` e il materiale che dimostra lo stato del prodotto. Usa durata, pubblico e formato ufficiali quando disponibili; se mancano, prepara una traccia adattabile e indica le assunzioni.
 

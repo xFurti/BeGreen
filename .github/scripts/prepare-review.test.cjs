@@ -5,7 +5,7 @@ const prepare = require("./prepare-review.cjs");
 const pr = {
   number: 7, state: "open", draft: false,
   base: { ref: "main" },
-  head: { ref: "feat/demo", sha: "abc123", repo: { full_name: "team/AU" } },
+  head: { ref: "feat/demo", sha: "abc123", repo: { full_name: "team/BeGreen" } },
 };
 
 function fixture(eventName, payload, permission = "write", currentPr = pr) {
@@ -15,7 +15,7 @@ function fixture(eventName, payload, permission = "write", currentPr = pr) {
     outputs,
     readCount: () => readPr,
     args: {
-      context: { eventName, payload, repo: { owner: "team", repo: "AU" } },
+      context: { eventName, payload, repo: { owner: "team", repo: "BeGreen" } },
       core: { setOutput: (k, v) => { outputs[k] = v; }, notice: () => {} },
       github: { rest: {
         repos: { getCollaboratorPermissionLevel: async () => ({ data: { permission } }) },
@@ -66,7 +66,7 @@ test("ignora bot, issue normali e commenti senza comando", async () => {
 test("esclude draft, PR chiuse, fork e altre destinazioni usando lo stato attuale", async () => {
   const rejected = [
     { ...pr, state: "closed" }, { ...pr, draft: true }, { ...pr, base: { ref: "dev" } },
-    { ...pr, head: { ...pr.head, repo: { full_name: "outsider/AU" } } },
+    { ...pr, head: { ...pr.head, repo: { full_name: "outsider/BeGreen" } } },
     { ...pr, head: { ...pr.head, repo: null } },
     { ...pr, head: { ...pr.head, ref: "main" } },
   ];

@@ -83,7 +83,7 @@ jobs:
           share_session: false
           export_session_html: false
           prompt: |
-            Revisiona la PR #${{ steps.request.outputs.number }} di AU.
+            Revisiona la PR #${{ steps.request.outputs.number }} di BeGreen.
             Lo SHA richiesto è ${{ steps.request.outputs.sha }}.
             Provider: ${{ vars.PI_PROVIDER }}. Modello: ${{ vars.PI_MODEL }}.
 
