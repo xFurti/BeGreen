@@ -33,9 +33,9 @@ import { DEMO_BY_ACTION } from "@/data/seed";
 import type { Audience, Media } from "@/data/types";
 import { usePulse } from "@/hooks/use-pulse";
 import { persistMedia } from "@/services/media";
-import { STOPS } from "@/services/quest/path";
+import { STOPS } from "@/services/quest/route";
 import { maxQuestSeeds } from "@/services/quest/seeds";
-import { leagueOf, postedToday, sdgsOf, streakOf, useApp } from "@/store/app-store";
+import { activeQuest, leagueOf, postedToday, sdgsOf, streakOf, useApp } from "@/store/app-store";
 import { C, F, R, T } from "@/theme/tokens";
 import { haptic } from "@/utils/format";
 
@@ -164,7 +164,7 @@ function Row({ icon, title, sub, right, delay }: { icon: IconName; title: string
 function QuestCta({ action }: { action: ActionId }) {
   const quest = useApp((s) => s.quest);
   const startQuest = useApp((s) => s.startQuest);
-  const resume = quest && !quest.done ? quest : null;
+  const resume = activeQuest(quest);
   const t = THREADS[resume?.thread ?? threadFor(action)];
   return (
     <Animated.View entering={FadeInDown.delay(760).springify().damping(18)} style={{ paddingTop: 14 }}>

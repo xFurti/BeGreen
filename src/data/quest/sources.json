@@ -1,25 +1,5 @@
 [
   {
-    "id": "src-wp-fabbrica-alta",
-    "title": "Fabbrica Alta",
-    "author": "Contributori di Wikipedia",
-    "url": "https://it.wikipedia.org/w/index.php?oldid=152405307",
-    "kind": "web",
-    "license": "CC BY-SA 4.0",
-    "accessed": "2026-10-22",
-    "snapshot": "src/data/quest/snapshots/Fabbrica_Alta.txt"
-  },
-  {
-    "id": "src-wp-quartiere-operaio",
-    "title": "Nuovo quartiere operaio",
-    "author": "Contributori di Wikipedia",
-    "url": "https://it.wikipedia.org/w/index.php?oldid=148007518",
-    "kind": "web",
-    "license": "CC BY-SA 4.0",
-    "accessed": "2026-10-22",
-    "snapshot": "src/data/quest/snapshots/Nuovo_quartiere_operaio.txt"
-  },
-  {
     "id": "src-wp-roggia-maestra",
     "title": "Roggia Maestra",
     "author": "Contributori di Wikipedia",
@@ -28,26 +8,6 @@
     "license": "CC BY-SA 4.0",
     "accessed": "2026-10-22",
     "snapshot": "src/data/quest/snapshots/Roggia_Maestra.txt"
-  },
-  {
-    "id": "src-wp-monumento-tessitore",
-    "title": "Monumento al Tessitore",
-    "author": "Contributori di Wikipedia",
-    "url": "https://it.wikipedia.org/w/index.php?oldid=148018311",
-    "kind": "web",
-    "license": "CC BY-SA 4.0",
-    "accessed": "2026-10-22",
-    "snapshot": "src/data/quest/snapshots/Monumento_al_Tessitore.txt"
-  },
-  {
-    "id": "src-wp-giardino-jacquard",
-    "title": "Giardino Jacquard",
-    "author": "Contributori di Wikipedia",
-    "url": "https://it.wikipedia.org/w/index.php?oldid=151576046",
-    "kind": "web",
-    "license": "CC BY-SA 4.0",
-    "accessed": "2026-10-22",
-    "snapshot": "src/data/quest/snapshots/Giardino_Jacquard.txt"
   },
   {
     "id": "src-wp-lanificio-conte",
@@ -60,21 +20,33 @@
     "snapshot": "src/data/quest/snapshots/Lanificio_Conte.txt"
   },
   {
-    "id": "src-commons-iscrizione",
-    "title": "Nuovo quartiere operaio di Schio, iscrizione (fotografia della lapide)",
-    "author": "Belllissimo, Wikimedia Commons",
-    "url": "https://commons.wikimedia.org/wiki/File:Nuovo_quartiere_operaio_di_Schio,_iscrizione.jpg",
-    "kind": "archivio",
+    "id": "src-wp-giardino-jacquard",
+    "title": "Giardino Jacquard",
+    "author": "Contributori di Wikipedia",
+    "url": "https://it.wikipedia.org/w/index.php?oldid=151576046",
+    "kind": "web",
     "license": "CC BY-SA 4.0",
-    "accessed": "2026-10-22"
+    "accessed": "2026-10-22",
+    "snapshot": "src/data/quest/snapshots/Giardino_Jacquard.txt"
   },
   {
-    "id": "src-commons-lanificio-conte",
-    "title": "Facciata Lanificio Conte (fotografia)",
-    "author": "TizianoSan, Wikimedia Commons",
-    "url": "https://commons.wikimedia.org/wiki/File:Facciata_Lanificio_Conte.jpg",
-    "kind": "archivio",
-    "license": "CC BY-SA 4.0",
-    "accessed": "2026-10-22"
+    "id": "src-inaturalist",
+    "title": "iNaturalist: specie osservate entro 10 km negli ultimi 30 giorni (solo research grade)",
+    "author": "Comunità di iNaturalist (citizen science)",
+    "url": "https://www.inaturalist.org",
+    "kind": "catalogo",
+    "license": "Licenze Creative Commons per foto, attribuzione mostrata",
+    "accessed": "in tempo reale",
+    "live": true
+  },
+  {
+    "id": "src-osm",
+    "title": "OpenStreetMap: aree protette e riserve naturali entro 25 km",
+    "author": "Contributori di OpenStreetMap",
+    "url": "https://www.openstreetmap.org/copyright",
+    "kind": "catalogo",
+    "license": "ODbL",
+    "accessed": "in tempo reale",
+    "live": true
   }
 ]

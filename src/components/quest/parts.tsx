@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon } from "@/components/icon";
 import { Blobs } from "@/components/nature";
 import { Button, Mono, Press } from "@/components/ui";
+import { ACTIONS, type ActionId } from "@/data/actions";
 import { getFact, getQuestSource, type QuestPlace } from "@/data/quest";
 import { C, F, R, shadow, T } from "@/theme/tokens";
 import { haptic } from "@/utils/format";
@@ -75,20 +76,21 @@ export function SourceChip({ n, onPress }: { n: number; onPress: () => void }) {
   );
 }
 
-/** What a chip opens: the fact, its source and the exact quote it was checked against */
-export type SourceRef = { factId?: string; sourceId: string; quote?: string };
+/** What a chip opens: the fact (or live sentence), its source and the exact quote it was checked against */
+export type SourceRef = { factId?: string; sourceId: string; quote?: string; text?: string };
 
 export function SourceSheet({ open, onClose }: { open: SourceRef | null; onClose: () => void }) {
   const { bottom } = useSafeAreaInsets();
   const src = open ? getQuestSource(open.sourceId) : undefined;
   const fact = open?.factId ? getFact(open.factId) : undefined;
   const quote = open?.quote ?? fact?.quote;
+  const text = open?.text ?? fact?.text;
   return (
     <Modal visible={!!open} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }} accessibilityLabel="Chiudi" />
       <View style={{ backgroundColor: C.bg, borderTopLeftRadius: R.xl, borderTopRightRadius: R.xl, padding: 22, paddingBottom: bottom + 18, gap: 14 }}>
         <Mono>Da dove viene</Mono>
-        {fact && <Text style={T.body}>{fact.text}</Text>}
+        {text && <Text style={T.body}>{text}</Text>}
         {quote && (
           <View style={{ borderLeftWidth: 2, borderLeftColor: C.leaf, paddingLeft: 12 }}>
             <Text style={[T.callout, { fontStyle: "italic" }]}>«{quote}»</Text>
@@ -98,7 +100,7 @@ export function SourceSheet({ open, onClose }: { open: SourceRef | null; onClose
           <View style={{ gap: 4 }}>
             <Text style={T.headline}>{src.title}</Text>
             <Text style={T.caption}>
-              {src.author} · {src.license} · consultata il {src.accessed}
+              {src.author} · {src.license} · {src.live ? "dati letti in tempo reale" : `consultata il ${src.accessed}`}
             </Text>
           </View>
         )}
@@ -121,6 +123,25 @@ export function PhotoCredit({ place, dark }: { place: QuestPlace; dark?: boolean
   );
 }
 
+// ---------- "Fai la tua parte" ----------
+
+/** Turns what you just learned into the BeGreen act you can prove next */
+export function ActHint({ act }: { act: ActionId }) {
+  const a = ACTIONS[act];
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.mint, borderRadius: R.md, padding: 14 }}>
+      <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: C.forest, alignItems: "center", justifyContent: "center" }}>
+        <Icon name={a.icon} size={16} color={C.lime} />
+      </View>
+      <View style={{ flex: 1, gap: 2 }}>
+        <Mono color={C.forest}>Fai la tua parte</Mono>
+        <Text style={[T.headline, { color: C.forest }]}>{a.label}</Text>
+      </View>
+      <Mono color={C.forest}>{`+${a.seeds}`}</Mono>
+    </View>
+  );
+}
+
 // ---------- "Lo sapevi?" with audio ----------
 
 function Wave() {
@@ -138,7 +159,17 @@ function Wave() {
   );
 }
 
-export function CuriosityCard({ place, onSource }: { place: QuestPlace; onSource: (r: SourceRef) => void }) {
+/** "Lo sapevi?" for a place: the curiosity and the facts behind it */
+export const placeCuriosity = (place: QuestPlace) => ({
+  id: place.id,
+  text: place.curiosity.text,
+  refs: place.curiosity.factIds.flatMap((id) => {
+    const f = getFact(id);
+    return f ? [{ factId: id, sourceId: f.sourceId }] : [];
+  }),
+});
+
+export function CuriosityCard({ id, text, refs, onSource }: { id: string; text: string; refs: SourceRef[]; onSource: (r: SourceRef) => void }) {
   const [speaking, setSpeaking] = useState(false);
   const scale = useSharedValue(1);
 
@@ -146,7 +177,7 @@ export function CuriosityCard({ place, onSource }: { place: QuestPlace; onSource
     return () => {
       Speech.stop();
     };
-  }, [place.id]);
+  }, [id]);
 
   const toggle = () => {
     haptic.soft();
@@ -158,7 +189,7 @@ export function CuriosityCard({ place, onSource }: { place: QuestPlace; onSource
     }
     setSpeaking(true);
     const done = () => setSpeaking(false);
-    Speech.speak(`Lo sapevi? ${place.curiosity.text}`, { language: "it-IT", rate: 0.98, onDone: done, onStopped: done, onError: done });
+    Speech.speak(`Lo sapevi? ${text}`, { language: "it-IT", rate: 0.98, onDone: done, onStopped: done, onError: done });
   };
   const btn = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
@@ -182,22 +213,21 @@ export function CuriosityCard({ place, onSource }: { place: QuestPlace; onSource
           </Pressable>
         </Animated.View>
       </View>
-      <Text style={{ fontFamily: F.medium, fontSize: 19, lineHeight: 25, letterSpacing: -0.4, color: C.white }}>{place.curiosity.text}</Text>
+      <Text style={{ fontFamily: F.medium, fontSize: 19, lineHeight: 25, letterSpacing: -0.4, color: C.white }}>{text}</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-        {place.curiosity.factIds.map((id) => {
-          const f = getFact(id);
-          return f ? (
-            <Press
-              key={id}
-              onPress={() => onSource({ factId: id, sourceId: f.sourceId })}
-              accessibilityLabel="Fonte della curiosità"
-              style={{ flexDirection: "row", alignItems: "center", gap: 6, height: 26, paddingHorizontal: 10, borderRadius: R.pill, borderWidth: 1, borderColor: C.forestLine }}
-            >
-              <Icon name="doc" size={11} color={C.forestMute} />
-              <Text style={{ fontFamily: F.monoMedium, fontSize: 10.5, color: C.forestMute }}>{getQuestSource(f.sourceId)?.title.toUpperCase()}</Text>
-            </Press>
-          ) : null;
-        })}
+        {refs.map((r) => (
+          <Press
+            key={r.factId ?? r.sourceId}
+            onPress={() => onSource(r)}
+            accessibilityLabel="Fonte della curiosità"
+            style={{ flexDirection: "row", alignItems: "center", gap: 6, height: 26, paddingHorizontal: 10, borderRadius: R.pill, borderWidth: 1, borderColor: C.forestLine }}
+          >
+            <Icon name="doc" size={11} color={C.forestMute} />
+            <Text numberOfLines={1} style={{ fontFamily: F.monoMedium, fontSize: 10.5, color: C.forestMute, maxWidth: 240 }}>
+              {getQuestSource(r.sourceId)?.title.split(":")[0].toUpperCase()}
+            </Text>
+          </Press>
+        ))}
       </ScrollView>
     </Animated.View>
   );

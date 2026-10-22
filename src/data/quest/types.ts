@@ -1,5 +1,6 @@
-// Caccia verde: types for the curated quest graph (places, links, clues, facts, sources).
+// Caccia verde: types for the curated quest (places, links, clues, facts, sources).
 // Content is in Italian; every fact and link carries the exact quote it comes from.
+import type { ActionId } from "../actions";
 
 export type Thread = "water" | "reuse" | "green";
 export type CheckMode = "onsite" | "remote";
@@ -32,6 +33,8 @@ export type QuestPlace = {
   /** "Lo sapevi?": a hook for young people, always backed by facts of this place */
   curiosity: { text: string; factIds: string[] };
   photo: QuestPhoto;
+  /** "Fai la tua parte": the BeGreen act this place points to */
+  act: ActionId;
 };
 
 export type QuestLink = {
@@ -79,11 +82,11 @@ export type QuestSource = {
   accessed: string;
   /** repo path of the saved text the quotes are checked against */
   snapshot?: string;
+  /** live open data (read at play time), not a saved document */
+  live?: boolean;
 };
 
-export type QuestPath = { thread: Thread; stops: string[]; links: string[] };
-
-/** One sentence of "Il luogo parla": it cites facts, or it is declared flavour */
-export type Sentence = { text: string; factIds?: string[]; flavor?: boolean };
+/** One sentence of "Il luogo parla": it cites curated facts (or a live source), or it is declared flavour */
+export type Sentence = { text: string; factIds?: string[]; sourceId?: string; flavor?: boolean };
 
 export type Narration = { sentences: Sentence[]; fallback: boolean; log: string[] };

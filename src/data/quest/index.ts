@@ -1,5 +1,6 @@
 import type { IconName } from "@/components/icon";
 import type { ActionId } from "@/data/actions";
+import { NATURE_STOP } from "@/services/quest/route";
 
 import cluesJson from "./clues.json";
 import factsJson from "./facts.json";
@@ -29,47 +30,48 @@ export const getQuestSource = (id: string) => sources.get(id);
 export const clueOf = (placeId: string) => CLUES.find((c) => c.placeId === placeId)!;
 export const factsOf = (placeId: string) => FACTS.filter((f) => f.placeId === placeId);
 
+export const isNature = (stop: string) => stop === NATURE_STOP;
+export const NATURE = { name: "Natura intorno a te", subtitle: "Le specie che vivono vicino a te, adesso", act: "spot" as ActionId };
+export const stopName = (stop: string) => (isNature(stop) ? NATURE.name : getPlace(stop).name);
+
 // Static requires: Metro needs literal paths.
 export const QUEST_IMAGES: { full: Record<string, number>; crops: Record<string, number> } = {
   full: {
-    "fabbrica-alta": require("../../../assets/quest/full/fabbrica-alta.jpg"),
     "giardino-jacquard": require("../../../assets/quest/full/giardino-jacquard.jpg"),
     "lanificio-conte": require("../../../assets/quest/full/lanificio-conte.jpg"),
-    "monumento-tessitore": require("../../../assets/quest/full/monumento-tessitore.jpg"),
-    "quartiere-operaio": require("../../../assets/quest/full/quartiere-operaio.jpg"),
     "roggia-maestra": require("../../../assets/quest/full/roggia-maestra.jpg"),
   },
   crops: {
-    "clue-fa-1": require("../../../assets/quest/crops/clue-fa-1.jpg"),
-    "clue-jq-1": require("../../../assets/quest/crops/clue-jq-1.jpg"),
-    "clue-lc-1": require("../../../assets/quest/crops/clue-lc-1.jpg"),
-    "clue-nqo-1": require("../../../assets/quest/crops/clue-nqo-1.jpg"),
-    "clue-omo-1": require("../../../assets/quest/crops/clue-omo-1.jpg"),
+    "clue-jq-2": require("../../../assets/quest/crops/clue-jq-2.jpg"),
+    "clue-lc-2": require("../../../assets/quest/crops/clue-lc-2.jpg"),
     "clue-rm-1": require("../../../assets/quest/crops/clue-rm-1.jpg"),
   },
 };
 
-export const THREADS: Record<Thread, { title: string; short: string; icon: IconName; sdgs: number[]; pitch: string }> = {
+export const THREADS: Record<Thread, { title: string; short: string; icon: IconName; sdgs: number[]; pitch: string; act: ActionId }> = {
   water: {
     title: "Il filo dell'acqua e dell'energia",
     short: "Acqua & energia",
     icon: "drop",
-    sdgs: [6, 7],
-    pitch: "Un canale, due fabbriche e la luce elettrica fatta con l'acqua.",
+    sdgs: [6, 7, 15],
+    pitch: "Dall'acqua che faceva girare le ruote e accendeva la luce, fino alla natura che vive intorno a te.",
+    act: "save",
   },
   reuse: {
     title: "Il filo del riuso",
     short: "Riuso",
     icon: "recycle",
-    sdgs: [11, 12],
-    pitch: "Fabbriche che non si buttano: diventano giardini, piazze e musei.",
+    sdgs: [11, 12, 15],
+    pitch: "Una fabbrica rinata, un'area di lavoro diventata giardino, e la natura che vive intorno a te.",
+    act: "rewear",
   },
   green: {
-    title: "Il filo del verde e della comunità",
-    short: "Verde & comunità",
+    title: "Il filo del verde",
+    short: "Verde & natura",
     icon: "tree",
     sdgs: [11, 15],
-    pitch: "Orti, giardini aperti a tutti e beni da curare insieme.",
+    pitch: "Dall'acqua di tutti al verde di città, fino alle specie che vivono intorno a te.",
+    act: "spot",
   },
 };
 
