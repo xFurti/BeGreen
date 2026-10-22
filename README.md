@@ -28,6 +28,7 @@ BeGreen is built for the brief **“2. La mia sostenibilità”**: it takes sust
 | **How to** | For people who don't know where to start: a searchable **“Where does it go?”** lookup (pizza box, Tetra Pak, receipts…), the six Italian waste streams, and three steps for every act. |
 | **Squad page** | Quest progress, invite code, and a **Community Report**: anonymised acts by type, estimated impact, which of the 7 areas are covered, today's local context. It can be shared with a school or Comune. |
 | **Me** | Streak, Seeds, verified count, **Agenda 2030** grid (which of the 17 UN goals your proofs moved, plus days left to 2030), estimated impact, a Memories calendar, badges, settings. |
+| **Caccia verde** | Unlocked after a post: a 3-stop hunt in Schio on the thread of the act you just proved. Find a detail, the place tells its environmental story with sources, then a **“Lo sapevi?”** curiosity you can listen to. Extra Seeds. See below. |
 
 ## How the brief is covered
 
@@ -68,6 +69,21 @@ Each source loads separately, so one outage never empties the Pulse. If everythi
 - **Grounded local engine (default):** answers by recognising the question's intent, using only the live Pulse numbers. It never invents a value and always cites sources. It works offline.
 - **AI backend:** set `EXPO_PUBLIC_LEAF_ENDPOINT`. The app sends `POST { question, audience, pulse, insights }` and expects `{ text, cites: SourceId[] }`. That server is where a language model reads documents, interprets proof images, identifies species and rewrites answers for the audience. **Model keys stay on the server, never in the app.** If the backend fails, the app falls back to the local engine.
 
+## Caccia verde (Le mura parlano)
+
+The hunt from our *Le mura parlano* project, re-read for this brief and built into BeGreen. Content is in Italian.
+
+1. **Unlock:** after posting, the celebration screen offers the hunt. The thread follows the act: refill / save / car-free → **Acqua & energia** (SDG 6, 7); sort / rewear / plate / pickup → **Riuso** (SDG 11, 12); plant / spot / crew → **Verde & comunità** (SDG 11, 15). A hunt in progress shows “Riprendi”.
+2. **Path:** 3 stops among 6 places in Schio's centre (Roggia Maestra, Lanificio Conte, Fabbrica Alta, Giardino Jacquard, Quartiere operaio, l'Omo), chosen by a **deterministic** walk on a curated graph (`src/services/quest/path.ts`). Every link between stops has a source.
+3. **Clue:** a cropped photo + 2 hints. Check **on site** (a control question with an objective answer) or **remotely** (tap the detail on the full photo; after 3 misses it shows where it was). No model decides whether you found it.
+4. **The place speaks:** first-person sentences, each with a numbered source chip (fact, source, exact quote). Lines without a source are marked **racconto** and can't contain dates, numbers or names. The pipeline is the same as for an LLM (validation → grounding check → 1 retry → hand-written fallback); the demo uses a fixture narrator (`src/services/quest/narrate.ts`).
+5. **Lo sapevi?:** a curiosity written for under-26s, backed by facts of that place, with **Ascolta** (on-device text-to-speech via `expo-speech`, `it-IT`).
+6. **Seeds:** +15 per stop (−5 per hint, minimum 5), +25 for finishing a thread. Each stop and thread pays out once. Quest Seeds count in Me and in the weekly league.
+
+Data lives in `src/data/quest/` (places, links, clues, facts, sources). Every `quote` must appear **word for word** in the saved Wikipedia revision (`src/data/quest/snapshots/`), and `tests/quest-data.test.ts` fails otherwise. Photos: Wikimedia Commons, CC BY-SA, credited in the app.
+
+To check on site before a live demo: the exact spot of the plaque in the Quartiere operaio, that the shelter on the Roggia is the wash-house at via Fogazzaro / via Manin, and that the Roggia's coordinates are only indicative.
+
 ## Run it
 
 ```bash
@@ -78,8 +94,7 @@ npx expo start          # press i for the iOS simulator, or scan the QR code wit
 The app runs in **Expo Go**: it uses no custom native code. On a simulator (which has no camera), the capture screen offers **library** and **demo** capture so you can try the whole flow.
 
 ```bash
-npm run typecheck
-npm run lint
+npm run verify          # typecheck + lint + tests (review workflow and Caccia verde)
 ```
 
 ## Project structure
@@ -88,14 +103,15 @@ npm run lint
 src/
   app/                    Expo Router routes (screens only)
     (tabs)/               Feed · Pulse · League · Me + custom tab bar with the shutter button
-    capture.tsx           Snap → Prove → Review → Celebrate
+    capture.tsx           Snap → Prove → Review → Celebrate (→ Caccia verde)
+    quest.tsx             Caccia verde: map → clue → the place speaks → thread → end
     post/[id].tsx         Post detail, verifiers, comments, flagging
     squad/[id].tsx        Quest + Community Report
     guide.tsx             How-to: waste lookup, bins, steps per act
     drop.tsx leaf.tsx sources.tsx new-squad.tsx onboarding.tsx
   components/             UI kit (ui.tsx), icon, proof media, post card, drop card, tab bar
   data/                   Actions (impact, SDGs, how-to, caption ideas), UN goals, waste guide, sources, seed content, types
-  services/               env (live APIs), interpret (audience-aware text), drop, leaf, media
+  services/               env (live APIs), interpret (audience-aware text), drop, leaf, media, quest/ (path, verify, grounding, narrate, seeds)
   hooks/use-pulse.ts      Location → live data → insights + today's Drop
   store/app-store.ts      Zustand store, saved through the expo-sqlite localStorage polyfill
   theme/tokens.ts         Colours, Geist font families, radii, type scale
@@ -117,6 +133,7 @@ assets/                   Icon, splash, demo photos (Unsplash), avatars, 5 s pro
 - Social data (friends, posts, squads, league) is seeded demo content kept on the device; production needs a backend with auth, moderation and anti-fraud.
 - Impact figures are conservative estimates per act and are labelled that way everywhere.
 - ARPA / ISPRA official data isn't wired in yet, because access and terms vary by region. It's listed as “to verify”.
+- The Caccia verde only covers Schio: elsewhere you play it remotely. Its narrator is a fixture, not a live model.
 
 See **[MARKETING.md](MARKETING.md)** for the go-to-market plan.
 

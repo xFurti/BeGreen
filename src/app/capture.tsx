@@ -28,10 +28,13 @@ import { Blobs, LeafMark, LeafSwitch } from "@/components/nature";
 import { ProofMedia } from "@/components/proof-media";
 import { Button, Chip, IconButton, Mono, Press, SdgTags, Segmented, useCountUp } from "@/components/ui";
 import { ACTION_LIST, ACTIONS, type ActionId } from "@/data/actions";
+import { THREADS, threadFor } from "@/data/quest";
 import { DEMO_BY_ACTION } from "@/data/seed";
 import type { Audience, Media } from "@/data/types";
 import { usePulse } from "@/hooks/use-pulse";
 import { persistMedia } from "@/services/media";
+import { STOPS } from "@/services/quest/path";
+import { maxQuestSeeds } from "@/services/quest/seeds";
 import { leagueOf, postedToday, sdgsOf, streakOf, useApp } from "@/store/app-store";
 import { C, F, R, T } from "@/theme/tokens";
 import { haptic } from "@/utils/format";
@@ -157,6 +160,35 @@ function Row({ icon, title, sub, right, delay }: { icon: IconName; title: string
   );
 }
 
+// After the proof, the Caccia verde: a hunt in Schio on the thread of the act you just did.
+function QuestCta({ action }: { action: ActionId }) {
+  const quest = useApp((s) => s.quest);
+  const startQuest = useApp((s) => s.startQuest);
+  const resume = quest && !quest.done ? quest : null;
+  const t = THREADS[resume?.thread ?? threadFor(action)];
+  return (
+    <Animated.View entering={FadeInDown.delay(760).springify().damping(18)} style={{ paddingTop: 14 }}>
+      <Press
+        onPress={() => {
+          if (!resume) startQuest(threadFor(action));
+          router.replace("/quest");
+        }}
+        accessibilityLabel={resume ? "Riprendi la caccia verde" : "Avvia la caccia verde"}
+        style={{ flexDirection: "row", alignItems: "center", gap: 14, padding: 16, borderRadius: R.lg, backgroundColor: C.forest2, borderWidth: 1, borderColor: C.forestLine }}
+      >
+        <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: C.lime, alignItems: "center", justifyContent: "center" }}>
+          <Icon name={t.icon} size={18} color={C.forest} />
+        </View>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Mono color={C.forestMute}>{resume ? `Caccia verde · tappa ${resume.step + 1}/${resume.stops.length}` : "Sbloccata · caccia verde"}</Mono>
+          <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3, color: C.white }}>{resume ? "Riprendi la caccia" : t.title}</Text>
+        </View>
+        <Mono color={C.lime}>{resume ? "→" : `+${maxQuestSeeds(STOPS)}`}</Mono>
+      </Press>
+    </Animated.View>
+  );
+}
+
 function Done(r: Result) {
   const { top, bottom } = useSafeAreaInsets();
   const n = useCountUp(r.seeds, 900);
@@ -211,6 +243,7 @@ function Done(r: Result) {
           <Row icon="globe" title={`New on your Agenda 2030`} sub={r.newGoals.map((g) => `SDG ${g}`).join(" · ")} delay={510} />
         )}
         {r.unlocked && <Row icon="lock" title="Today’s feed unlocked" sub="Go see what your friends did." delay={640} />}
+        <QuestCta action={r.action} />
       </View>
 
       <View style={{ flexDirection: "row", gap: 10, paddingTop: 16 }}>
@@ -346,7 +379,7 @@ export default function Capture() {
     const name = s.profile.name;
     const wasUnlocked = postedToday(before);
     const goalsBefore = sdgsOf(before);
-    const leagueBefore = leagueOf(before, name);
+    const leagueBefore = leagueOf(before, name, s.questSeeds);
     const isDrop =
       action === drop.action && !before.some((p) => p.isDrop && new Date(p.createdAt).toDateString() === new Date().toDateString());
     addPost({
@@ -360,7 +393,7 @@ export default function Capture() {
       squadId: audience === "squad" ? squadId : undefined,
     });
     const after = useApp.getState().myPosts;
-    const leagueAfter = leagueOf(after, name);
+    const leagueAfter = leagueOf(after, name, s.questSeeds);
     const rankBefore = leagueBefore.findIndex((r) => r.me) + 1;
     const rankAfter = leagueAfter.findIndex((r) => r.me) + 1;
     setResult({

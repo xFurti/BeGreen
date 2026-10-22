@@ -10,6 +10,7 @@ import { Avatar, IconButton, Logo, Mono, Press, SectionHeader, TopCover, useCoun
 import { ACTIONS } from "@/data/actions";
 import { daysTo2030, SDG_LIST, SDGS } from "@/data/sdgs";
 import type { Post } from "@/data/types";
+import { questSeedsSince } from "@/services/quest/seeds";
 import { sdgsOf, seedsOf, streakOf, useApp, useLeague } from "@/store/app-store";
 import { C, F, R, T } from "@/theme/tokens";
 import { haptic } from "@/utils/format";
@@ -177,7 +178,7 @@ export default function Me() {
   const { top } = useSafeAreaInsets();
   const profile = useApp((s) => s.profile);
   const posts = useApp((s) => s.myPosts);
-  const bonus = useApp((s) => s.bonusSeeds);
+  const bonus = useApp((s) => s.bonusSeeds + questSeedsSince(s.questSeeds));
   const verifiedCount = useApp((s) => Object.keys(s.verified).length);
   const explain = useApp((s) => s.explain);
   const setExplain = useApp((s) => s.setExplain);

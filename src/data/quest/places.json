@@ -1,0 +1,165 @@
+[
+  {
+    "id": "fabbrica-alta",
+    "name": "Fabbrica Alta",
+    "subtitle": "Una fabbrica che aspetta una seconda vita",
+    "wikidataId": "Q3737489",
+    "coord": [45.715, 11.35194444],
+    "threads": ["water", "reuse"],
+    "flavor": {
+      "water": "Sono fatta di mattoni, ma sotto i miei piedi l'acqua non ha mai smesso di correre.",
+      "reuse": "Le mie finestre sono spente da tempo, però nessuno ha deciso di buttarmi giù.",
+      "green": "Da quassù vedo il verde del giardino di fronte, e mi chiedo cosa diventerò."
+    },
+    "curiosity": {
+      "text": "Altro che caldaia moderna: questa fabbrica dell'Ottocento si scaldava già riciclando il vapore delle sue macchine. Recuperare energia non l'abbiamo inventato noi.",
+      "factIds": ["fact-fa-1"]
+    },
+    "photo": {
+      "key": "fabbrica-alta",
+      "title": "Fabbrica Alta, torretta e ciminiera",
+      "author": "MillaKamo",
+      "license": "CC BY-SA 4.0",
+      "url": "https://commons.wikimedia.org/wiki/File:Fabbrica_Alta,_torretta_e_ciminiera.jpg",
+      "alt": "La lunga facciata in mattoni e pietra della Fabbrica Alta, con file di finestre ad arco e una scala antincendio in ferro",
+      "w": 1280,
+      "h": 960
+    }
+  },
+  {
+    "id": "quartiere-operaio",
+    "name": "Nuovo Quartiere Operaio",
+    "subtitle": "Case con l'orto, prima che fosse di moda",
+    "wikidataId": "Q3879878",
+    "coord": [45.71111111, 11.34972222],
+    "threads": ["reuse", "green"],
+    "flavor": {
+      "water": "Tra le mie case passavano secchi, bucati e chiacchiere vicino all'acqua.",
+      "reuse": "Le mie case hanno cambiato abitanti tante volte, ma si cerca di restaurarle senza stravolgerle.",
+      "green": "Dietro quasi ogni porta c'era un pezzo di terra da coltivare."
+    },
+    "curiosity": {
+      "text": "Orti di quartiere prima che diventassero di tendenza: ogni casa aveva un giardino o un orto, e qui c'era perfino una scuola per imparare a coltivare ortaggi e frutta.",
+      "factIds": ["fact-nqo-1", "fact-nqo-3"]
+    },
+    "photo": {
+      "key": "quartiere-operaio",
+      "title": "Nuovo quartiere operaio di Schio, iscrizione",
+      "author": "Belllissimo",
+      "license": "CC BY-SA 4.0",
+      "url": "https://commons.wikimedia.org/wiki/File:Nuovo_quartiere_operaio_di_Schio,_iscrizione.jpg",
+      "alt": "Una lapide di marmo chiaro su un muro grigio, con un'iscrizione in lettere maiuscole; sotto, rami di rosa",
+      "w": 960,
+      "h": 1280
+    }
+  },
+  {
+    "id": "roggia-maestra",
+    "name": "Roggia Maestra",
+    "subtitle": "Il canale che ha acceso la città",
+    "wikidataId": "Q16597881",
+    "coord": [45.7118, 11.3585],
+    "approxCoord": true,
+    "threads": ["water", "green"],
+    "flavor": {
+      "water": "Scorro accanto a te da secoli, e spesso nemmeno ti accorgi che ci sono.",
+      "reuse": "La mia acqua passa da una ruota all'altra, da una fabbrica all'altra, e poi torna al torrente.",
+      "green": "A tratti mi nascondo sotto le strade: mi senti, ma non mi vedi."
+    },
+    "curiosity": {
+      "text": "Prima delle centrali, la città andava ad acqua: in un solo anno questo canale faceva girare 44 ruote, metà per la lana e metà per i mulini. Energia rinnovabile, versione Settecento.",
+      "factIds": ["fact-rm-2"]
+    },
+    "photo": {
+      "key": "roggia-maestra",
+      "title": "Lavatoio antico 05",
+      "author": "Elisa.rolle",
+      "license": "CC BY-SA 3.0",
+      "url": "https://commons.wikimedia.org/wiki/File:Lavatoio_antico_05.JPG",
+      "alt": "Un canale d'acqua tra muri di sassi; sulla destra una tettoia di coppi sul bordo dell'acqua, sullo sfondo un edificio arancione",
+      "w": 1024,
+      "h": 685
+    }
+  },
+  {
+    "id": "monumento-tessitore",
+    "name": "Monumento al Tessitore",
+    "subtitle": "«L'Omo», caduto e rimesso in piedi",
+    "wikidataId": "Q3862664",
+    "coord": [45.7147, 11.3589],
+    "threads": ["green", "reuse"],
+    "flavor": {
+      "water": "Guardo l'attrezzo che ho in mano e penso a tutta l'acqua che serviva per lavare la lana.",
+      "reuse": "Mi hanno rimesso insieme pezzo dopo pezzo: non tutto quello che si rompe va buttato.",
+      "green": "Ho cambiato casa più di una volta, e per un po' ho vissuto tra gli alberi di un giardino."
+    },
+    "curiosity": {
+      "text": "Una gru l'ha buttato giù per sbaglio durante dei lavori in piazza. Invece di sostituirlo, l'hanno ricomposto e restaurato: oggi è di nuovo al suo posto.",
+      "factIds": ["fact-omo-3", "fact-omo-4"]
+    },
+    "photo": {
+      "key": "monumento-tessitore",
+      "title": "Monumento al Tessitore Schio",
+      "author": "Maurizio Moro5153",
+      "license": "CC BY-SA 4.0",
+      "url": "https://commons.wikimedia.org/wiki/File:Monumento_al_Tessitore_Schio.jpg",
+      "alt": "Statua in pietra bianca di un operaio con berretto e baffi che guarda l'attrezzo che tiene in mano, davanti alla balaustra del duomo",
+      "w": 1280,
+      "h": 951
+    }
+  },
+  {
+    "id": "giardino-jacquard",
+    "name": "Giardino Jacquard",
+    "subtitle": "Da area di fabbrica a giardino",
+    "wikidataId": "Q16559252",
+    "coord": [45.71583333, 11.3525],
+    "threads": ["reuse", "green"],
+    "flavor": {
+      "water": "Tra i miei vialetti l'acqua gioca in fontane e grotte nascoste.",
+      "reuse": "Dove oggi crescono alberi, un tempo si lavorava la lana: sono un pezzo di fabbrica diventato verde.",
+      "green": "Le mie piante vengono da vicino e da molto lontano, e convivono senza litigare."
+    },
+    "curiosity": {
+      "text": "Plot twist: dove ora ci sono alberi e vialetti c'erano gli orinatoi degli operai. L'urina veniva usata per produrre l'ammoniaca che serviva a lavorare la lana. Economia circolare, versione Ottocento.",
+      "factIds": ["fact-jq-1"]
+    },
+    "photo": {
+      "key": "giardino-jacquard",
+      "title": "Giardino e Teatro Jacquard 06",
+      "author": "Elisa.rolle",
+      "license": "CC BY-SA 3.0",
+      "url": "https://commons.wikimedia.org/wiki/File:Giardino_e_Teatro_Jacquard_06.JPG",
+      "alt": "Il cancello in ferro battuto del Giardino Jacquard tra colonne di pietra, ciascuna con una lanterna in cima; dietro, alberi alti e un edificio con medaglioni",
+      "w": 1024,
+      "h": 685
+    }
+  },
+  {
+    "id": "lanificio-conte",
+    "name": "Lanificio Conte",
+    "subtitle": "Luce elettrica fatta con l'acqua",
+    "wikidataId": "Q3217568",
+    "coord": [45.71388888888889, 11.35388888888889],
+    "threads": ["water", "reuse"],
+    "flavor": {
+      "water": "Ho sempre avuto l'acqua accanto: mi ha dato forza, e poi anche luce.",
+      "reuse": "Mi hanno smontata e rimontata: una parte di me oggi è museo, un'altra è casa di qualcuno.",
+      "green": "Davanti a me, dove c'erano capannoni, oggi la gente passeggia in una piazza."
+    },
+    "curiosity": {
+      "text": "Luce elettrica già nel 1883, prodotta con l'acqua del canale qui accanto: questo lanificio fu tra i primi in Italia. E le sue vecchie turbine, restaurate, si possono ancora visitare.",
+      "factIds": ["fact-lc-1", "fact-lc-2"]
+    },
+    "photo": {
+      "key": "lanificio-conte",
+      "title": "Facciata Lanificio Conte",
+      "author": "TizianoSan",
+      "license": "CC BY-SA 4.0",
+      "url": "https://commons.wikimedia.org/wiki/File:Facciata_Lanificio_Conte.jpg",
+      "alt": "Una piazza lastricata davanti al Lanificio Conte: un edificio lungo e basso con tetto di coppi e, a destra, un edificio a quattro piani in mattoni",
+      "w": 1280,
+      "h": 853
+    }
+  }
+]

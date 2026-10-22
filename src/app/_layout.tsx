@@ -49,6 +49,7 @@ export default function RootLayout() {
           name="capture"
           options={{ presentation: "fullScreenModal", headerShown: false, contentStyle: { backgroundColor: C.black } }}
         />
+        <Stack.Screen name="quest" options={{ presentation: "fullScreenModal", headerShown: false }} />
         <Stack.Screen name="post/[id]" options={{ title: "" }} />
         <Stack.Screen name="squad/[id]" options={{ title: "" }} />
         <Stack.Screen name="drop" options={{ ...sheet, sheetAllowedDetents: [0.92] }} />
