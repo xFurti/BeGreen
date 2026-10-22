@@ -5,11 +5,13 @@ import { Alert, Pressable, ScrollView, Share, Text, useWindowDimensions, View } 
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { ComuneSection } from "@/components/comune-card";
 import { Icon, type IconName } from "@/components/icon";
 import { Avatar, IconButton, Logo, Mono, Press, SectionHeader, TopCover, useCountUp } from "@/components/ui";
 import { ACTIONS } from "@/data/actions";
 import { daysTo2030, SDG_LIST, SDGS } from "@/data/sdgs";
 import type { Post } from "@/data/types";
+import { useComune } from "@/hooks/use-comune";
 import { sdgsOf, seedsOf, streakOf, useApp, useLeague } from "@/store/app-store";
 import { C, F, R, T } from "@/theme/tokens";
 import { haptic } from "@/utils/format";
@@ -182,6 +184,8 @@ export default function Me() {
   const explain = useApp((s) => s.explain);
   const setExplain = useApp((s) => s.setExplain);
   const reset = useApp((s) => s.reset);
+  const pulse = useApp((s) => s.pulse);
+  const comune = useComune();
   const league = useLeague();
   const rank = league.findIndex((r) => r.me) + 1;
 
@@ -234,8 +238,13 @@ export default function Me() {
           <Agenda posts={posts} />
         </Animated.View>
 
+        <Animated.View entering={FadeInDown.delay(120)} style={{ gap: 16 }}>
+          <SectionHeader index="02" title="My Comune" action="Sources →" onAction={() => router.push("/sources")} />
+          <ComuneSection view={comune} pulse={pulse} />
+        </Animated.View>
+
         <View style={{ gap: 16 }}>
-          <SectionHeader index="02" title="Impact" action="How we count →" onAction={() => router.push("/sources")} />
+          <SectionHeader index="03" title="Impact" action="How we count →" onAction={() => router.push("/sources")} />
           <View style={{ flexDirection: "row", flexWrap: "wrap", borderTopWidth: 1, borderTopColor: C.line }}>
             <Imp value={imp.co2.toFixed(1)} label="kg CO₂e avoided" />
             <Imp value={String(imp.items)} label="items kept from waste" right />
@@ -246,12 +255,12 @@ export default function Me() {
         </View>
 
         <View style={{ gap: 16 }}>
-          <SectionHeader index="03" title="Memories" action={new Date().toLocaleString("en", { month: "long" })} />
+          <SectionHeader index="04" title="Memories" action={new Date().toLocaleString("en", { month: "long" })} />
           <Calendar posts={posts} />
         </View>
 
         <View style={{ gap: 16 }}>
-          <SectionHeader index="04" title="Badges" action={`${badges.filter((b) => b.on).length}/${badges.length}`} />
+          <SectionHeader index="05" title="Badges" action={`${badges.filter((b) => b.on).length}/${badges.length}`} />
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             {badges.map((b) => (
               <View

@@ -50,7 +50,7 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "lint": "expo lint",
-    "test": "node --test .github/scripts/*.test.cjs",
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test .github/scripts/*.test.cjs tests/*.test.ts",
     "verify": "npm run typecheck && npm run lint && npm test"
   },
   "private": true

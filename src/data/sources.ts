@@ -50,7 +50,7 @@ export const SOURCE_KINDS: Record<
   },
 };
 
-export type SourceId = "cams" | "openmeteo" | "inat" | "osm" | "begreen" | "arpa";
+export type SourceId = "cams" | "openmeteo" | "inat" | "osm" | "begreen" | "arpa" | "ispra" | "rifiuti" | "sensor" | "gbif";
 
 export const SOURCES: Record<
   SourceId,
@@ -97,11 +97,43 @@ export const SOURCES: Record<
     verified: true,
   },
   arpa: {
-    name: "Regional monitoring stations",
+    name: "Air stations & municipal emissions",
     kind: "official",
-    provider: "ARPA regional agencies (e.g. ARPA Lombardia)",
-    url: "https://www.arpalombardia.it",
-    terms: "Open data · API access & terms still to be verified per region",
+    provider: "ARPAV open data (PM10 2002-2025, INEMAR Veneto 2019 emissions per comune)",
+    url: "https://www.arpa.veneto.it/dati-ambientali/open-data/atmosfera",
+    terms: "CC BY 4.0 · Veneto only; other regions' ARPA still to be verified",
+    verified: true,
+  },
+  ispra: {
+    name: "Land take per comune",
+    kind: "official",
+    provider: "ISPRA/SNPA Consumo di suolo, edition 2025 (data 2024)",
+    url: "https://www.isprambiente.gov.it/it/attivita/suolo-e-territorio/suolo/il-consumo-di-suolo/i-dati-sul-consumo-di-suolo",
+    terms: "CC BY 4.0 · attribution to ISPRA/SNPA",
+    verified: true,
+  },
+  rifiuti: {
+    name: "Waste & separate collection per comune",
+    kind: "official",
+    provider: "ISPRA Catasto Rifiuti, year 2024",
+    url: "https://www.catasto-rifiuti.isprambiente.it/index.php?pg=downloadComune",
+    terms: "Public ISPRA data · reuse licence not stated on the page, to verify",
     verified: false,
+  },
+  sensor: {
+    name: "Citizen air sensors",
+    kind: "citizen",
+    provider: "Sensor.Community (low-cost PM sensors run by citizens)",
+    url: "https://sensor.community",
+    terms: "ODbL · identifiable user agent required · not official stations",
+    verified: true,
+  },
+  gbif: {
+    name: "Species records",
+    kind: "citizen",
+    provider: "GBIF (museums, surveys and citizen science)",
+    url: "https://techdocs.gbif.org/en/openapi/",
+    terms: "Licence per dataset (CC0 / CC BY / CC BY-NC) · cite GBIF.org",
+    verified: true,
   },
 };
