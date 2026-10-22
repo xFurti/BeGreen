@@ -4,11 +4,11 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
 import { ACTIONS, type ActionId } from "@/data/actions";
-import { LINKS, PLACES, type CheckMode, type Thread } from "@/data/quest";
+import type { CheckMode, Thread } from "@/data/quest";
 import { DEMO_CLIP, FRIENDS, HERO_PHOTOS, ME_ID, SEED_POSTS, SEED_SQUADS, USERS, WEEKLY } from "@/data/seed";
 import type { Audience, Comment, Explain, Post, Role, Squad } from "@/data/types";
 import { DEFAULT_PLACE, type Place, type Pulse } from "@/services/env";
-import { buildPath } from "@/services/quest/path";
+import { isCurrentRoute, routeFor } from "@/services/quest/route";
 import { isPaid, questSeedsSince, stopKey, stopSeeds, THREAD_BONUS, threadKey, type QuestSeed } from "@/services/quest/seeds";
 
 export type Profile = { name: string; handle: string; role: Role };
@@ -193,10 +193,9 @@ export const useApp = create<State & Actions>()(
       },
       nudge: (userId) => set({ nudged: { ...get().nudged, [userId]: Date.now() } }),
       startQuest: (thread) => {
-        const cur = get().quest;
-        if (cur && !cur.done && cur.thread === thread) return cur;
-        const path = buildPath(thread, PLACES, LINKS);
-        const run: QuestRun = { ...path, step: 0, solved: {}, startedAt: Date.now(), done: false, bonus: 0 };
+        const cur = activeQuest(get().quest);
+        if (cur && cur.thread === thread) return cur;
+        const run: QuestRun = { ...routeFor(thread), step: 0, solved: {}, startedAt: Date.now(), done: false, bonus: 0 };
         set({ quest: run });
         return run;
       },
@@ -256,6 +255,14 @@ export const useApp = create<State & Actions>()(
 );
 
 // ---------- derived ----------
+
+/** A saved run that can still be played: on the current route (older saves may not be) */
+export const playableQuest = (q: QuestRun | null) => (q && isCurrentRoute(q.stops) ? q : null);
+/** A playable run that isn't finished yet: what "Riprendi" resumes */
+export const activeQuest = (q: QuestRun | null) => {
+  const p = playableQuest(q);
+  return p && !p.done ? p : null;
+};
 
 const dayStr = (t: number) => new Date(t).toDateString();
 

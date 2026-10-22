@@ -4,7 +4,10 @@ import path from "node:path";
 import { test } from "node:test";
 
 import type { QuestClue, QuestFact, QuestLink, QuestPlace, QuestSource } from "../src/data/quest/types";
+import { ACTIONS } from "../src/data/actions.ts";
 import { flavorViolation } from "../src/services/quest/grounding.ts";
+import { INAT, OSM } from "../src/services/quest/nature.ts";
+import { NATURE_STOP, ROUTE, ROUTE_LINKS } from "../src/services/quest/route.ts";
 
 const root = path.resolve(import.meta.dirname, "..");
 const load = <T>(f: string): T => JSON.parse(readFileSync(path.join(root, "src/data/quest", f), "utf8"));
@@ -61,8 +64,26 @@ test("luoghi completi: almeno 3 fatti e un indizio, racconto pulito, curiosità 
   }
 });
 
-test("collegamenti tra luoghi esistenti, id univoci, ogni filo ha almeno due collegamenti", () => {
-  for (const l of links) assert.ok(place.has(l.from) && place.has(l.to), l.id);
+test("collegamenti tra tappe esistenti (luoghi o natura), id univoci", () => {
+  const stop = (id: string) => place.has(id) || id === NATURE_STOP;
+  for (const l of links) assert.ok(stop(l.from) && stop(l.to), l.id);
   for (const xs of [places, links, clues, facts, sources]) assert.equal(new Set(xs.map((x) => x.id)).size, xs.length);
-  for (const t of ["water", "reuse", "green"]) assert.ok(links.filter((l) => l.thread === t).length >= 2, t);
+});
+
+test("percorso: ogni tappa esiste, i collegamenti uniscono le tappe in ordine, finisce nella natura", () => {
+  assert.equal(ROUTE.at(-1), NATURE_STOP);
+  for (const id of ROUTE.slice(0, -1)) assert.ok(place.has(id), id);
+  assert.equal(ROUTE_LINKS.length, ROUTE.length - 1);
+  ROUTE_LINKS.forEach((id, i) => {
+    const l = links.find((x) => x.id === id);
+    assert.ok(l, id);
+    assert.equal(l!.from, ROUTE[i]);
+    assert.equal(l!.to, ROUTE[i + 1]);
+  });
+  assert.deepEqual(new Set(places.map((p) => p.id)), new Set(ROUTE.slice(0, -1)));
+});
+
+test("ogni luogo suggerisce un gesto BeGreen esistente; le fonti live sono marcate", () => {
+  for (const p of places) assert.ok(ACTIONS[p.act], `${p.id}: ${p.act}`);
+  for (const id of [INAT, OSM]) assert.equal(source.get(id)?.live, true, id);
 });

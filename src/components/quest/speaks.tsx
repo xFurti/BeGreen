@@ -9,7 +9,7 @@ import type { Narration } from "@/data/quest/types";
 import { narrate } from "@/services/quest/narrate";
 import { C, F, T } from "@/theme/tokens";
 
-import { CuriosityCard, PhotoCredit, SourceChip, type SourceRef } from "./parts";
+import { ActHint, CuriosityCard, PhotoCredit, placeCuriosity, SourceChip, type SourceRef } from "./parts";
 
 export function SpeaksStep({
   placeId,
@@ -94,11 +94,12 @@ export function SpeaksStep({
             </View>
           )}
 
-          <CuriosityCard place={place} onSource={onSource} />
+          <CuriosityCard {...placeCuriosity(place)} onSource={onSource} />
+          <ActHint act={place.act} />
         </View>
       </ScrollView>
       <View style={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12, borderTopWidth: 1, borderTopColor: C.line, backgroundColor: C.bg }}>
-        <Button label={last ? "Concludi la caccia" : "Segui il filo"} kind="green" icon={last ? "trophy" : "arrowRight"} onPress={onNext} />
+        <Button label={last ? "Concludi la caccia" : "Prossima tappa"} kind="green" icon={last ? "trophy" : "arrowRight"} onPress={onNext} />
       </View>
     </View>
   );

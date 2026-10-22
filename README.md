@@ -28,7 +28,7 @@ BeGreen is built for the brief **“2. La mia sostenibilità”**: it takes sust
 | **How to** | For people who don't know where to start: a searchable **“Where does it go?”** lookup (pizza box, Tetra Pak, receipts…), the six Italian waste streams, and three steps for every act. |
 | **Squad page** | Quest progress, invite code, and a **Community Report**: anonymised acts by type, estimated impact, which of the 7 areas are covered, today's local context. It can be shared with a school or Comune. |
 | **Me** | Streak, Seeds, verified count, **Agenda 2030** grid (which of the 17 UN goals your proofs moved, plus days left to 2030), estimated impact, a Memories calendar, badges, settings. |
-| **Caccia verde** | Unlocked after a post: a 3-stop hunt in Schio on the thread of the act you just proved. Find a detail, the place tells its environmental story with sources, then a **“Lo sapevi?”** curiosity you can listen to. Extra Seeds. See below. |
+| **Caccia verde** | Unlocked after a post: 3 stops in Schio on water, energy, reuse and urban green, then the nature around you from live open data. Find a detail, the place tells its story with sources, a **“Lo sapevi?”** you can listen to, and an act to prove next. Extra Seeds. See below. |
 
 ## How the brief is covered
 
@@ -37,9 +37,9 @@ BeGreen is built for the brief **“2. La mia sostenibilità”**: it takes sust
 | Personal / class / association / Comune scale | Roles in onboarding, Squads by type, the three explanation modes, the Community Report |
 | Agenda 2030 | Every act and every Pulse card is tagged with the UN Sustainable Development Goals it touches; your profile and the Community Report count goals covered |
 | Starts from the local environment | Pulse + the Drop, from the user's approximate (~1 km) location |
-| Links knowledge to concrete action | Every Pulse card ends in an action button; the Drop turns today's worst indicator into today's mission |
+| Links knowledge to concrete action | Every Pulse card ends in an action button; the Drop turns today's worst indicator into today's mission; every Caccia verde stop points to an act and the hunt ends on the camera |
 | Air, water, soil, biodiversity, consumption, mobility, community | Pulse cards (air, water, soil, nature, protected areas) and the 10 action types, each tagged with its areas; the report shows how many of the 7 a squad covers |
-| Protected areas, species, nature observations | iNaturalist species list with photos and attribution; OpenStreetMap protected areas nearby |
+| Protected areas, species, nature observations | iNaturalist species list with photos and attribution; OpenStreetMap protected areas nearby; the Caccia verde's last stop turns them into a game |
 | Air quality, weather, local climate | CAMS European AQI with a 24 h chart, pollutant breakdown and dominant pollutant; current weather |
 | Soil and landscape changes | Top-soil moisture and its trend; class and Comune text points to land-sealing and land-use cartography (access marked “to verify”) |
 | Individual behaviour and group activity | Personal proofs, squad quests, city league, Community Report |
@@ -71,18 +71,23 @@ Each source loads separately, so one outage never empties the Pulse. If everythi
 
 ## Caccia verde (Le mura parlano)
 
-The hunt from our *Le mura parlano* project, re-read for this brief and built into BeGreen. Content is in Italian.
+The hunt from our *Le mura parlano* project, rebuilt for this brief: from the water that powered the town to the nature that lives around you. Content is in Italian.
 
-1. **Unlock:** after posting, the celebration screen offers the hunt. The thread follows the act: refill / save / car-free → **Acqua & energia** (SDG 6, 7); sort / rewear / plate / pickup → **Riuso** (SDG 11, 12); plant / spot / crew → **Verde & comunità** (SDG 11, 15). A hunt in progress shows “Riprendi”.
-2. **Path:** 3 stops among 6 places in Schio's centre (Roggia Maestra, Lanificio Conte, Fabbrica Alta, Giardino Jacquard, Quartiere operaio, l'Omo), chosen by a **deterministic** walk on a curated graph (`src/services/quest/path.ts`). Every link between stops has a source.
-3. **Clue:** a cropped photo + 2 hints. Check **on site** (a control question with an objective answer) or **remotely** (tap the detail on the full photo; after 3 misses it shows where it was). No model decides whether you found it.
-4. **The place speaks:** first-person sentences, each with a numbered source chip (fact, source, exact quote). Lines without a source are marked **racconto** and can't contain dates, numbers or names. The pipeline is the same as for an LLM (validation → grounding check → 1 retry → hand-written fallback); the demo uses a fixture narrator (`src/services/quest/narrate.ts`).
+1. **Unlock:** after posting, the celebration screen offers the hunt. The thread follows the act and sets the emphasis of the stories, the SDGs and the act suggested at the end: refill / save / car-free → **Acqua & energia** (SDG 6, 7, 15); sort / rewear / plate / pickup → **Riuso** (SDG 11, 12, 15); plant / spot / crew → **Verde & natura** (SDG 11, 15). A hunt in progress shows “Riprendi”.
+2. **Route** (`src/services/quest/route.ts`), 4 stops:
+   - **Roggia Maestra**: water as a common good and as energy (44 wheels in 1795, small hydro plants still running). Clue: the wash-house on the canal.
+   - **Lanificio Conte**: electric light from the canal in 1883, restored hydro turbines, a water tank reused for heating and cooling, the factory turned into museum, homes and a square. Clue: the restored building; the on-site answer is what it hosts today.
+   - **Giardino Jacquard**: a factory yard turned garden, urine reused for ammonia, local and exotic trees, replanting. Clue: the big trees; the answer is what was replanted.
+   - **Natura intorno a te** (live, works anywhere): which species was observed most often within 10 km in the last 30 days (iNaturalist, research grade), then the numbers behind it and the nearest protected area (OpenStreetMap), each with its source, plus the citizen-science caveat. Clearly flagged sample data if the APIs don't answer.
+3. **Clue:** a cropped photo + 2 hints. Check **on site** (a control question with an objective answer) or **remotely** (tap the detail on the full photo; after 3 misses it shows where it was). The nature stop is a pick among 3 nearby species, checked against the data. No model decides whether you found it.
+4. **The place speaks:** first-person sentences, each with a numbered source chip (fact, source, exact quote). Lines without a source are marked **racconto** and can't contain dates, numbers or names. The pipeline is the same as for an LLM (validation → grounding check → 1 retry → hand-written fallback); the demo uses a fixture narrator (`src/services/quest/narrate.ts`). At the nature stop every number is read from the open data (`src/services/quest/nature.ts`).
 5. **Lo sapevi?:** a curiosity written for under-26s, backed by facts of that place, with **Ascolta** (on-device text-to-speech via `expo-speech`, `it-IT`).
-6. **Seeds:** +15 per stop (−5 per hint, minimum 5), +25 for finishing a thread. Each stop and thread pays out once. Quest Seeds count in Me and in the weekly league.
+6. **Fai la tua parte:** every stop points to a BeGreen act (refill, save water / energy, plant, spot a species), and the end screen opens the camera on the act of your thread: knowing → doing → proving.
+7. **Seeds:** +15 per stop (−5 per hint, minimum 5), +25 for finishing a thread. Each stop and thread pays out once. Quest Seeds count in Me and in the weekly league.
 
-Data lives in `src/data/quest/` (places, links, clues, facts, sources). Every `quote` must appear **word for word** in the saved Wikipedia revision (`src/data/quest/snapshots/`), and `tests/quest-data.test.ts` fails otherwise. Photos: Wikimedia Commons, CC BY-SA, credited in the app.
+Data lives in `src/data/quest/` (places, links, clues, facts, sources). Every `quote` must appear **word for word** in the saved Wikipedia revision (`src/data/quest/snapshots/`), and `tests/quest-data.test.ts` fails otherwise. Photos: Wikimedia Commons, CC BY-SA, credited in the app; species photos from iNaturalist with their authors' licence.
 
-To check on site before a live demo: the exact spot of the plaque in the Quartiere operaio, that the shelter on the Roggia is the wash-house at via Fogazzaro / via Manin, and that the Roggia's coordinates are only indicative.
+To check on site before a live demo: that the shelter on the Roggia is the wash-house at via Fogazzaro / via Manin, and that the Roggia's coordinates are only indicative.
 
 ## Run it
 
@@ -104,7 +109,7 @@ src/
   app/                    Expo Router routes (screens only)
     (tabs)/               Feed · Pulse · League · Me + custom tab bar with the shutter button
     capture.tsx           Snap → Prove → Review → Celebrate (→ Caccia verde)
-    quest.tsx             Caccia verde: map → clue → the place speaks → thread → end
+    quest.tsx             Caccia verde: map → clue → the place speaks → thread → … → nature around you → end
     post/[id].tsx         Post detail, verifiers, comments, flagging
     squad/[id].tsx        Quest + Community Report
     guide.tsx             How-to: waste lookup, bins, steps per act
@@ -133,7 +138,7 @@ assets/                   Icon, splash, demo photos (Unsplash), avatars, 5 s pro
 - Social data (friends, posts, squads, league) is seeded demo content kept on the device; production needs a backend with auth, moderation and anti-fraud.
 - Impact figures are conservative estimates per act and are labelled that way everywhere.
 - ARPA / ISPRA official data isn't wired in yet, because access and terms vary by region. It's listed as “to verify”.
-- The Caccia verde only covers Schio: elsewhere you play it remotely. Its narrator is a fixture, not a live model.
+- The first 3 Caccia verde stops are in Schio (elsewhere you play them remotely); the nature stop works anywhere. The narrator is a fixture, not a live model, and species common names come from iNaturalist in English.
 
 See **[MARKETING.md](MARKETING.md)** for the go-to-market plan.
 

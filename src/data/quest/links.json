@@ -1,14 +1,5 @@
 [
   {
-    "id": "link-fa-rm",
-    "from": "fabbrica-alta",
-    "to": "roggia-maestra",
-    "thread": "water",
-    "text": "Sotto il parcheggio della Fabbrica Alta scorre, chiusa in un tubo, l'acqua che ha fatto nascere l'industria. Seguila fino a dove torna all'aria aperta.",
-    "sourceId": "src-wp-roggia-maestra",
-    "quote": "intubato sotto il parcheggio Fabbrica Alta"
-  },
-  {
     "id": "link-rm-lc",
     "from": "roggia-maestra",
     "to": "lanificio-conte",
@@ -18,93 +9,21 @@
     "quote": "È interessante osservare l'intima connessione tra l'opificio e la Roggia Maestra sfruttata per produrre energia elettrica."
   },
   {
-    "id": "link-lc-fa",
+    "id": "link-lc-jq",
     "from": "lanificio-conte",
-    "to": "fabbrica-alta",
-    "thread": "water",
-    "text": "Risali la corrente: la stessa acqua passa dalla Fabbrica Alta, che il Comune ha acquisito insieme a una centrale idroelettrica.",
-    "sourceId": "src-wp-fabbrica-alta",
-    "quote": "assieme alla centrale termica, alla centrale idroelettrica Umberto I"
-  },
-  {
-    "id": "link-fa-jq",
-    "from": "fabbrica-alta",
     "to": "giardino-jacquard",
     "thread": "reuse",
-    "text": "Insieme alla fabbrica, il Comune ha preso anche il giardino di fronte: un unico recupero per tutta l'area. Attraversa la strada.",
-    "sourceId": "src-wp-fabbrica-alta",
-    "quote": "all'edificio ex assortissaggio, contenente l'archivio Lanerossi, e al vicino Giardino Jacquard."
-  },
-  {
-    "id": "link-jq-lc",
-    "from": "giardino-jacquard",
-    "to": "lanificio-conte",
-    "thread": "reuse",
-    "text": "Qui un'area di fabbrica è diventata giardino. Poco lontano un altro lanificio è diventato piazza, case e museo.",
-    "sourceId": "src-wp-lanificio-conte",
-    "quote": "L'area storica del lanificio Conte è stata sottoposta ad un imponente progetto di recupero a partecipazione pubblica e privata"
-  },
-  {
-    "id": "link-lc-nqo",
-    "from": "lanificio-conte",
-    "to": "quartiere-operaio",
-    "thread": "reuse",
-    "text": "Recuperare non vale solo per le fabbriche: anche il quartiere degli operai ha regole per restaurare senza stravolgere.",
-    "sourceId": "src-wp-quartiere-operaio",
-    "quote": "Dal 1990 vige un piano di riqualificazione per vincolare i lavori architettonici e di restauro a dei precisi parametri"
-  },
-  {
-    "id": "link-nqo-jq",
-    "from": "quartiere-operaio",
-    "to": "giardino-jacquard",
-    "thread": "green",
-    "text": "Ogni casa aveva il suo pezzo di verde. E a pochi passi c'era un giardino aperto anche agli operai.",
+    "text": "Qui una fabbrica è diventata museo, case e piazza. Poco lontano, un'area dove si lavorava la lana è diventata un giardino.",
     "sourceId": "src-wp-giardino-jacquard",
-    "quote": "Il giardino era aperto agli operai dell'opificio."
+    "quote": "Prima di creare il giardino l'area era utilizzata a scopi produttivi"
   },
   {
-    "id": "link-nqo-omo",
-    "from": "quartiere-operaio",
-    "to": "monumento-tessitore",
-    "thread": "green",
-    "text": "Per un periodo l'Omo ha abitato proprio qui, nei giardini pubblici del quartiere. Poi si è spostato: vai a cercarlo.",
-    "sourceId": "src-wp-monumento-tessitore",
-    "quote": "fu trasferito presso dei piccoli giardini pubblici del quartiere operaio posti lungo via Maraschin."
-  },
-  {
-    "id": "link-rm-nqo",
-    "from": "roggia-maestra",
-    "to": "quartiere-operaio",
-    "thread": "green",
-    "text": "La roggia era un bene da curare insieme. Anche il quartiere degli operai aveva servizi per tutti: bagni, lavatoio, giardino pubblico.",
-    "sourceId": "src-wp-quartiere-operaio",
-    "quote": "Vennero quindi realizzati numerosi altri servizi, quali: giardino pubblico, scuole, i bagni pubblici"
-  },
-  {
-    "id": "link-jq-omo",
+    "id": "link-jq-nat",
     "from": "giardino-jacquard",
-    "to": "monumento-tessitore",
+    "to": "natura",
     "thread": "green",
-    "text": "Dal giardino aperto agli operai scendi in piazza: lì ti aspetta il primo monumento in Italia dedicato ai lavoratori.",
-    "sourceId": "src-wp-monumento-tessitore",
-    "quote": "la statua risulta essere il primo monumento in Italia dedicato a dei lavoratori."
-  },
-  {
-    "id": "link-omo-rm",
-    "from": "monumento-tessitore",
-    "to": "roggia-maestra",
-    "thread": "water",
-    "text": "L'Omo stringe la navetta del telaio. E la lana, in città, per secoli si è lavorata lungo un canale.",
-    "sourceId": "src-wp-roggia-maestra",
-    "quote": "lungo il suo corso si insediarono numerose attività artigianali quali lavorazioni di lana, metalli, pelli"
-  },
-  {
-    "id": "link-jq-rm",
-    "from": "giardino-jacquard",
-    "to": "roggia-maestra",
-    "thread": "water",
-    "text": "Prima del giardino qui si lavorava la lana. E le botteghe della lana, da secoli, si mettevano in fila lungo un canale.",
-    "sourceId": "src-wp-roggia-maestra",
-    "quote": "lungo il suo corso si insediarono numerose attività artigianali quali lavorazioni di lana, metalli, pelli"
+    "text": "Questo giardino custodisce piante di qui e di lontano. L'ultima tappa è la natura che vive intorno a te, adesso: la raccontano i dati di chi la osserva.",
+    "sourceId": "src-wp-giardino-jacquard",
+    "quote": "anche vari imponenti esemplari di piante sia locali sia esotiche"
   }
 ]

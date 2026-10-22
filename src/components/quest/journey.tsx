@@ -7,8 +7,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Icon } from "@/components/icon";
 import { Blobs } from "@/components/nature";
-import { Button, Mono, SdgTags, useCountUp } from "@/components/ui";
-import { getLink, getPlace, QUEST_IMAGES, THREADS } from "@/data/quest";
+import { Button, Mono, Press, SdgTags, useCountUp } from "@/components/ui";
+import { ACTIONS } from "@/data/actions";
+import { getLink, getPlace, isNature, NATURE, QUEST_IMAGES, stopName, THREADS } from "@/data/quest";
+import type { Species } from "@/services/env";
 import { maxQuestSeeds } from "@/services/quest/seeds";
 import type { QuestRun } from "@/store/app-store";
 import { C, F, R, T } from "@/theme/tokens";
@@ -27,7 +29,21 @@ function Pulse() {
   return <Animated.Text style={[{ fontFamily: F.medium, fontSize: 30, color: C.lime }, s]}>?</Animated.Text>;
 }
 
-export function QuestMap({ quest, onGo }: { quest: QuestRun; onGo: () => void }) {
+/** A square image for a stop: the place's photo, or the species found at the nature stop */
+function StopImage({ id, natureTarget }: { id: string; natureTarget?: Species }) {
+  const style = { width: "100%" as const, aspectRatio: 1, borderRadius: 2 };
+  if (!isNature(id)) return <Image source={QUEST_IMAGES.full[getPlace(id).photo.key]} style={style} contentFit="cover" />;
+  if (natureTarget?.photo) return <Image source={{ uri: natureTarget.photo }} style={style} contentFit="cover" />;
+  return (
+    <View style={[style, { backgroundColor: C.mint, alignItems: "center", justifyContent: "center" }]}>
+      <Icon name="nature" size={26} color={C.leaf} />
+    </View>
+  );
+}
+
+const stopSubtitle = (id: string) => (isNature(id) ? NATURE.subtitle : getPlace(id).subtitle);
+
+export function QuestMap({ quest, natureTarget, onGo }: { quest: QuestRun; natureTarget?: Species; onGo: () => void }) {
   const t = THREADS[quest.thread];
   const current = quest.stops[quest.step];
   const fresh = Object.keys(quest.solved).length === 0;
@@ -38,7 +54,7 @@ export function QuestMap({ quest, onGo }: { quest: QuestRun; onGo: () => void })
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <Icon name={t.icon} size={15} color={C.leaf} />
             <Mono color={C.leaf} style={{ flex: 1 }}>
-              Caccia verde · Schio
+              Caccia verde
             </Mono>
             <SdgTags goals={t.sdgs} />
           </View>
@@ -46,15 +62,14 @@ export function QuestMap({ quest, onGo }: { quest: QuestRun; onGo: () => void })
           <Text style={T.callout}>{t.pitch}</Text>
           {fresh && (
             <Text style={T.caption}>
-              {quest.stops.length} tappe nel centro di Schio. Trovi un dettaglio, il luogo ti racconta la sua storia con le fonti in mano. Fino a +
-              {maxQuestSeeds(quest.stops.length)} seeds.
+              {quest.stops.length - 1} tappe a Schio, dove l&apos;acqua ha acceso le fabbriche e una fabbrica è diventata giardino, poi la natura che vive
+              intorno a te, letta dai dati aperti. Ogni tappa ha le sue fonti e ti suggerisce un gesto da provare. Fino a +{maxQuestSeeds(quest.stops.length)} seeds.
             </Text>
           )}
         </View>
 
         <View>
           {quest.stops.map((id, i) => {
-            const p = getPlace(id);
             const solved = !!quest.solved[id];
             const active = id === current && !solved;
             return (
@@ -65,22 +80,30 @@ export function QuestMap({ quest, onGo }: { quest: QuestRun; onGo: () => void })
                     <Polaroid tilt={i % 2 ? 3 : -3}>
                       {solved ? (
                         <View>
-                          <Image source={QUEST_IMAGES.full[p.photo.key]} style={{ width: "100%", aspectRatio: 1, borderRadius: 2 }} contentFit="cover" />
+                          <StopImage id={id} natureTarget={natureTarget} />
                           <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, alignItems: "center", justifyContent: "center" }}>
                             <Stamp label="✓" size={0.8} />
                           </View>
                         </View>
                       ) : (
                         <View style={{ width: "100%", aspectRatio: 1, borderRadius: 2, backgroundColor: active ? C.forest : C.mint, alignItems: "center", justifyContent: "center" }}>
-                          {active ? <Pulse /> : <Text style={{ fontFamily: F.medium, fontSize: 30, color: C.mint2 }}>?</Text>}
+                          {active ? (
+                            <Pulse />
+                          ) : isNature(id) ? (
+                            <Icon name="nature" size={26} color={C.mint2} />
+                          ) : (
+                            <Text style={{ fontFamily: F.medium, fontSize: 30, color: C.mint2 }}>?</Text>
+                          )}
                         </View>
                       )}
                     </Polaroid>
                   </View>
                   <View style={{ flex: 1, gap: 4 }}>
                     <Mono color={active || solved ? C.leaf : C.mute}>{`0${i + 1}${active ? " · Adesso" : solved ? " · Trovato" : ""}`}</Mono>
-                    <Text style={[T.title, { color: solved || active ? C.ink : C.faint }]}>{solved ? p.name : "Luogo misterioso"}</Text>
-                    {solved && <Text style={T.caption}>{p.subtitle}</Text>}
+                    <Text style={[T.title, { color: solved || active ? C.ink : C.faint }]}>
+                      {solved || isNature(id) ? stopName(id) : "Luogo misterioso"}
+                    </Text>
+                    {(solved || isNature(id)) && <Text style={T.caption}>{stopSubtitle(id)}</Text>}
                   </View>
                 </View>
               </Animated.View>
@@ -120,9 +143,10 @@ export function LinkStep({ linkId, next, total, onNext, onSource }: { linkId: st
 
 // ---------- End ----------
 
-export function QuestEnd({ quest }: { quest: QuestRun }) {
+export function QuestEnd({ quest, natureTarget }: { quest: QuestRun; natureTarget?: Species }) {
   const { top, bottom } = useSafeAreaInsets();
   const t = THREADS[quest.thread];
+  const act = ACTIONS[t.act];
   const stopSeeds = Object.values(quest.solved).reduce((a, s) => a + s.seeds, 0);
   const total = stopSeeds + quest.bonus;
   const n = useCountUp(total, 900);
@@ -140,39 +164,53 @@ export function QuestEnd({ quest }: { quest: QuestRun }) {
         <SdgTags goals={t.sdgs} dark />
       </View>
 
-      <View style={{ flex: 1, justifyContent: "center", gap: 28 }}>
+      <View style={{ flex: 1, justifyContent: "center", gap: 24 }}>
         <View>
           <Text style={[T.mega, { color: C.lime, fontSize: 112, lineHeight: 112, fontVariant: ["tabular-nums"] }]}>+{n}</Text>
           <Text style={{ fontFamily: F.medium, fontSize: 22, letterSpacing: -0.6, color: C.white }}>seeds dalla caccia.</Text>
           <Text style={{ fontFamily: F.regular, fontSize: 14, color: C.forestMute, marginTop: 6 }}>
             {total === 0
-              ? "Questi luoghi li avevi già trovati: i seeds si guadagnano una volta sola. Le storie restano."
+              ? "Queste tappe le avevi già trovate: i seeds si guadagnano una volta sola. Il gesto qui sotto invece vale sempre."
               : `${stopSeeds} dalle tappe${quest.bonus ? ` · +${quest.bonus} bonus ${t.short}` : ""}`}
           </Text>
         </View>
-        <View style={{ flexDirection: "row", gap: 10 }}>
-          {quest.stops.map((id, i) => {
-            const p = getPlace(id);
-            return (
-              <Animated.View key={id} entering={FadeInDown.delay(200 + i * 140).springify().damping(14)} style={{ flex: 1 }}>
-                <Polaroid tilt={[-4, 2, -2][i % 3]} caption={p.name.split(" ").slice(-1)[0]}>
-                  <Image source={QUEST_IMAGES.full[p.photo.key]} style={{ width: "100%", aspectRatio: 1, borderRadius: 2 }} contentFit="cover" />
-                </Polaroid>
-              </Animated.View>
-            );
-          })}
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          {quest.stops.map((id, i) => (
+            <Animated.View key={id} entering={FadeInDown.delay(200 + i * 140).springify().damping(14)} style={{ flex: 1 }}>
+              <Polaroid tilt={[-4, 2, -2, 3][i % 4]} caption={isNature(id) ? "Natura" : stopName(id).split(" ").slice(-1)[0]}>
+                <StopImage id={id} natureTarget={natureTarget} />
+              </Polaroid>
+            </Animated.View>
+          ))}
         </View>
         <Text style={{ fontFamily: F.medium, fontSize: 17, lineHeight: 23, letterSpacing: -0.3, color: C.white }}>{t.title}</Text>
       </View>
 
-      <View style={{ flexDirection: "row", gap: 10, paddingTop: 16 }}>
+      <Animated.View entering={FadeInDown.delay(800).springify().damping(18)}>
+        <Press
+          onPress={() => router.replace({ pathname: "/capture", params: { action: t.act } })}
+          accessibilityLabel={`Fai la tua parte: ${act.label}`}
+          style={{ flexDirection: "row", alignItems: "center", gap: 14, padding: 16, borderRadius: R.lg, backgroundColor: C.forest2, borderWidth: 1, borderColor: C.forestLine }}
+        >
+          <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: C.lime, alignItems: "center", justifyContent: "center" }}>
+            <Icon name={act.icon} size={18} color={C.forest} />
+          </View>
+          <View style={{ flex: 1, gap: 2 }}>
+            <Mono color={C.forestMute}>Fai la tua parte · prova ora</Mono>
+            <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3, color: C.white }}>{act.label}</Text>
+          </View>
+          <Mono color={C.lime}>{`+${act.seeds}`}</Mono>
+        </Press>
+      </Animated.View>
+
+      <View style={{ flexDirection: "row", gap: 10, paddingTop: 12 }}>
         <Button
           label="Condividi"
           icon="share"
           kind="glass"
           onPress={() =>
             Share.share({
-              message: `Ho completato «${t.title}» a Schio: ${quest.stops.map((id) => getPlace(id).name).join(" → ")}. Le mura parlano, con le fonti in mano. 🌱 #BeGreen`,
+              message: `Ho completato la Caccia verde «${t.title}»: ${quest.stops.map(stopName).join(" → ")}. Ogni tappa con le sue fonti. 🌱 #BeGreen`,
             })
           }
         />
