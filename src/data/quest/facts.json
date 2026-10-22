@@ -1,0 +1,290 @@
+[
+  {
+    "id": "fact-fa-1",
+    "placeId": "fabbrica-alta",
+    "text": "Già nell'Ottocento la Fabbrica Alta aveva acqua potabile e un riscaldamento che riciclava il vapore.",
+    "voice": "Già nell'Ottocento mi scaldavo riciclando il vapore, e avevo acqua potabile per chi lavorava qui.",
+    "threads": ["water", "reuse"],
+    "sourceId": "src-wp-fabbrica-alta",
+    "quote": "acqua potabile, riscaldamento con il riciclo del vapore, illuminazione a gas"
+  },
+  {
+    "id": "fact-fa-2",
+    "placeId": "fabbrica-alta",
+    "text": "Nel 2013 il Comune di Schio ha acquisito la Fabbrica Alta insieme alla centrale termica e alla centrale idroelettrica Umberto I.",
+    "voice": "Nel 2013 sono passata al Comune, insieme alla mia centrale termica e a una centrale idroelettrica.",
+    "threads": ["water", "reuse"],
+    "sourceId": "src-wp-fabbrica-alta",
+    "quote": "A maggio 2013 la Fabbrica Alta è stata acquisita dall'amministrazione comunale assieme alla centrale termica, alla centrale idroelettrica Umberto I"
+  },
+  {
+    "id": "fact-fa-3",
+    "placeId": "fabbrica-alta",
+    "text": "Con la cessione degli edifici al Comune è previsto un piano di recupero per tutta l'area.",
+    "voice": "Non mi hanno demolita: per me e per l'area intorno è previsto un piano di recupero.",
+    "threads": ["reuse"],
+    "sourceId": "src-wp-fabbrica-alta",
+    "quote": "Grazie alla cessione di questi edifici, verrà attuato un piano di recupero coinvolgente tutta l'area."
+  },
+  {
+    "id": "fact-fa-4",
+    "placeId": "fabbrica-alta",
+    "text": "Sotto il parcheggio della Fabbrica Alta scorre, intubata, la Roggia Maestra.",
+    "voice": "Sotto il mio parcheggio scorre ancora un canale, chiuso in un tubo: la Roggia Maestra.",
+    "threads": ["water"],
+    "sourceId": "src-wp-roggia-maestra",
+    "quote": "poi nel lanificio Rossi, intubato sotto il parcheggio Fabbrica Alta"
+  },
+  {
+    "id": "fact-rm-1",
+    "placeId": "roggia-maestra",
+    "text": "La Roggia Maestra è un canale artificiale: a Torrebelvicino capta una parte dell'acqua del torrente Leogra e la porta attraverso Schio.",
+    "voice": "Sono un canale scavato dalle persone: prendo una parte dell'acqua del Leogra e la porto attraverso la città.",
+    "threads": ["water"],
+    "sourceId": "src-wp-roggia-maestra",
+    "quote": "nel territorio comunale di Torrebelvicino, dove viene captata parte dell'acqua del torrente"
+  },
+  {
+    "id": "fact-rm-2",
+    "placeId": "roggia-maestra",
+    "text": "Nel 1795 lungo la roggia 44 ruote sfruttavano la sua energia: metà per la lavorazione della lana, metà per macinare.",
+    "voice": "Nel 1795 facevo girare 44 ruote: metà per la lana, metà per i mulini.",
+    "threads": ["water"],
+    "sourceId": "src-wp-roggia-maestra",
+    "quote": "Nel 1795: 44 ruote sfruttavano l'energia della Roggia Maestra, metà ad uso protoindustriale legato alla lavorazione della lana, l'altra metà ad uso molitorio."
+  },
+  {
+    "id": "fact-rm-3",
+    "placeId": "roggia-maestra",
+    "text": "Nell'Ottocento le industrie lungo la roggia la usavano per produrre energia elettrica e forza motrice.",
+    "voice": "Nell'Ottocento le fabbriche mi usavano per produrre elettricità e far muovere le macchine.",
+    "threads": ["water"],
+    "sourceId": "src-wp-roggia-maestra",
+    "quote": "utilizzato per produrre energia elettrica e forza motrice"
+  },
+  {
+    "id": "fact-rm-4",
+    "placeId": "roggia-maestra",
+    "text": "Quando la sua acqua non bastò più, le industrie costruirono piccole centrali idroelettriche lungo i torrenti; alcune sono ancora attive.",
+    "voice": "Quando la mia acqua non bastò più, nacquero piccole centrali idroelettriche lungo i torrenti, e alcune funzionano ancora.",
+    "threads": ["water"],
+    "sourceId": "src-wp-roggia-maestra",
+    "quote": "inizia in questo periodo l'epoca delle piccole centrali idroelettriche private fatte costruire lungo i torrenti dalle varie industrie, alcune delle quali sono ancora attive."
+  },
+  {
+    "id": "fact-rm-5",
+    "placeId": "roggia-maestra",
+    "text": "Già gli Statuti Comunali del 1393 dedicavano numerosi articoli alla manutenzione, alla pulizia e all'uso della roggia.",
+    "voice": "Già nel 1393 le leggi della città dedicavano molti articoli a come pulirmi, mantenermi e usarmi.",
+    "threads": ["green", "water"],
+    "sourceId": "src-wp-roggia-maestra",
+    "quote": "Gli Statuti Comunali del 1393 dedicavano alla manutenzione, pulizia, utilizzo della roggia numerosi articoli"
+  },
+  {
+    "id": "fact-rm-6",
+    "placeId": "roggia-maestra",
+    "text": "In città la roggia riemerge all'incrocio tra via Fogazzaro e via Manin, presso i vecchi lavatoi.",
+    "voice": "In centro torno all'aria aperta vicino ai vecchi lavatoi, tra via Fogazzaro e via Manin.",
+    "threads": ["water", "green"],
+    "sourceId": "src-wp-roggia-maestra",
+    "quote": "emerge poi all'incroccio di via Fogazzaro e via Manin ai vecchi lavatoi"
+  },
+  {
+    "id": "fact-lc-1",
+    "placeId": "lanificio-conte",
+    "text": "Usando la Roggia Maestra per produrre energia elettrica, il lanificio Conte fu tra i primi in Italia ad avere l'illuminazione elettrica, già dal 1883.",
+    "voice": "Con l'acqua della roggia producevo elettricità: dal 1883 sono stato tra i primi in Italia ad accendere la luce elettrica.",
+    "threads": ["water"],
+    "sourceId": "src-wp-lanificio-conte",
+    "quote": "Il lanificio Conte fu infatti tra i primi in Italia ad avvalersi di questa nuova forma di illuminazione, già dal 1883."
+  },
+  {
+    "id": "fact-lc-2",
+    "placeId": "lanificio-conte",
+    "text": "Le antiche turbine usate per produrre energia idroelettrica sono state restaurate nel 2019 e si possono visitare.",
+    "voice": "Le mie vecchie turbine idroelettriche sono state restaurate nel 2019: puoi andare a vederle.",
+    "threads": ["water", "reuse"],
+    "sourceId": "src-wp-lanificio-conte",
+    "quote": "le antiche turbine utilizzate per la produzione di energia idroelettrica, restaurate nel corso del 2019 e visitabili"
+  },
+  {
+    "id": "fact-lc-3",
+    "placeId": "lanificio-conte",
+    "text": "La grande cisterna per l'acqua del 1929 oggi è usata come vano per gli impianti di riscaldamento e raffreddamento.",
+    "voice": "La mia vecchia cisterna per l'acqua non è stata buttata: oggi ospita gli impianti di riscaldamento e raffreddamento.",
+    "threads": ["reuse", "water"],
+    "sourceId": "src-wp-lanificio-conte",
+    "quote": "sormontata dalla cisterna per l'acqua (oggi utilizzata come vano per gli impianti di riscaldamento e raffreddamento)"
+  },
+  {
+    "id": "fact-lc-4",
+    "placeId": "lanificio-conte",
+    "text": "Nel recupero dell'area storica gli edifici meno interessanti sono stati demoliti per palazzine e un supermercato; quelli più notevoli sono stati restaurati per musei, case, uffici e negozi.",
+    "voice": "Nel mio recupero una parte è stata demolita per case nuove e un supermercato; le parti più belle sono state restaurate e riusate.",
+    "threads": ["reuse"],
+    "sourceId": "src-wp-lanificio-conte",
+    "quote": "gli edifici ritenuti meno interessanti sono stati demoliti per costruire nuove palazzine ed un supermercato, le strutture più notevoli sono state restaurate e impiegate a scopo espositivo, residenziale, direzionale e commerciale."
+  },
+  {
+    "id": "fact-lc-5",
+    "placeId": "lanificio-conte",
+    "text": "Lo spazio libero tra le nuove costruzioni e l'antico opificio è diventato una nuova piazza.",
+    "voice": "Tra me e i palazzi nuovi è nata una piazza.",
+    "threads": ["reuse", "green"],
+    "sourceId": "src-wp-lanificio-conte",
+    "quote": "Un grande spazio libero tra le nuove costruzioni e l'antico opificio ha formato una nuova piazza"
+  },
+  {
+    "id": "fact-jq-1",
+    "placeId": "giardino-jacquard",
+    "text": "Prima del giardino l'area era produttiva: c'erano stenditoi per i panni e orinatoi per gli operai, usati per produrre l'ammoniaca necessaria alla lavorazione.",
+    "voice": "Prima di essere un giardino ero un'area di lavoro: perfino l'urina degli operai veniva raccolta per farne ammoniaca per la lana.",
+    "threads": ["reuse"],
+    "sourceId": "src-wp-giardino-jacquard",
+    "quote": "erano presenti stenditoi per i panni lana e gli orinatoi per gli operai sfruttati per produrre l'ammoniaca utilizzata per il ciclo produttivo."
+  },
+  {
+    "id": "fact-jq-2",
+    "placeId": "giardino-jacquard",
+    "text": "Il giardino occupa un'area di circa 5000 metri quadrati, in parte in piano e in parte in pendenza.",
+    "voice": "Sono circa 5000 metri quadrati di verde, un po' in piano e un po' in salita.",
+    "threads": ["green"],
+    "sourceId": "src-wp-giardino-jacquard",
+    "quote": "Il giardino si sviluppa in un'area di circa 5000 metri quadrati in parte pianeggianti e in parte in pendenza"
+  },
+  {
+    "id": "fact-jq-3",
+    "placeId": "giardino-jacquard",
+    "text": "Il giardino conserva imponenti esemplari di piante sia locali sia esotiche.",
+    "voice": "Custodisco alberi imponenti, alcuni di qui e altri arrivati da lontano.",
+    "threads": ["green"],
+    "sourceId": "src-wp-giardino-jacquard",
+    "quote": "anche vari imponenti esemplari di piante sia locali sia esotiche"
+  },
+  {
+    "id": "fact-jq-4",
+    "placeId": "giardino-jacquard",
+    "text": "Nei lavori iniziati nel 2015 sono state eliminate circa trenta piante e messi a dimora nuovi esemplari, rispettando il disegno originale.",
+    "voice": "Nel restauro mi hanno tolto una trentina di piante e ne hanno messe di nuove, seguendo il mio disegno originale.",
+    "threads": ["green", "reuse"],
+    "sourceId": "src-wp-giardino-jacquard",
+    "quote": "sono state eliminate circa trenta piante e messe a dimora nuovi esemplari nel rispetto del disegno originale progettato da Caregaro Negrin."
+  },
+  {
+    "id": "fact-jq-5",
+    "placeId": "giardino-jacquard",
+    "text": "Il giardino era aperto agli operai del lanificio.",
+    "voice": "Non ero un giardino solo per i padroni: potevano entrare anche gli operai.",
+    "threads": ["green"],
+    "sourceId": "src-wp-giardino-jacquard",
+    "quote": "Il giardino era aperto agli operai dell'opificio."
+  },
+  {
+    "id": "fact-jq-6",
+    "placeId": "giardino-jacquard",
+    "text": "Dal 2015 il complesso è in restauro, con fondi del Comune di Schio, della Regione del Veneto, della Fondazione Cariverona e del FAI.",
+    "voice": "Dal 2015 mi stanno curando in tanti: il Comune, la Regione, una fondazione e il FAI.",
+    "threads": ["reuse", "green"],
+    "sourceId": "src-wp-giardino-jacquard",
+    "quote": "Sono in corso a partire dal 2015 le opere di risanamento e restauro del complesso, finanziate dal comune di Schio, dalla Regione del Veneto, dalla Fondazione Cariverona e dal FAI"
+  },
+  {
+    "id": "fact-nqo-1",
+    "placeId": "quartiere-operaio",
+    "text": "Le case del quartiere avevano tutte un giardino o un orto.",
+    "voice": "Ogni casa aveva il suo giardino o il suo orto.",
+    "threads": ["green"],
+    "sourceId": "src-wp-quartiere-operaio",
+    "quote": "Erano tutte dotate di varie stanze, servizio igienico esterno sul retro, cantina, sottotetto, giardino o orto."
+  },
+  {
+    "id": "fact-nqo-2",
+    "placeId": "quartiere-operaio",
+    "text": "Nel quartiere furono realizzati servizi comuni: un giardino pubblico, scuole, bagni pubblici, il lavatoio e la ghiacciaia.",
+    "voice": "Non ero solo case: avevo un giardino pubblico, scuole, bagni pubblici, un lavatoio e una ghiacciaia per tutti.",
+    "threads": ["green", "water"],
+    "sourceId": "src-wp-quartiere-operaio",
+    "quote": "Vennero quindi realizzati numerosi altri servizi, quali: giardino pubblico, scuole, i bagni pubblici"
+  },
+  {
+    "id": "fact-nqo-3",
+    "placeId": "quartiere-operaio",
+    "text": "C'era anche una scuola convitto di orticoltura e pomologia, costruita nel 1883-84.",
+    "voice": "Avevo perfino una scuola dove si imparava a coltivare ortaggi e alberi da frutto.",
+    "threads": ["green"],
+    "sourceId": "src-wp-quartiere-operaio",
+    "quote": "La scuola convitto di orticoltura e pomologia (1883-84, Caregaro Negrin)."
+  },
+  {
+    "id": "fact-nqo-4",
+    "placeId": "quartiere-operaio",
+    "text": "Il quartiere fu costruito in un'area che prima non era urbanizzata.",
+    "voice": "Prima di me, qui non c'erano case: sono nato su un terreno libero.",
+    "threads": ["reuse"],
+    "sourceId": "src-wp-quartiere-operaio",
+    "quote": "edificato in un'area in precedenza non urbanizzata"
+  },
+  {
+    "id": "fact-nqo-5",
+    "placeId": "quartiere-operaio",
+    "text": "Dal 1990 un piano di riqualificazione fissa parametri precisi per i lavori di restauro, per conservare il quartiere storico.",
+    "voice": "Dal 1990 chi mi restaura deve seguire regole precise, così resto me stesso.",
+    "threads": ["reuse"],
+    "sourceId": "src-wp-quartiere-operaio",
+    "quote": "Dal 1990 vige un piano di riqualificazione per vincolare i lavori architettonici e di restauro a dei precisi parametri"
+  },
+  {
+    "id": "fact-nqo-6",
+    "placeId": "quartiere-operaio",
+    "text": "Il primo progetto immaginava case circondate dal verde, con strade e viali curvi e sinuosi.",
+    "voice": "Nel primo progetto dovevo essere un quartiere di case nel verde, con strade curve.",
+    "threads": ["green"],
+    "sourceId": "src-wp-quartiere-operaio",
+    "quote": "intendeva realizzare un quartiere costituito da abitazioni circondate da verde, con strade e viali ad andamento curvilineo e sinuoso"
+  },
+  {
+    "id": "fact-omo-1",
+    "placeId": "monumento-tessitore",
+    "text": "Negli anni Trenta, per l'espansione della città, l'Omo fu spostato nei piccoli giardini pubblici del quartiere operaio, lungo via Maraschin.",
+    "voice": "Quando la città è cresciuta mi hanno spostato in un piccolo giardino pubblico del quartiere operaio.",
+    "threads": ["green"],
+    "sourceId": "src-wp-monumento-tessitore",
+    "quote": "Nella seconda metà degli anni trenta, per esigenze legate alla espansione urbanistica, fu trasferito presso dei piccoli giardini pubblici del quartiere operaio posti lungo via Maraschin."
+  },
+  {
+    "id": "fact-omo-2",
+    "placeId": "monumento-tessitore",
+    "text": "È considerato il primo monumento in Italia dedicato a dei lavoratori.",
+    "voice": "Sono il primo monumento in Italia dedicato a dei lavoratori, non a un re o a un generale.",
+    "threads": ["green"],
+    "sourceId": "src-wp-monumento-tessitore",
+    "quote": "la statua risulta essere il primo monumento in Italia dedicato a dei lavoratori."
+  },
+  {
+    "id": "fact-omo-3",
+    "placeId": "monumento-tessitore",
+    "text": "Nel maggio 2003 la statua fu abbattuta per errore da una gru durante dei lavori di manutenzione della piazza.",
+    "voice": "Nel 2003 una gru mi ha buttato giù per sbaglio.",
+    "threads": ["reuse"],
+    "sourceId": "src-wp-monumento-tessitore",
+    "quote": "Nel maggio 2003 la statua fu accidentalmente abbattuta da una gru che stava effettuando lavori di manutenzione della piazza."
+  },
+  {
+    "id": "fact-omo-4",
+    "placeId": "monumento-tessitore",
+    "text": "Nel 2004 il monumento, ricomposto e restaurato, è stato riconsegnato alla cittadinanza.",
+    "voice": "Mi hanno ricomposto e restaurato, e nel 2004 sono tornato a tutti.",
+    "threads": ["reuse"],
+    "sourceId": "src-wp-monumento-tessitore",
+    "quote": "Nel corso del 2004 il monumento, ricomposto e restaurato, è stato riconsegnato alla cittadinanza."
+  },
+  {
+    "id": "fact-omo-5",
+    "placeId": "monumento-tessitore",
+    "text": "La statua raffigura un operaio che tiene in mano una navetta, parte essenziale del telaio; ai suoi piedi ci sono i panni, frutto del suo lavoro.",
+    "voice": "Stringo una navetta del telaio, e ai miei piedi ci sono i panni che ho tessuto.",
+    "threads": ["green", "reuse"],
+    "sourceId": "src-wp-monumento-tessitore",
+    "quote": "Ai suoi piedi sono posti dei panni, il frutto del suo lavoro."
+  }
+]

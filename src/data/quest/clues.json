@@ -1,0 +1,205 @@
+[
+  {
+    "id": "clue-fa-1",
+    "placeId": "fabbrica-alta",
+    "crop": "clue-fa-1",
+    "title": "Qualcuno ha ricamato il mattone",
+    "alt": "Ritaglio: una fascia decorata in cotto sotto il cornicione di un edificio di mattoni",
+    "hints": [
+      "Alza lo sguardo: è appena sotto il tetto, e corre per tutta la facciata.",
+      "Segui la linea del cornicione verso destra, dove l'edificio è più vicino a te."
+    ],
+    "check": {
+      "question": "Che forma geometrica si ripete nella fascia decorata sotto il tetto?",
+      "answers": [
+        "rombo",
+        "rombi",
+        "romboidale",
+        "romboidali",
+        "losanga",
+        "losanghe",
+        "diamante",
+        "diamanti"
+      ]
+    },
+    "boxes": [
+      [
+        0.74,
+        0.13,
+        1,
+        0.34
+      ]
+    ],
+    "sourceId": "src-wp-fabbrica-alta"
+  },
+  {
+    "id": "clue-nqo-1",
+    "placeId": "quartiere-operaio",
+    "crop": "clue-nqo-1",
+    "title": "Una visita reale, scritta nel marmo",
+    "alt": "Ritaglio: lettere maiuscole incise su una lapide chiara",
+    "hints": [
+      "Cerca una lapide chiara fissata con quattro grappe a un muro grigio.",
+      "Leggi la riga più lunga della lapide: c'è un nome di casa reale."
+    ],
+    "check": {
+      "question": "In che anno avvenne la visita ricordata dalla lapide?",
+      "answers": [
+        "1877"
+      ]
+    },
+    "boxes": [
+      [
+        0.48,
+        0.19,
+        0.87,
+        0.245
+      ]
+    ],
+    "sourceId": "src-commons-iscrizione",
+    "toVerify": "Posizione esatta della lapide nel quartiere da confermare sul posto (la foto Commons non indica la via)."
+  },
+  {
+    "id": "clue-rm-1",
+    "placeId": "roggia-maestra",
+    "crop": "clue-rm-1",
+    "title": "Un tetto senza casa, sopra l'acqua",
+    "alt": "Ritaglio: una tettoia di coppi sorretta da pilastri, aperta sui lati",
+    "hints": [
+      "Segui il muro di sassi che accompagna il canale.",
+      "È una tettoia di coppi, aperta sui lati, proprio sul bordo dell'acqua."
+    ],
+    "check": {
+      "question": "A cosa serviva la tettoia sul bordo dell'acqua? (basta una parola)",
+      "answers": [
+        "lavatoio",
+        "lavatoi",
+        "lavare",
+        "per lavare",
+        "lavare i panni",
+        "bucato",
+        "lavanderia"
+      ]
+    },
+    "boxes": [
+      [
+        0.51,
+        0.17,
+        0.75,
+        0.57
+      ]
+    ],
+    "sourceId": "src-wp-roggia-maestra",
+    "toVerify": "Confermare che la tettoia in foto sia il lavatoio all'incrocio tra via Fogazzaro e via Manin."
+  },
+  {
+    "id": "clue-omo-1",
+    "placeId": "monumento-tessitore",
+    "crop": "clue-omo-1",
+    "title": "Tiene in mano il suo attrezzo, e lo guarda",
+    "alt": "Ritaglio: una mano di pietra bianca che stringe un oggetto affusolato",
+    "hints": [
+      "È in piazza, davanti alla grande scalinata del duomo.",
+      "Non guardare il viso: guarda le sue mani."
+    ],
+    "check": {
+      "question": "Come si chiama l'attrezzo del telaio che tiene in mano?",
+      "answers": [
+        "navetta",
+        "la navetta",
+        "spoletta",
+        "spola"
+      ]
+    },
+    "boxes": [
+      [
+        0.39,
+        0.44,
+        0.52,
+        0.58
+      ]
+    ],
+    "sourceId": "src-wp-monumento-tessitore"
+  },
+  {
+    "id": "clue-jq-1",
+    "placeId": "giardino-jacquard",
+    "crop": "clue-jq-1",
+    "title": "Quattro guardiani con la testa di vetro",
+    "alt": "Ritaglio: una lanterna di metallo e vetro in cima a una colonna di pietra",
+    "hints": [
+      "Sei all'ingresso del giardino: guarda il cancello in ferro battuto.",
+      "Alza gli occhi in cima alle colonne ottagonali."
+    ],
+    "check": {
+      "question": "Cosa c'è in cima alle colonne del cancello?",
+      "answers": [
+        "lanterna",
+        "lanterne",
+        "lampione",
+        "lampioni",
+        "lampada",
+        "lampade",
+        "lume",
+        "lumi"
+      ]
+    },
+    "boxes": [
+      [
+        0.15,
+        0.28,
+        0.23,
+        0.45
+      ],
+      [
+        0.4,
+        0.35,
+        0.465,
+        0.51
+      ],
+      [
+        0.655,
+        0.44,
+        0.705,
+        0.56
+      ],
+      [
+        0.75,
+        0.48,
+        0.8,
+        0.59
+      ]
+    ],
+    "sourceId": "src-wp-giardino-jacquard"
+  },
+  {
+    "id": "clue-lc-1",
+    "placeId": "lanificio-conte",
+    "crop": "clue-lc-1",
+    "title": "Una casetta minuscola sul tetto lungo",
+    "alt": "Ritaglio: un piccolo tettuccio a due falde sopra un tetto di coppi, con qualcosa appeso sotto",
+    "hints": [
+      "Guarda il tetto di coppi dell'edificio basso, non la torre di mattoni.",
+      "Verso sinistra: sotto un tettuccio c'è qualcosa appeso."
+    ],
+    "check": {
+      "question": "Cosa c'è appeso sotto il tettuccio?",
+      "answers": [
+        "campana",
+        "campanella",
+        "una campana",
+        "una campanella"
+      ]
+    },
+    "boxes": [
+      [
+        0.12,
+        0.4,
+        0.18,
+        0.49
+      ]
+    ],
+    "sourceId": "src-commons-lanificio-conte",
+    "toVerify": "La funzione della campana non è documentata nelle fonti: non usarla nella narrazione finché non si trova una fonte."
+  }
+]

@@ -4,11 +4,28 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
 import { ACTIONS, type ActionId } from "@/data/actions";
+import { LINKS, PLACES, type CheckMode, type Thread } from "@/data/quest";
 import { DEMO_CLIP, FRIENDS, HERO_PHOTOS, ME_ID, SEED_POSTS, SEED_SQUADS, USERS, WEEKLY } from "@/data/seed";
 import type { Audience, Comment, Explain, Post, Role, Squad } from "@/data/types";
 import { DEFAULT_PLACE, type Place, type Pulse } from "@/services/env";
+import { buildPath } from "@/services/quest/path";
+import { isPaid, questSeedsSince, stopKey, stopSeeds, THREAD_BONUS, threadKey, type QuestSeed } from "@/services/quest/seeds";
 
 export type Profile = { name: string; handle: string; role: Role };
+
+export type StopResult = { mode: CheckMode; hints: number; tries: number; seeds: number };
+
+// The Caccia verde in progress: unlocked by a post, persisted so it can be resumed.
+export type QuestRun = {
+  thread: Thread;
+  stops: string[];
+  links: string[];
+  step: number;
+  solved: Record<string, StopResult>;
+  startedAt: number;
+  done: boolean;
+  bonus: number;
+};
 
 type State = {
   onboarded: boolean;
@@ -23,6 +40,8 @@ type State = {
   squads: Squad[];
   bonusSeeds: number;
   nudged: Record<string, number>;
+  quest: QuestRun | null;
+  questSeeds: QuestSeed[];
 };
 
 type Actions = {
@@ -46,6 +65,11 @@ type Actions = {
   createSquad: (s: Pick<Squad, "name" | "kind" | "place">) => Squad;
   joinSquad: (code: string) => Squad | null;
   nudge: (userId: string) => void;
+  startQuest: (thread: Thread) => QuestRun;
+  solveStop: (placeId: string, r: Omit<StopResult, "seeds">) => number;
+  nextStop: () => void;
+  finishQuest: () => number;
+  abandonQuest: () => void;
   reset: () => void;
 };
 
@@ -62,6 +86,8 @@ const initial: State = {
   squads: SEED_SQUADS,
   bonusSeeds: 0,
   nudged: {},
+  quest: null,
+  questSeeds: [],
 };
 
 const D = 864e5;
@@ -166,6 +192,43 @@ export const useApp = create<State & Actions>()(
         return get().squads.find((s) => s.code === c) ?? null;
       },
       nudge: (userId) => set({ nudged: { ...get().nudged, [userId]: Date.now() } }),
+      startQuest: (thread) => {
+        const cur = get().quest;
+        if (cur && !cur.done && cur.thread === thread) return cur;
+        const path = buildPath(thread, PLACES, LINKS);
+        const run: QuestRun = { ...path, step: 0, solved: {}, startedAt: Date.now(), done: false, bonus: 0 };
+        set({ quest: run });
+        return run;
+      },
+      solveStop: (placeId, r) => {
+        const { quest, questSeeds } = get();
+        if (!quest) return 0;
+        if (quest.solved[placeId]) return quest.solved[placeId].seeds;
+        const key = stopKey(placeId);
+        const seeds = isPaid(questSeeds, key) ? 0 : stopSeeds(r.hints);
+        set({
+          quest: { ...quest, solved: { ...quest.solved, [placeId]: { ...r, seeds } } },
+          questSeeds: seeds ? [...questSeeds, { at: Date.now(), seeds, key }] : questSeeds,
+        });
+        return seeds;
+      },
+      nextStop: () => {
+        const q = get().quest;
+        if (q) set({ quest: { ...q, step: Math.min(q.step + 1, q.stops.length - 1) } });
+      },
+      finishQuest: () => {
+        const { quest, questSeeds } = get();
+        if (!quest) return 0;
+        if (quest.done) return quest.bonus;
+        const key = threadKey(quest.thread);
+        const bonus = isPaid(questSeeds, key) ? 0 : THREAD_BONUS;
+        set({
+          quest: { ...quest, done: true, bonus },
+          questSeeds: bonus ? [...questSeeds, { at: Date.now(), seeds: bonus, key }] : questSeeds,
+        });
+        return bonus;
+      },
+      abandonQuest: () => set({ quest: null }),
       reset: () => set({ ...initial }),
     }),
     {
@@ -185,6 +248,8 @@ export const useApp = create<State & Actions>()(
         squads: s.squads,
         bonusSeeds: s.bonusSeeds,
         nudged: s.nudged,
+        quest: s.quest,
+        questSeeds: s.questSeeds,
       }),
     },
   ),
@@ -237,15 +302,18 @@ export function useAllPosts(): Post[] {
 
 const WEEK = 7 * D;
 
-export function weeklyOf(posts: Post[]) {
+export function weeklyOf(posts: Post[], questLog: QuestSeed[] = []) {
   const since = Date.now() - WEEK;
-  return posts.filter((p) => p.createdAt > since).reduce((a, p) => a + ACTIONS[p.action].seeds + (p.isDrop ? 10 : 0), 0);
+  return (
+    posts.filter((p) => p.createdAt > since).reduce((a, p) => a + ACTIONS[p.action].seeds + (p.isDrop ? 10 : 0), 0) +
+    questSeedsSince(questLog, since)
+  );
 }
 
 export type Racer = { id: string; name: string; avatar?: number | string; points: number; me: boolean; postedToday: boolean };
 
 // This week's friends race. Friends' totals are demo values; yours is real.
-export function leagueOf(myPosts: Post[], meName: string): Racer[] {
+export function leagueOf(myPosts: Post[], meName: string, questLog: QuestSeed[] = []): Racer[] {
   const recent = (id: string) => SEED_POSTS.some((p) => p.authorId === id && Date.now() - p.createdAt < D);
   const friends: Racer[] = FRIENDS.map((id) => ({
     id,
@@ -255,7 +323,7 @@ export function leagueOf(myPosts: Post[], meName: string): Racer[] {
     me: false,
     postedToday: recent(id),
   }));
-  const me: Racer = { id: ME_ID, name: meName || "You", points: weeklyOf(myPosts), me: true, postedToday: postedToday(myPosts) };
+  const me: Racer = { id: ME_ID, name: meName || "You", points: weeklyOf(myPosts, questLog), me: true, postedToday: postedToday(myPosts) };
   // Ties go to you: it feels better and you earned it.
   return [...friends, me].sort((a, b) => b.points - a.points || (a.me ? -1 : b.me ? 1 : 0));
 }
@@ -263,7 +331,8 @@ export function leagueOf(myPosts: Post[], meName: string): Racer[] {
 export function useLeague() {
   const myPosts = useApp((s) => s.myPosts);
   const name = useApp((s) => s.profile.name);
-  return leagueOf(myPosts, name);
+  const questLog = useApp((s) => s.questSeeds);
+  return leagueOf(myPosts, name, questLog);
 }
 
 export function sdgsOf(posts: Post[]) {
