@@ -5,7 +5,9 @@ import { Alert, ScrollView, Text, TextInput, View } from "react-native";
 import { Icon } from "@/components/icon";
 import { Button, Chip, Mono, Press } from "@/components/ui";
 import { CHALLENGE_TEMPLATE_LIST, CHALLENGE_TEMPLATES, type ChallengeTemplateId } from "@/data/community";
+import { useKeyboardCover } from "@/hooks/use-keyboard-cover";
 import { useI18n } from "@/i18n/use-i18n";
+import { scrollPaddingBottom } from "@/services/keyboard-inset";
 import { useCommunity, useCommunityById } from "@/store/community-store";
 import { F, R } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
@@ -20,6 +22,7 @@ export default function NewChallenge() {
   const community = useCommunityById(id);
   const member = useCommunity((s) => !!s.roles[id]);
   const launch = useCommunity((s) => s.launch);
+  const { ref: keyboardRoot, cover, scrollerRef, scrollProps } = useKeyboardCover();
   const { t } = useI18n();
   const [template, setTemplate] = useState<ChallengeTemplateId | "custom">("fivePlaces");
   const [title, setTitle] = useState("");
@@ -31,7 +34,14 @@ export default function NewChallenge() {
   const custom = template === "custom";
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 28, gap: 16, paddingBottom: 50 }} keyboardShouldPersistTaps="handled">
+    <View ref={keyboardRoot} collapsable={false} style={{ flex: 1, backgroundColor: C.bg }}>
+      <ScrollView
+        ref={scrollerRef}
+        {...scrollProps}
+        nestedScrollEnabled={process.env.EXPO_OS === "android"}
+        contentContainerStyle={{ padding: 20, paddingTop: 28, gap: 16, paddingBottom: scrollPaddingBottom(50, cover) }}
+        keyboardShouldPersistTaps="handled"
+      >
       <Mono color={C.leaf}>{t("community.newChallenge.kicker", { name: community.name })}</Mono>
       <Text style={T.display}>{t("community.newChallenge.title")}</Text>
       <Text style={T.callout}>{t("community.newChallenge.body")}</Text>
@@ -118,6 +128,7 @@ export default function NewChallenge() {
         }}
       />
       <Text style={T.caption}>{t("community.newChallenge.note")}</Text>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }

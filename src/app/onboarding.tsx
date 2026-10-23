@@ -1,7 +1,7 @@
 import { Camera } from "expo-camera";
 import { router } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { KeyboardAvoidingView, Pressable, ScrollView, Text, TextInput, useWindowDimensions, View } from "react-native";
+import { Pressable, ScrollView, Text, TextInput, useWindowDimensions, View } from "react-native";
 import Animated, { FadeIn, FadeInDown, LinearTransition, useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Ellipse } from "react-native-svg";
@@ -18,7 +18,9 @@ import { Bubble, FloatingLeaves, HoldButton, SeedPicker } from "@/components/see
 import { Button, Logo, Mono, Press } from "@/components/ui";
 import { SEED_IDS, type Mood, type SeedId } from "@/data/seeds";
 import type { Comune, Role } from "@/data/types";
+import { useKeyboardCover } from "@/hooks/use-keyboard-cover";
 import { useI18n } from "@/i18n/use-i18n";
+import { scrollPaddingBottom } from "@/services/keyboard-inset";
 import { countPlanted, HandleTaken } from "@/services/social";
 import { hasBackend } from "@/services/supabase";
 import { registerProfile, useApp } from "@/store/app-store";
@@ -81,6 +83,7 @@ export default function Onboarding() {
   const { C, T } = useTheme();
   const { width } = useWindowDimensions();
   const { top, bottom } = useSafeAreaInsets();
+  const { ref: keyboardRoot, cover, scrollerRef, scrollProps } = useKeyboardCover();
   const { t } = useI18n();
   const comune = useApp((s) => s.comune);
   const setComune = useApp((s) => s.setComune);
@@ -296,8 +299,10 @@ export default function Onboarding() {
 
   const content = (
     <ScrollView
+      ref={scrollerRef}
+      {...scrollProps}
       keyboardShouldPersistTaps="handled"
-      contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 20, paddingTop: 8, paddingBottom: bottom + 20, gap: 18 }}
+      contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 20, paddingTop: 8, paddingBottom: scrollPaddingBottom(bottom + 20, cover), gap: 18 }}
       showsVerticalScrollIndicator={false}
     >
       <View style={{ alignItems: "center", paddingTop: step === "welcome" ? 40 : 4 }}>
@@ -320,7 +325,7 @@ export default function Onboarding() {
   );
 
   return (
-    <KeyboardAvoidingView behavior={process.env.EXPO_OS === "ios" ? "padding" : undefined} style={{ flex: 1, backgroundColor: C.bg }}>
+    <View ref={keyboardRoot} collapsable={false} style={{ flex: 1, backgroundColor: C.bg }}>
       <View style={{ position: "absolute", inset: 0, overflow: "hidden" } as never} pointerEvents="none">
         <Blobs colors={[C.mint2, C.mint]} opacity={0.9} size={width * 0.9} />
         <FloatingLeaves />
@@ -343,6 +348,6 @@ export default function Onboarding() {
       ) : (
         content
       )}
-    </KeyboardAvoidingView>
+    </View>
   );
 }

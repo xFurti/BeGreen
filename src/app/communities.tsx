@@ -6,10 +6,12 @@ import { Icon } from "@/components/icon";
 import { Mono, Press } from "@/components/ui";
 import { isCity, type Community } from "@/data/community";
 import type { Comune } from "@/data/types";
+import { useKeyboardCover } from "@/hooks/use-keyboard-cover";
 import { formatNumber } from "@/i18n/format";
 import { useI18n } from "@/i18n/use-i18n";
 import { normalize } from "@/services/community-search";
 import { comuneLabel, searchComuni } from "@/services/comuni";
+import { scrollPaddingBottom } from "@/services/keyboard-inset";
 import { useApp } from "@/store/app-store";
 import { comuneCommunity, previewCity, suggestedCommunity, syncCommunity, useCommunity } from "@/store/community-store";
 import { F, R } from "@/theme/tokens";
@@ -26,6 +28,7 @@ export default function FindCity() {
   const catalog = useCommunity((s) => s.catalog);
   const roles = useCommunity((s) => s.roles);
   const comune = useApp((s) => s.comune);
+  const { ref: keyboardRoot, cover, scrollerRef, scrollProps } = useKeyboardCover();
   const [q, setQ] = useState("");
   // Search results for one query at a time; anything else on screen is derived from them.
   const [result, setResult] = useState<{ q: string; found: Comune[]; offline: boolean }>({ q: "", found: [], offline: false });
@@ -80,7 +83,14 @@ export default function FindCity() {
   };
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 36, gap: 16, paddingBottom: 50 }} keyboardShouldPersistTaps="handled">
+    <View ref={keyboardRoot} collapsable={false} style={{ flex: 1, backgroundColor: C.bg }}>
+      <ScrollView
+        ref={scrollerRef}
+        {...scrollProps}
+        nestedScrollEnabled={process.env.EXPO_OS === "android"}
+        contentContainerStyle={{ padding: 20, paddingTop: 36, gap: 16, paddingBottom: scrollPaddingBottom(50, cover) }}
+        keyboardShouldPersistTaps="handled"
+      >
       <Text style={T.display}>{t("community.findCity.title")}</Text>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: C.card, borderRadius: R.pill, paddingHorizontal: 16, height: 50 }}>
         <Icon name="search" size={16} color={C.mute} />
@@ -138,6 +148,7 @@ export default function FindCity() {
           <Text style={[T.callout, { paddingVertical: 12 }]}>{offline ? t("community.findCity.offline") : t("community.findCity.none", { q: q.trim() })}</Text>
         )}
       </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }

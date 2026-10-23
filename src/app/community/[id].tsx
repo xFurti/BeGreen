@@ -8,9 +8,11 @@ import { Leaderboard } from "@/components/leaderboard";
 import { AvatarStack, Button, Mono, Press } from "@/components/ui";
 import { eventPhase, isCity, type Community } from "@/data/community";
 import { useCommunityFeed } from "@/hooks/use-community-feed";
+import { useKeyboardCover } from "@/hooks/use-keyboard-cover";
 import { useNow } from "@/hooks/use-now";
 import { formatNumber } from "@/i18n/format";
 import { useI18n } from "@/i18n/use-i18n";
+import { scrollPaddingBottom } from "@/services/keyboard-inset";
 import { useAuthor } from "@/store/app-store";
 import { joinCity, syncCommunity, useCommunity, useCommunityById, useCommunitySpots } from "@/store/community-store";
 import { F, R } from "@/theme/tokens";
@@ -290,9 +292,10 @@ function GroupPage({ c }: { c: Community }) {
 }
 
 export default function CommunityPage() {
-  const { T } = useTheme();
+  const { C, T } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const community = useCommunityById(id);
+  const { ref: keyboardRoot, cover, scrollerRef, scrollProps } = useKeyboardCover();
   const { t } = useI18n();
 
   useEffect(() => {
@@ -308,9 +311,17 @@ export default function CommunityPage() {
   }
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 20, paddingTop: 8, paddingBottom: 60, gap: 26 }} keyboardShouldPersistTaps="handled">
+    <View ref={keyboardRoot} collapsable={false} style={{ flex: 1, backgroundColor: C.bg }}>
       <Stack.Screen options={{ title: community.name }} />
-      {isCity(community) ? <CityPage c={community} /> : <GroupPage c={community} />}
-    </ScrollView>
+      <ScrollView
+        ref={scrollerRef}
+        {...scrollProps}
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={{ padding: 20, paddingTop: 8, paddingBottom: scrollPaddingBottom(60, cover), gap: 26 }}
+        keyboardShouldPersistTaps="handled"
+      >
+        {isCity(community) ? <CityPage c={community} /> : <GroupPage c={community} />}
+      </ScrollView>
+    </View>
   );
 }

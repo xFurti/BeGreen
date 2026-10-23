@@ -6,9 +6,11 @@ import { Icon } from "@/components/icon";
 import { Button, Chip, Mono } from "@/components/ui";
 import { KIND } from "@/data/squad-kinds";
 import type { SquadKind } from "@/data/types";
+import { useKeyboardCover } from "@/hooks/use-keyboard-cover";
 import { usePulse } from "@/hooks/use-pulse";
 import { ACT_WEEK, actionCopy, questTitle, squadKindLabel } from "@/i18n/content";
 import { useI18n } from "@/i18n/use-i18n";
+import { scrollPaddingBottom } from "@/services/keyboard-inset";
 import { useApp } from "@/store/app-store";
 import { F } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
@@ -16,6 +18,7 @@ import { haptic } from "@/utils/format";
 
 export default function NewSquad() {
   const { C, T } = useTheme();
+  const { ref: keyboardRoot, cover, scrollerRef, scrollProps } = useKeyboardCover();
   const [name, setName] = useState("");
   const [kind, setKind] = useState<SquadKind>("friends");
   const [busy, setBusy] = useState(false);
@@ -28,7 +31,14 @@ export default function NewSquad() {
   const quest = { title: ACT_WEEK, action: drop.action, goal: 10, progress: 0, endsInDays: 7 };
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 22, paddingTop: 30, gap: 28 }} keyboardShouldPersistTaps="handled">
+    <View ref={keyboardRoot} collapsable={false} style={{ flex: 1, backgroundColor: C.bg }}>
+      <ScrollView
+        ref={scrollerRef}
+        {...scrollProps}
+        nestedScrollEnabled={process.env.EXPO_OS === "android"}
+        contentContainerStyle={{ padding: 22, paddingTop: 30, paddingBottom: scrollPaddingBottom(40, cover), gap: 28 }}
+        keyboardShouldPersistTaps="handled"
+      >
       <View style={{ gap: 10 }}>
         <Mono>
           {t("newSquad.kicker")} · {place}
@@ -79,6 +89,7 @@ export default function NewSquad() {
           }
         }}
       />
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }

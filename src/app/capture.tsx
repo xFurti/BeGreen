@@ -44,6 +44,7 @@ import { actionCopy } from "@/i18n/content";
 import { useI18n } from "@/i18n/use-i18n";
 import { HIDDEN_PLACE } from "@/i18n/persist";
 import { usePulse } from "@/hooks/use-pulse";
+import { scrollPaddingBottom } from "@/services/keyboard-inset";
 import { persistMedia, proofWithinBudget } from "@/services/media";
 import { canStopProof, displaySeconds, noteProgress, outcomeFromRecording, PROOF_SECONDS } from "@/services/proof-recording.mjs";
 import { canClaimDrop, DROP_BONUS, seedsFor } from "@/services/rewards";
@@ -603,7 +604,7 @@ export default function Capture() {
   const { C, T, scheme } = useTheme();
   const params = useLocalSearchParams<{ action?: ActionId; spot?: string }>();
   const { top, bottom } = useSafeAreaInsets();
-  const { ref: keyboardRoot, cover } = useKeyboardCover();
+  const { ref: keyboardRoot, cover, scrollerRef, scrollProps } = useKeyboardCover();
   const { drop, pulse } = usePulse();
   const [perm, requestPerm] = useCameraPermissions();
   const cam = useRef<CameraView>(null);
@@ -879,7 +880,12 @@ export default function Capture() {
           <IconButton icon="close" label={t("capture.discard")} onPress={() => !posting && router.back()} />
         </View>
 
-        <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, gap: 22, paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          ref={scrollerRef}
+          {...scrollProps}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, gap: 22, paddingBottom: scrollPaddingBottom(24, cover > 0 ? 16 : 0) }}
+          keyboardShouldPersistTaps="handled"
+        >
           <Animated.View
             entering={ZoomIn.springify().damping(15)}
             style={{ paddingHorizontal: 40, paddingTop: 4, transform: [{ rotate: posting ? "0deg" : "-1.2deg" }] }}

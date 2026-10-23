@@ -1,7 +1,23 @@
 import assert from "node:assert/strict";
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import path from "node:path";
 import { test } from "node:test";
 
-import { composerInset, keyboardCover } from "../src/services/keyboard-inset.ts";
+import {
+  composerInset,
+  focusedScrollOffset,
+  keyboardCover,
+  resolveKeyboardTop,
+  scrollPaddingBottom,
+} from "../src/services/keyboard-inset.ts";
+
+function walk(dir: string): string[] {
+  return readdirSync(dir).flatMap((name) => {
+    const file = path.join(dir, name);
+    if (statSync(file).isDirectory()) return walk(file);
+    return file.endsWith(".ts") || file.endsWith(".tsx") ? [file] : [];
+  });
+}
 
 test("sotto l'header la barra sale di tutta la tastiera", () => {
   const header = 96;
@@ -21,8 +37,85 @@ test("coordinate assenti non alzano la barra", () => {
   assert.equal(keyboardCover(Number.NaN, 800, 400), 0);
 });
 
+test("su Android quando screenY resta sul fondo del frame usa l'altezza reale della tastiera", () => {
+  assert.equal(resolveKeyboardTop(836, 316, 836), 520);
+  assert.equal(keyboardCover(96, 740, 836, 316, 836), 316);
+  // Se invece screenY è già il bordo superiore della tastiera, non sottrae due volte.
+  assert.equal(resolveKeyboardTop(520, 316, 836), 520);
+  assert.equal(keyboardCover(96, 740, 520, 316, 836), 316);
+  // E se la vista si è già ridotta sopra la tastiera, la copertura resta zero.
+  assert.equal(keyboardCover(96, 424, 520, 316, 836), 0);
+});
+
 test("a tastiera aperta l'inset sicuro non si somma alla copertura", () => {
   assert.equal(composerInset(48, 0), 58);
   assert.equal(composerInset(48, 316), 326);
   assert.ok(composerInset(48, 316) < 48 + 10 + 316);
+});
+
+test("lo scroll aggiunge il padding della tastiera solo quando è aperta", () => {
+  assert.equal(scrollPaddingBottom(40, 0), 40);
+  assert.equal(scrollPaddingBottom(40, 320), 360);
+  assert.equal(scrollPaddingBottom(-10, 320), 320);
+});
+
+test("porta il campo focalizzato sopra la tastiera senza muovere i campi già visibili", () => {
+  // Campo commento in basso su spot/[id] coperto dalla tastiera: scorre in alto quanto basta.
+  const nextY = focusedScrollOffset({
+    scrollY: 300,
+    scrollTop: 96,
+    scrollHeight: 748,
+    inputTop: 640,
+    inputHeight: 50,
+    keyboardTop: 500,
+  });
+  assert.equal(nextY, 518);
+
+  // Barra di ricerca già visibile nella metà alta dello schermo: nessuno scroll superfluo.
+  assert.equal(
+    focusedScrollOffset({
+      scrollY: 0,
+      scrollTop: 80,
+      scrollHeight: 764,
+      inputTop: 180,
+      inputHeight: 50,
+      keyboardTop: 500,
+    }),
+    null,
+  );
+
+  // Campo finito parzialmente sopra il bordo superiore dello scroll: risale per mostrarlo.
+  assert.equal(
+    focusedScrollOffset({
+      scrollY: 200,
+      scrollTop: 100,
+      scrollHeight: 600,
+      inputTop: 80,
+      inputHeight: 48,
+      keyboardTop: 500,
+    }),
+    164,
+  );
+});
+
+test("ogni schermata con TextInput usa useKeyboardCover e nessuna lascia KeyboardAvoidingView spento su Android", () => {
+  const root = path.resolve(import.meta.dirname, "..");
+  const missingCover: string[] = [];
+  const brokenAvoidingView: string[] = [];
+
+  for (const file of walk(path.join(root, "src"))) {
+    if (file.endsWith("use-keyboard-cover.ts")) continue;
+    const content = readFileSync(file, "utf8");
+    const rel = path.relative(root, file).replaceAll("\\", "/");
+    // I sotto-passi di onboarding vivono dentro lo ScrollView di src/app/onboarding.tsx, che usa useKeyboardCover.
+    if (/<TextInput\b/.test(content) && !rel.startsWith("src/components/onboarding/") && !/\buseKeyboardCover\b/.test(content)) {
+      missingCover.push(rel);
+    }
+    if (/<KeyboardAvoidingView\b/.test(content)) {
+      brokenAvoidingView.push(rel);
+    }
+  }
+
+  assert.deepEqual(missingCover, []);
+  assert.deepEqual(brokenAvoidingView, []);
 });

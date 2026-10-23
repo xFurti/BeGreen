@@ -10,10 +10,12 @@ import { Avatar, AvatarStack, Bar, Button, IconButton, Mono, Press, SectionHeade
 import { ACTIONS } from "@/data/actions";
 import { KIND } from "@/data/squad-kinds";
 import type { Squad } from "@/data/types";
+import { useKeyboardCover } from "@/hooks/use-keyboard-cover";
 import type { MessageKey } from "@/i18n/catalog";
 import { questTitle, squadKindLabel } from "@/i18n/content";
 import { compact, formatNumber } from "@/i18n/format";
 import { useI18n } from "@/i18n/use-i18n";
+import { scrollPaddingBottom } from "@/services/keyboard-inset";
 import { nudgedRecently, useApp, useAuthor, useLeague, weekResetIn, type Racer } from "@/store/app-store";
 import { F, R } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
@@ -181,6 +183,7 @@ export default function League() {
   const place = useApp((s) => s.comune?.name ?? s.place.name);
   const join = useApp((s) => s.joinSquad);
   const league = useLeague();
+  const { ref: keyboardRoot, cover, scrollerRef, scrollProps } = useKeyboardCover();
   const [code, setCode] = useState("");
   const [joining, setJoining] = useState(false);
   const [tab, setTab] = useState<View_>(params.tab ?? "people");
@@ -193,11 +196,13 @@ export default function League() {
   const me = league[myRank - 1];
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg }}>
+    <View ref={keyboardRoot} collapsable={false} style={{ flex: 1, backgroundColor: C.bg }}>
       <ScrollView
+        ref={scrollerRef}
+        {...scrollProps}
         style={{ flex: 1, backgroundColor: C.bg }}
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={{ paddingTop: 4, paddingHorizontal: 20, paddingBottom: 60, gap: 22 }}
+        contentContainerStyle={{ paddingTop: 4, paddingHorizontal: 20, paddingBottom: scrollPaddingBottom(60, cover), gap: 22 }}
         keyboardShouldPersistTaps="handled"
       >
         <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" }}>

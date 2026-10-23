@@ -5,7 +5,9 @@ import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-nativ
 import { Icon, type IconName } from "@/components/icon";
 import { Button, Mono } from "@/components/ui";
 import type { FlagReason } from "@/data/community";
+import { useKeyboardCover } from "@/hooks/use-keyboard-cover";
 import { useI18n } from "@/i18n/use-i18n";
+import { scrollPaddingBottom } from "@/services/keyboard-inset";
 import { useAuthor } from "@/store/app-store";
 import { NO_FLAGS, useCommunity, useSpot } from "@/store/community-store";
 import { F, R } from "@/theme/tokens";
@@ -28,13 +30,21 @@ export default function FlagSpot() {
   const flag = useCommunity((s) => s.flag);
   const block = useCommunity((s) => s.block);
   const mine = useCommunity((s) => s.myFlags[spot?.id ?? id]) ?? NO_FLAGS;
+  const { ref: keyboardRoot, cover, scrollerRef, scrollProps } = useKeyboardCover();
   const [reason, setReason] = useState<Exclude<FlagReason, "resolved"> | null>(null);
   const [note, setNote] = useState("");
   if (!spot) return null;
   const name = author(spot.authorId).name;
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 28, gap: 14, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
+    <View ref={keyboardRoot} collapsable={false} style={{ flex: 1, backgroundColor: C.bg }}>
+      <ScrollView
+        ref={scrollerRef}
+        {...scrollProps}
+        nestedScrollEnabled={process.env.EXPO_OS === "android"}
+        contentContainerStyle={{ padding: 20, paddingTop: 28, gap: 14, paddingBottom: scrollPaddingBottom(40, cover) }}
+        keyboardShouldPersistTaps="handled"
+      >
       <Mono color={C.leaf}>{t("community.flag.kicker")}</Mono>
       <Text style={T.title}>{t("community.flag.title")}</Text>
       {REASONS.map((r) => {
@@ -98,6 +108,7 @@ export default function FlagSpot() {
           ])
         }
       />
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }

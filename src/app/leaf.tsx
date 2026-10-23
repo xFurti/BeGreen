@@ -57,6 +57,10 @@ export default function Leaf() {
 
   const scrollToEnd = () => setTimeout(() => scroller.current?.scrollToEnd({ animated: true }), 50);
 
+  useEffect(() => {
+    if (cover > 0 && turns.length > 0) scrollToEnd();
+  }, [cover, turns.length]);
+
   const ask = async (question: string, opts?: { audience?: Explain; shown?: string }) => {
     const text = question.trim();
     if (!text || busy) return;
