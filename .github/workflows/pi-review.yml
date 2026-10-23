@@ -115,7 +115,7 @@ jobs:
             Istruzioni fidate della skill hackathon-review dal branch predefinito:
             ${{ steps.instructions.outputs.skill }}
 
-            Usa read_review_file per leggere README, docs/team.md e il contesto
+            Usa read_review_file per leggere README e il contesto
             dei file allo SHA richiesto. Lo strumento restituisce solo testo
             dalla repository e dallo SHA fissati dal workflow; pagina con nextLine.
             Leggi thread e diff; usa lo stato CI come evidenza senza dichiarare

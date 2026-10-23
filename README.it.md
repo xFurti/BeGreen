@@ -15,7 +15,6 @@
 
 [![FESAV 2026](https://img.shields.io/badge/FESAV_2026-Good_Vibes_hackathon-152315?style=for-the-badge&labelColor=152315&color=C8E61A)](docs/regolamento.md)
 [![Traccia](https://img.shields.io/badge/Traccia_2-La_mia_sostenibilit%C3%A0-C8E61A?style=for-the-badge&labelColor=152315)](docs/traccia.md)
-[![Team](https://img.shields.io/badge/Team-Magilla_Gorilla-C8E61A?style=for-the-badge&labelColor=152315)](#team)
 [![Verify](https://github.com/xFurti/BeGreen/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/xFurti/BeGreen/actions/workflows/ci.yml)
 
 [![Expo](https://img.shields.io/badge/Expo-SDK_58-000020?style=flat-square&logo=expo&logoColor=white)](https://docs.expo.dev/versions/v58.0.0/)
@@ -42,7 +41,6 @@
 [Architettura](#architettura) ·
 [Brand](#brand-e-design-system) ·
 [Limiti](#limiti-dichiarati) ·
-[Team](#team) ·
 [Contribuire](#come-contribuire)
 
 <br>
@@ -485,30 +483,19 @@ La crescita è **scuola per scuola, città per città**, perché gli effetti di 
 
 Idee per dopo l'hackathon: [`docs/ideas.md`](docs/ideas.md).
 
-## Team
-
-<img src="docs/readme/icons/school.svg" width="20" alt=""> **Magilla Gorilla**: sei studenti del **Liceo Tecnologico Guglielmo Marconi** di Verona, a **Good Vibes / FESAV 2026** (Schio, 22–24 ottobre 2026).
-
-| Classe | Componenti |
-| :---: | --- |
-| **4AI** | Holovan Oleksii · Vitiello Lorenzo |
-| **4BI** | Bassanello Leonardo · Cremonese Luca · Warnakulasuriya Arachchilage Fernando Nipun Samuel |
-| **4SI** | Cipriani Gabriele |
-
 ## Come contribuire
 
 <img src="docs/readme/icons/construct.svg" width="20" alt=""> Le regole di lavoro della repo sono in [AGENTS.md](AGENTS.md); valgono anche per gli assistenti AI. In sintesi:
 
 - Crea un branch da `main` aggiornato (`feat/12-demo`, `fix/18-login`, `docs/pitch`) e apri una PR verso `main`. `npm run verify` deve passare.
 - Serve l'approvazione di un compagno prima del merge. Quando la review Pi è configurata in CI, parte da sola sulle PR pronte.
-- Attività e referenti: [docs/team.md](docs/team.md) · idee fuori dallo scope corrente: [docs/ideas.md](docs/ideas.md).
+- Idee fuori dallo scope corrente: [docs/ideas.md](docs/ideas.md).
 
 ### Documentazione
 
 | Documento | Cosa |
 | --- | --- |
 | [docs/traccia.md](docs/traccia.md) · [docs/regolamento.md](docs/regolamento.md) | Traccia ufficiale e regolamento dell'evento |
-| [docs/presentation.md](docs/presentation.md) | Struttura del pitch e percorso della demo (8 minuti) |
 | [docs/decisions.md](docs/decisions.md) | Perché il prodotto è fatto così |
 | [docs/dati-comune.md](docs/dati-comune.md) | Dataset ufficiali per Comune, join e soglie |
 | [docs/profile.md](docs/profile.md) | Profilo e configurazione della mappa nativa |

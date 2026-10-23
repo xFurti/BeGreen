@@ -15,7 +15,6 @@
 
 [![FESAV 2026](https://img.shields.io/badge/FESAV_2026-Good_Vibes_hackathon-152315?style=for-the-badge&labelColor=152315&color=C8E61A)](docs/regolamento.md)
 [![Track](https://img.shields.io/badge/Track_2-La_mia_sostenibilit%C3%A0-C8E61A?style=for-the-badge&labelColor=152315)](docs/traccia.md)
-[![Team](https://img.shields.io/badge/Team-Magilla_Gorilla-C8E61A?style=for-the-badge&labelColor=152315)](#team)
 [![Verify](https://github.com/xFurti/BeGreen/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/xFurti/BeGreen/actions/workflows/ci.yml)
 
 [![Expo](https://img.shields.io/badge/Expo-SDK_58-000020?style=flat-square&logo=expo&logoColor=white)](https://docs.expo.dev/versions/v58.0.0/)
@@ -42,7 +41,6 @@
 [Architecture](#architecture) ·
 [Brand](#brand--design-system) ·
 [Limits](#honest-limits) ·
-[Team](#team) ·
 [Contributing](#contributing)
 
 <br>
@@ -483,30 +481,19 @@ Growth is **school by school, city by city**, because network effects are local:
 
 Ideas for after the hackathon: [`docs/ideas.md`](docs/ideas.md).
 
-## Team
-
-<img src="docs/readme/icons/school.svg" width="20" alt=""> **Magilla Gorilla**: six students from the **Liceo Tecnologico Guglielmo Marconi** in Verona, at **Good Vibes / FESAV 2026** (Schio, 22–24 October 2026).
-
-| Class | Members |
-| :---: | --- |
-| **4AI** | Holovan Oleksii · Vitiello Lorenzo |
-| **4BI** | Bassanello Leonardo · Cremonese Luca · Warnakulasuriya Arachchilage Fernando Nipun Samuel |
-| **4SI** | Cipriani Gabriele |
-
 ## Contributing
 
 <img src="docs/readme/icons/construct.svg" width="20" alt=""> The repo's working rules live in [AGENTS.md](AGENTS.md); they apply to AI assistants too. The short version:
 
 - Branch from an up-to-date `main` (`feat/12-demo`, `fix/18-login`, `docs/pitch`) and open a PR to `main`. `npm run verify` must pass.
 - Another teammate approves before merging. When Pi review is configured in CI, it runs on its own on ready PRs.
-- Tasks and owners: [docs/team.md](docs/team.md) · new ideas, off the current scope: [docs/ideas.md](docs/ideas.md).
+- New ideas, off the current scope: [docs/ideas.md](docs/ideas.md).
 
 ### Documentation
 
 | Document | What |
 | --- | --- |
 | [docs/traccia.md](docs/traccia.md) · [docs/regolamento.md](docs/regolamento.md) | The official track and the event rules |
-| [docs/presentation.md](docs/presentation.md) | Pitch structure and demo path (8 minutes) |
 | [docs/decisions.md](docs/decisions.md) | Why the product looks like this |
 | [docs/dati-comune.md](docs/dati-comune.md) | Official per-Comune datasets, joins and thresholds |
 | [docs/profile.md](docs/profile.md) | Profile and native map setup |

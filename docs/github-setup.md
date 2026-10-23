@@ -2,7 +2,7 @@
 
 ## Repository e accessi
 
-La repository deve essere **Private**. Invita i cinque collaboratori oltre al responsabile usando gli username che verranno comunicati, senza creare token. In un'organizzazione assegna normalmente `Write`; in una repository personale gli invitati diventano collaboratori. Non assegnare amministrazione senza necessità.
+La repository resta **privata durante l'evento**; dopo la consegna il responsabile la rende pubblica. Invita i cinque collaboratori oltre al responsabile usando gli username che verranno comunicati, senza creare token. In un'organizzazione assegna normalmente `Write`; in una repository personale gli invitati diventano collaboratori. Non assegnare amministrazione senza necessità.
 
 ## Secrets e variables
 
