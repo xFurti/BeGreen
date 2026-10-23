@@ -14,6 +14,7 @@ import { CATEGORIES, CATEGORY_LIST, type Community, type Spot } from "@/data/com
 import type { MessageKey } from "@/i18n/catalog";
 import { timeAgo } from "@/i18n/format";
 import { useI18n } from "@/i18n/use-i18n";
+import { useKeyboardCover } from "@/hooks/use-keyboard-cover";
 import { requestMyLocation, useMyLocation } from "@/hooks/use-my-location";
 import { useNow } from "@/hooks/use-now";
 import { activeFilterCount, applyFilters, searchSpots, type MapFilters } from "@/services/community-search";
@@ -145,6 +146,7 @@ export function MapScreen({
 }) {
   const { C, T } = useTheme();
   const { t } = useI18n();
+  const { ref: keyboardRoot, cover } = useKeyboardCover();
   const map = useRef<MapHandle>(null);
   const filters = useCommunity((s) => s.filters);
   const setFilters = useCommunity((s) => s.setFilters);
@@ -233,7 +235,7 @@ export function MapScreen({
   ];
 
   return (
-    <View style={{ flex: 1 }}>
+    <View ref={keyboardRoot} collapsable={false} style={{ flex: 1 }}>
       <CommunityMap
         ref={map}
         community={community}
@@ -294,8 +296,18 @@ export function MapScreen({
 
         {/* Search results */}
         {!!query.trim() && (
-          <Animated.View entering={FadeInDown.duration(160)} style={{ marginHorizontal: 12, backgroundColor: C.bg, borderRadius: R.lg, padding: 6, maxHeight: 330, boxShadow: "0 6px 24px rgba(0,0,0,0.16)" }}>
-            <ScrollView keyboardShouldPersistTaps="handled">
+          <Animated.View
+            entering={FadeInDown.duration(160)}
+            style={{
+              marginHorizontal: 12,
+              backgroundColor: C.bg,
+              borderRadius: R.lg,
+              padding: 6,
+              maxHeight: cover > 0 ? 220 : 330,
+              boxShadow: "0 6px 24px rgba(0,0,0,0.16)",
+            }}
+          >
+            <ScrollView keyboardShouldPersistTaps="handled" nestedScrollEnabled={process.env.EXPO_OS === "android"}>
               {places.map((pl) => (
                 <Pressable
                   key={pl.id}

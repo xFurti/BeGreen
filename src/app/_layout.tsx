@@ -75,7 +75,7 @@ export default function RootLayout() {
           <Stack.Screen name="leaf" options={{ ...sheet, sheetAllowedDetents: [0.92] }} />
           <Stack.Screen name="guide" options={{ ...sheet, sheetAllowedDetents: [0.92] }} />
           <Stack.Screen name="sources" options={{ ...sheet, sheetAllowedDetents: [0.8, 1] }} />
-          <Stack.Screen name="new-squad" options={{ ...sheet, sheetAllowedDetents: [0.6] }} />
+          <Stack.Screen name="new-squad" options={{ ...sheet, sheetAllowedDetents: [0.92] }} />
           <Stack.Screen name="comune" options={{ ...sheet, sheetAllowedDetents: [0.92] }} />
           <Stack.Screen name="league" options={{ title: "" }} />
           <Stack.Screen name="community-ranking" options={{ title: "" }} />
@@ -87,9 +87,9 @@ export default function RootLayout() {
           <Stack.Screen name="add-spot" options={{ presentation: "fullScreenModal", headerShown: false }} />
           <Stack.Screen name="communities" options={{ ...sheet, sheetAllowedDetents: [0.92] }} />
           <Stack.Screen name="new-community" options={{ ...sheet, sheetAllowedDetents: [0.92] }} />
-          <Stack.Screen name="join" options={{ ...sheet, sheetAllowedDetents: [0.7] }} />
+          <Stack.Screen name="join" options={{ ...sheet, sheetAllowedDetents: [0.92] }} />
           <Stack.Screen name="new-challenge" options={{ ...sheet, sheetAllowedDetents: [0.92] }} />
-          <Stack.Screen name="flag-spot" options={{ ...sheet, sheetAllowedDetents: [0.7] }} />
+          <Stack.Screen name="flag-spot" options={{ ...sheet, sheetAllowedDetents: [0.92] }} />
         </Stack>
       </ThemeProvider>
     </GestureHandlerRootView>

@@ -1,7 +1,7 @@
 import { Image } from "expo-image";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { Alert, KeyboardAvoidingView, Pressable, ScrollView, Share, Text, TextInput, View } from "react-native";
+import { Alert, Pressable, ScrollView, Share, Text, TextInput, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 
 import { CategoryTag, dateText, LoveButton, ProofRow, SaveButton, spotText, StatusBadge, whenText } from "@/components/community-ui";
@@ -9,8 +9,10 @@ import { Icon } from "@/components/icon";
 import { REACTIONS } from "@/components/post-card";
 import { Avatar, Button, Mono, Press, SectionHeader } from "@/components/ui";
 import { eventPhase } from "@/data/community";
+import { useKeyboardCover } from "@/hooks/use-keyboard-cover";
 import { timeAgo } from "@/i18n/format";
 import { useI18n } from "@/i18n/use-i18n";
+import { scrollPaddingBottom } from "@/services/keyboard-inset";
 import { useApp, useAuthor } from "@/store/app-store";
 import { NO_FLAGS, useCommunity, useCommunityById, useSpot } from "@/store/community-store";
 import { F, R } from "@/theme/tokens";
@@ -36,6 +38,7 @@ export default function SpotDetail() {
   const blocked = useCommunity((s) => s.blocked);
   const reacted = useCommunity((s) => s.reacted[sid]);
   const { toggleGoing, comment, react, editSpot, removeSpot, verify, hide, flag } = useCommunity.getState();
+  const { ref: keyboardRoot, cover, scrollerRef, scrollProps } = useKeyboardCover();
   const [text, setText] = useState("");
 
   if (!spot) {
@@ -63,9 +66,15 @@ export default function SpotDetail() {
   };
 
   return (
-    <KeyboardAvoidingView behavior={process.env.EXPO_OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={90} style={{ flex: 1, backgroundColor: C.bg }}>
+    <View ref={keyboardRoot} collapsable={false} style={{ flex: 1, backgroundColor: C.bg }}>
       <Stack.Screen options={{ title: community?.name ?? "" }} />
-      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingBottom: 40, gap: 20 }} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        ref={scrollerRef}
+        {...scrollProps}
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={{ paddingBottom: scrollPaddingBottom(40, cover), gap: 20 }}
+        keyboardShouldPersistTaps="handled"
+      >
         {spot.photo != null && <Image source={spot.photo} style={{ width: "100%", aspectRatio: 4 / 3, backgroundColor: C.card }} contentFit="cover" transition={150} />}
         <View style={{ paddingHorizontal: 20, gap: 20 }}>
           {fresh && (
@@ -280,6 +289,6 @@ export default function SpotDetail() {
           )}
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </View>
   );
 }

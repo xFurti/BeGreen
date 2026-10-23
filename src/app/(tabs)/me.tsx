@@ -3,7 +3,6 @@ import { router, type Href } from "expo-router";
 import { useEffect, useRef, useState, type ComponentRef, type ReactNode } from "react";
 import {
   AccessibilityInfo,
-  KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
@@ -23,9 +22,11 @@ import { GrowthCard, SeedPicker } from "@/components/seed-ui";
 import { TitledName } from "@/components/titled-name";
 import { Avatar, Button, IconButton, Press, Segmented, toast } from "@/components/ui";
 import type { Explain, Role } from "@/data/types";
+import { useKeyboardCover } from "@/hooks/use-keyboard-cover";
 import { profileName } from "@/i18n/content";
 import { formatNumber } from "@/i18n/format";
 import { useI18n } from "@/i18n/use-i18n";
+import { scrollPaddingBottom } from "@/services/keyboard-inset";
 import { HandleTaken } from "@/services/social";
 import { supabase } from "@/services/supabase";
 import { badgeStatsOf, dropStaleBadge, seedsOf, streakOf, useApp, useMyPosts, type ThemePref } from "@/store/app-store";
@@ -186,6 +187,7 @@ function Sheet({ title, onClose, children }: { title: string; onClose: () => voi
   const { C } = useTheme();
   const s = styles(C);
   const { top, bottom } = useSafeAreaInsets();
+  const { ref: keyboardRoot, cover, scrollerRef, scrollProps } = useKeyboardCover();
   const { t } = useI18n();
   const ref = useRef<ComponentRef<typeof View>>(null);
   return (
@@ -201,14 +203,14 @@ function Sheet({ title, onClose, children }: { title: string; onClose: () => voi
         }
       }}
     >
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={[s.modalRoot, { paddingTop: top + 12 }]}>
+      <View ref={keyboardRoot} collapsable={false} style={[s.modalRoot, { paddingTop: top + 12, paddingBottom: cover }]}>
         <View accessible={false} style={StyleSheet.absoluteFill} onStartShouldSetResponder={() => true} onResponderRelease={onClose} />
         <View
           role="dialog"
           aria-modal
           accessibilityViewIsModal
           accessibilityLabel={title}
-          style={[s.sheet, { maxHeight: "94%", paddingBottom: Math.max(bottom, 20) }]}
+          style={[s.sheet, { maxHeight: "94%", paddingBottom: cover > 0 ? 12 : Math.max(bottom, 20) }]}
         >
           <View style={s.sheetHandle} />
           <View style={s.sheetHeader}>
@@ -217,11 +219,16 @@ function Sheet({ title, onClose, children }: { title: string; onClose: () => voi
             </View>
             <IconButton icon="close" label={t("common.close")} onPress={onClose} />
           </View>
-          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 24, gap: 20, paddingBottom: 8 }}>
+          <ScrollView
+            ref={scrollerRef}
+            {...scrollProps}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{ paddingHorizontal: 24, gap: 20, paddingBottom: scrollPaddingBottom(16, cover > 0 ? 12 : 0) }}
+          >
             {children}
           </ScrollView>
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }

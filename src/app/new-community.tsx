@@ -6,8 +6,10 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { Icon } from "@/components/icon";
 import { Button, Chip, Segmented } from "@/components/ui";
 import type { Community, CommunityKind, Visibility } from "@/data/community";
+import { useKeyboardCover } from "@/hooks/use-keyboard-cover";
 import { useI18n } from "@/i18n/use-i18n";
 import { bboxAround } from "@/services/geo";
+import { scrollPaddingBottom } from "@/services/keyboard-inset";
 import { useApp } from "@/store/app-store";
 import { useCommunity } from "@/store/community-store";
 import { F, R } from "@/theme/tokens";
@@ -20,6 +22,7 @@ export default function NewGroup() {
   const { t } = useI18n();
   const comune = useApp((s) => s.comune);
   const create = useCommunity((s) => s.create);
+  const { ref: keyboardRoot, cover, scrollerRef, scrollProps } = useKeyboardCover();
   const [name, setName] = useState("");
   const [visibility, setVisibility] = useState<Visibility>("private");
   const [kind, setKind] = useState<CommunityKind>("friends");
@@ -81,42 +84,50 @@ export default function NewGroup() {
   }
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 36, gap: 18, paddingBottom: 50 }} keyboardShouldPersistTaps="handled">
-      <Text style={T.display}>{t("community.newGroup.title")}</Text>
-      <TextInput
-        value={name}
-        onChangeText={setName}
-        placeholder={t("community.newGroup.namePh")}
-        placeholderTextColor={C.mute}
-        maxLength={60}
-        autoFocus
-        returnKeyType="done"
-        onSubmitEditing={() => name.trim().length >= 3 && submit()}
-        style={{ height: 56, borderRadius: R.md, backgroundColor: C.card, paddingHorizontal: 16, fontFamily: F.medium, fontSize: 18, color: C.ink }}
-        accessibilityLabel={t("community.newGroup.name")}
-      />
-      <View style={{ gap: 8 }}>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-          {(["friends", "school", "association", "neighbourhood"] as const).map((value) => (
-            <Chip key={value} label={t(`community.kinds2.${value}`)} active={kind === value} onPress={() => setKind(value)} />
-          ))}
-        </View>
-        <Segmented<Visibility>
-          value={visibility}
-          onChange={setVisibility}
-          options={[
-            { value: "private", label: t("community.visibility.private") },
-            { value: "public", label: t("community.visibility.public") },
-          ]}
+    <View ref={keyboardRoot} collapsable={false} style={{ flex: 1, backgroundColor: C.bg }}>
+      <ScrollView
+        ref={scrollerRef}
+        {...scrollProps}
+        nestedScrollEnabled={process.env.EXPO_OS === "android"}
+        contentContainerStyle={{ padding: 20, paddingTop: 36, gap: 18, paddingBottom: scrollPaddingBottom(50, cover) }}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text style={T.display}>{t("community.newGroup.title")}</Text>
+        <TextInput
+          value={name}
+          onChangeText={setName}
+          placeholder={t("community.newGroup.namePh")}
+          placeholderTextColor={C.mute}
+          maxLength={60}
+          autoFocus
+          returnKeyType="done"
+          onSubmitEditing={() => name.trim().length >= 3 && submit()}
+          style={{ height: 56, borderRadius: R.md, backgroundColor: C.card, paddingHorizontal: 16, fontFamily: F.medium, fontSize: 18, color: C.ink }}
+          accessibilityLabel={t("community.newGroup.name")}
         />
-        <View style={{ flexDirection: "row", gap: 8, paddingHorizontal: 4 }}>
-          <Icon name={visibility === "private" ? "lock" : "globe"} size={14} color={C.ink2} />
-          <Text style={[T.caption, { flex: 1, color: C.ink2 }]}>
-            {visibility === "private" ? t("community.newGroup.privateNote") : t("community.newGroup.publicNote")}
-          </Text>
+        <View style={{ gap: 8 }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            {(["friends", "school", "association", "neighbourhood"] as const).map((value) => (
+              <Chip key={value} label={t(`community.kinds2.${value}`)} active={kind === value} onPress={() => setKind(value)} />
+            ))}
+          </View>
+          <Segmented<Visibility>
+            value={visibility}
+            onChange={setVisibility}
+            options={[
+              { value: "private", label: t("community.visibility.private") },
+              { value: "public", label: t("community.visibility.public") },
+            ]}
+          />
+          <View style={{ flexDirection: "row", gap: 8, paddingHorizontal: 4 }}>
+            <Icon name={visibility === "private" ? "lock" : "globe"} size={14} color={C.ink2} />
+            <Text style={[T.caption, { flex: 1, color: C.ink2 }]}>
+              {visibility === "private" ? t("community.newGroup.privateNote") : t("community.newGroup.publicNote")}
+            </Text>
+          </View>
         </View>
-      </View>
-      <Button label={t("community.newGroup.create")} kind="green" icon="plus" loading={busy} disabled={name.trim().length < 3} onPress={submit} />
-    </ScrollView>
+        <Button label={t("community.newGroup.create")} kind="green" icon="plus" loading={busy} disabled={name.trim().length < 3} onPress={submit} />
+      </ScrollView>
+    </View>
   );
 }
