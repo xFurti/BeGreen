@@ -61,7 +61,7 @@ export function ProofDeck({ width, active }: { width: number; active: boolean })
                     { translateX: position === 1 ? -8 : position === 2 ? 8 : 0 },
                     { translateY: position * 9 },
                     { scale: 1 - position * 0.045 },
-                    { rotate: `${(position - 1) * 7}deg` },
+                    { rotate: `${position === 1 ? -4 : position === 2 ? 4 : 0}deg` },
                   ],
                 },
                 isTop && topStyle,

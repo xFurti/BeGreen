@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { router } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from "react-native-reanimated";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
@@ -78,9 +79,15 @@ export function ProfileCard({
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
           <Icon name="location" size={14} color={C.lime} />
-          <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.regular, fontSize: 13, color: C.forestMute }}>
-            {comune ? comuneLabel(comune) : t("onboarding.profileComune")}
-          </Text>
+          <Pressable
+            onPress={() => router.push("/comune")}
+            accessibilityLabel={comune ? t("comune.change", { name: comune.name }) : t("onboarding.profileComune")}
+            style={{ flex: 1 }}
+          >
+            <Text numberOfLines={1} style={{ fontFamily: F.regular, fontSize: 13, color: C.forestMute }}>
+              {comune ? comuneLabel(comune) : t("onboarding.profileComune")}
+            </Text>
+          </Pressable>
         </View>
         {comune && <ComuneAir />}
         <View style={{ flexDirection: "row", alignItems: "center", gap: 7, borderTopWidth: 1, borderTopColor: C.forestLine, paddingTop: 10 }}>
@@ -107,10 +114,10 @@ function AvatarChoice({ id, selected, onPress }: { id: AvatarId; selected: boole
       accessibilityState={{ selected }}
       accessibilityLabel={t(`avatars.${id}` as MessageKey)}
       onPress={onPress}
-      style={{ width: 42, height: 48, alignItems: "center", justifyContent: "center" }}
+      style={{ width: 40, height: 46, alignItems: "center", justifyContent: "center" }}
     >
       <Animated.View style={[{ padding: selected ? 2 : 0, borderRadius: 24, borderWidth: selected ? 2 : 0, borderColor: C.leaf }, animated]}>
-        <Avatar avatarId={id} name={t(`avatars.${id}` as MessageKey)} size={38} />
+        <Avatar avatarId={id} name={t(`avatars.${id}` as MessageKey)} size={36} />
       </Animated.View>
     </Pressable>
   );
@@ -122,7 +129,7 @@ export function AvatarPicker({ value, onChange }: { value: AvatarId | null; onCh
   return (
     <View style={{ gap: 8 }}>
       <Mono color={C.forest}>{t("onboarding.chooseAvatar")}</Mono>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
         {AVATARS.map((avatar) => (
           <AvatarChoice
             key={avatar.id}

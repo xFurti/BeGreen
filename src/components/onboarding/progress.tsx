@@ -6,7 +6,7 @@ import { useTheme } from "@/theme/use-theme";
 function Segment({ index, progress }: { index: number; progress: SharedValue<number> }) {
   const { C } = useTheme();
   const fill = useAnimatedStyle(() => ({
-    width: `${interpolate(progress.value, [index, index + 1], [0, 100], "clamp")}%`,
+    width: `${interpolate(progress.value, [index - 1, index], [0, 100], "clamp")}%`,
   }));
   return (
     <View style={{ height: 4, alignSelf: "stretch", borderRadius: 2, overflow: "hidden", backgroundColor: C.mint2 }}>

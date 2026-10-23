@@ -24,8 +24,8 @@ export function RotatingWord({ words, active }: { words: string[]; active: boole
   }, [active, opacity, reducedMotion, words.length]);
   const fade = useAnimatedStyle(() => ({ opacity: reducedMotion ? 1 : opacity.value }));
   return (
-    <Animated.View style={[{ backgroundColor: C.mint, borderRadius: R.pill, paddingHorizontal: 10, paddingVertical: 4 }, fade]}>
-      <Text style={{ fontFamily: F.monoMedium, fontSize: 11, color: C.forest, textTransform: "uppercase" }}>{words[index]}</Text>
+    <Animated.View style={[{ backgroundColor: C.forest, borderRadius: R.pill, paddingHorizontal: 10, paddingVertical: 4 }, fade]}>
+      <Text style={{ fontFamily: F.monoMedium, fontSize: 11, color: C.lime, textTransform: "uppercase" }}>{words[index]}</Text>
     </Animated.View>
   );
 }

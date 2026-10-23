@@ -56,7 +56,7 @@ function CityChooser({ comune, locating, onLocate, onSearch, message }: { comune
   const { t } = useI18n();
   return (
     <View style={{ gap: 10 }}>
-      <Button label={locating ? t("comune.locating") : t("onboarding.useLocation")} kind="green" icon="location" disabled={locating} onPress={onLocate} />
+      {!comune && <Button label={locating ? t("comune.locating") : t("onboarding.useLocation")} kind="green" icon="location" disabled={locating} onPress={onLocate} />}
       <Press
         onPress={onSearch}
         accessibilityLabel={comune ? t("comune.change", { name: comune.name }) : t("onboarding.searchComune")}
@@ -144,7 +144,7 @@ export default function Onboarding() {
       </View>
       <ProfileCard name={name.trim()} handle={h} avatarId={avatarId} comune={comune} />
       <AvatarPicker value={avatarId} onChange={setAvatarId} />
-      <TextInput
+        <TextInput
         value={name}
         onChangeText={setName}
         placeholder={t("onboarding.name")}
@@ -165,6 +165,7 @@ export default function Onboarding() {
             placeholderTextColor={C.faint}
             autoCapitalize="none"
             autoCorrect={false}
+            accessibilityHint={t("onboarding.handleHint")}
             accessibilityLabel={t("onboarding.handleA11y")}
             style={{ flex: 1, height: 46, fontSize: 17, fontFamily: F.monoMedium, color: C.ink }}
           />
@@ -186,7 +187,6 @@ export default function Onboarding() {
             </View>
           </View>
         )}
-        <Text style={T.caption}>{t("onboarding.handleHint")}</Text>
       </View>
     </ScrollView>
   );
@@ -198,7 +198,7 @@ export default function Onboarding() {
         <Text style={[T.hero, { fontSize: 38, lineHeight: 40 }]}>{t("onboarding.cityTitle")}</Text>
         <Text style={T.body}>{t("onboarding.cityBody")}</Text>
       </View>
-      {!comune && <CityChooser comune={comune} locating={locating} onLocate={locate} onSearch={() => router.push("/comune")} message={locationMessage} />}
+      <CityChooser comune={comune} locating={locating} onLocate={locate} onSearch={() => router.push("/comune")} message={locationMessage} />
       {comune && <CityLive active={page === 1} />}
     </ScrollView>
   );

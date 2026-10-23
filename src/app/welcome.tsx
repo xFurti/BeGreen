@@ -66,7 +66,7 @@ export default function Welcome() {
           <DropCard drop={drop} done={false} place={comune?.name ?? pulse.place.name} crowd={[]} ready={ready} />
 
           <View style={{ backgroundColor: C.mint, borderRadius: R.lg, padding: 18, gap: 8 }}>
-            <Mono color={C.forest}>{t("welcome.cameraTitle")}</Mono>
+            <Mono color={C.forestInk}>{t("welcome.cameraTitle")}</Mono>
             <Text style={{ fontFamily: F.regular, fontSize: 15, lineHeight: 21, color: C.ink2 }}>{t("welcome.cameraBody")}</Text>
           </View>
           {permissionMessage && <Text style={[T.caption, { color: C.red }]}>{permissionMessage}</Text>}
