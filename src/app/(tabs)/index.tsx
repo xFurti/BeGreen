@@ -9,6 +9,7 @@ import { DropCard, useCountdown } from "@/components/drop-card";
 import { Icon } from "@/components/icon";
 import { Sprout } from "@/components/nature";
 import { PostCard, VerifyBar } from "@/components/post-card";
+import { SeedTip } from "@/components/seed-ui";
 import { Avatar, Button, Logo, Mono, Press, TextTabs } from "@/components/ui";
 import { demoPostsFor } from "@/data/demo";
 import type { Post, User } from "@/data/types";
@@ -136,6 +137,7 @@ export default function Feed() {
   const place = comune?.name ?? pulse.place.name;
 
   const unlocked = postedToday(myPosts);
+  const dropTipSeen = useApp((s) => !!s.tips.drop);
   const streak = streakOf(myPosts);
   const today = new Date().toDateString();
   const mineToday = myPosts.find((p) => new Date(p.createdAt).toDateString() === today);
@@ -171,6 +173,7 @@ export default function Feed() {
 
   const header = (
     <View style={{ gap: 14, paddingBottom: 10 }}>
+      <SeedTip id="drop" text={t("seed.tips.drop", { place })} />
       <DropCard drop={drop} done={didDrop} place={place} crowd={crowd} ready={ready} />
       {mineToday ? (
         <View style={{ paddingVertical: 8 }}>
@@ -191,6 +194,7 @@ export default function Feed() {
           ]}
         />
       </View>
+      {unlocked && dropTipSeen && posts.some((p) => !p.isDemo) && <SeedTip id="verify" text={t("seed.tips.verify")} />}
     </View>
   );
 
@@ -212,7 +216,7 @@ export default function Feed() {
         </Press>
         <Logo size={24} />
         <Press onPress={() => router.navigate("/me")} accessibilityLabel={t("feed.profile")} style={{ width: 40, alignItems: "flex-end" }}>
-          <Avatar name={profileName(profile.name, t)} size={32} />
+          <Avatar name={profileName(profile.name, t)} seed={author(me).seed} seeds={author(me).seeds} size={32} />
         </Press>
       </View>
 

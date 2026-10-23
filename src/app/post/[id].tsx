@@ -65,7 +65,7 @@ export default function PostDetail() {
       <Stack.Screen options={{ title: a.name }} />
       <ScrollView contentContainerStyle={{ padding: 16, gap: 20, paddingBottom: 30 }} contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled">
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-          <Avatar src={a.avatar} name={a.name} size={42} />
+          <Avatar src={a.avatar} name={a.name} seed={a.seed} seeds={a.seeds} size={42} />
           <View style={{ flex: 1, gap: 3 }}>
             <TitledName name={a.name} badgeId={a.badgeId} style={{ fontFamily: F.semibold, fontSize: 16, letterSpacing: -0.2 }} />
             <Mono>
@@ -138,7 +138,7 @@ export default function PostDetail() {
                 const u = author(v);
                 return (
                   <View key={v} style={{ alignItems: "center", gap: 6 }}>
-                    <Avatar src={u.avatar} name={u.name} size={42} />
+                    <Avatar src={u.avatar} name={u.name} seed={u.seed} seeds={u.seeds} size={42} />
                     <TitledName name={u.name} badgeId={u.badgeId} align="center" style={{ fontFamily: F.medium, fontSize: 12 }} />
                   </View>
                 );
@@ -157,7 +157,7 @@ export default function PostDetail() {
               const u = author(c.authorId);
               return (
                 <Animated.View key={c.id} entering={FadeInDown.delay(i * 40)} style={{ flexDirection: "row", gap: 10 }}>
-                  <Avatar src={u.avatar} name={u.name} size={30} />
+                  <Avatar src={u.avatar} name={u.name} seed={u.seed} seeds={u.seeds} size={30} />
                   <View style={{ flex: 1, gap: 2 }}>
                     <TitledName
                       name={u.name}

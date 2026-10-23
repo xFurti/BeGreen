@@ -19,6 +19,7 @@ import { Icon, type IconName } from "@/components/icon";
 import { ImpactPanel, MemoriesPanel } from "@/components/profile-panels";
 import { ProfileMap } from "@/components/profile-map";
 import { LanguageSwitch } from "@/components/language-switch";
+import { GrowthCard, SeedPicker } from "@/components/seed-ui";
 import { TitledName } from "@/components/titled-name";
 import { Avatar, Button, IconButton, Press, Segmented, toast } from "@/components/ui";
 import type { Explain, Role } from "@/data/types";
@@ -30,6 +31,7 @@ import { supabase } from "@/services/supabase";
 import { badgeStatsOf, dropStaleBadge, seedsOf, streakOf, useApp, useMyPosts, type ThemePref } from "@/store/app-store";
 import { useCommunity } from "@/store/community-store";
 import { earnedBadges } from "@/data/badges";
+import { plantStage, seedOf } from "@/data/seeds";
 import { F, type Palette } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
@@ -56,6 +58,9 @@ export default function Me() {
   const streak = streakOf(posts);
   const verified = posts.filter((p) => p.verifiedBy.length >= 3).length;
   const place = comune?.name ?? t("comune.yours");
+  const userId = useApp((s) => s.userId);
+  const seed = seedOf(userId, profile.seed);
+  const seeds = seedsOf(posts, verifications);
   const earnedKey = earnedBadges(badgeStatsOf(posts, verifications)).join();
   useEffect(() => {
     dropStaleBadge();
@@ -98,7 +103,7 @@ export default function Me() {
           </View>
           <View style={s.identity}>
             <View style={s.avatarFrame}>
-              <Avatar name={profileName(profile.name, t)} size={80} />
+              <Avatar name={profileName(profile.name, t)} seed={seed} seeds={seeds} size={80} />
             </View>
             <View style={s.nameBlock}>
               <TitledName name={profileName(profile.name, t)} badgeId={profile.badgeId} align="center" lines={2} style={s.name} />
@@ -121,8 +126,11 @@ export default function Me() {
           </View>
           <View style={s.stats}>
             <Stat value={streak} label={t("me.streak")} />
-            <Stat value={seedsOf(posts, verifications)} label={t("common.seeds")} middle />
+            <Stat value={seeds} label={t("common.seeds")} middle />
             <Stat value={verified} label={t("me.verified")} />
+          </View>
+          <View style={s.growth}>
+            <GrowthCard seed={seed} seeds={seeds} streak={streak} />
           </View>
           <View accessibilityRole="tablist" style={s.tabs}>
             {TABS.map((item) => (
@@ -223,6 +231,11 @@ function EditProfile({ onClose }: { onClose: () => void }) {
   const { t } = useI18n();
   const profile = useApp((s) => s.profile);
   const update = useApp((s) => s.updateProfile);
+  const setSeedOf = useApp((s) => s.setSeed);
+  const userId = useApp((s) => s.userId);
+  const myPosts = useMyPosts();
+  const verifiedCount = useApp((s) => s.verifiedCount);
+  const [seed, setSeed] = useState(seedOf(userId, profile.seed));
   const [name, setName] = useState(profile.name);
   const [handle, setHandle] = useState(profile.handle);
   const [role, setRole] = useState(profile.role);
@@ -246,6 +259,7 @@ function EditProfile({ onClose }: { onClose: () => void }) {
     setError("");
     try {
       await update(next);
+      if (seed !== profile.seed) setSeedOf(seed);
       if (mounted.current) {
         haptic.success();
         onClose();
@@ -261,7 +275,11 @@ function EditProfile({ onClose }: { onClose: () => void }) {
   return (
     <>
       <View style={{ alignItems: "center" }}>
-        <Avatar name={name || t("common.you")} size={72} />
+        <Avatar name={name || t("common.you")} seed={seed} seeds={seedsOf(myPosts, verifiedCount)} size={72} />
+      </View>
+      <View style={s.field}>
+        <Text style={s.fieldLabel}>{t("seed.growth.change")}</Text>
+        <SeedPicker value={seed} onChange={setSeed} stage={plantStage(seedsOf(myPosts, verifiedCount))} />
       </View>
       <View style={s.field}>
         <Text style={s.fieldLabel}>{t("onboarding.name")}</Text>
@@ -452,6 +470,7 @@ const styles = (C: Palette) =>
     roleText: { fontFamily: F.medium, fontSize: 12, color: C.forestInk },
     city: { flexDirection: "row", alignItems: "center", gap: 4, maxWidth: "55%" },
     subline: { fontFamily: F.regular, fontSize: 13, lineHeight: 19, color: C.mute },
+    growth: { marginHorizontal: 20, marginTop: 12 },
     stats: { flexDirection: "row", paddingVertical: 16, marginHorizontal: 20, marginTop: 16, backgroundColor: C.card, borderRadius: 20 },
     stat: { flex: 1, alignItems: "center", gap: 4 },
     middleStat: { borderLeftWidth: 1, borderRightWidth: 1, borderColor: C.line },

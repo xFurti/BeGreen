@@ -4,6 +4,7 @@ import { fetch as expoFetch } from "expo/fetch";
 import type { ActionId } from "@/data/actions";
 import { isBadgeId, type BadgeId } from "@/data/badges";
 import { assetKey, resolveMedia } from "@/data/demo";
+import { isSeedId, type SeedId } from "@/data/seeds";
 import type { Audience, Comment, Comune, Media, Post, Role, Squad, SquadKind, User } from "@/data/types";
 import { shrinkPhoto } from "@/services/media";
 import { signedMedia } from "@/services/storage-media";
@@ -14,7 +15,7 @@ import { SUPABASE_KEY, SUPABASE_URL, supabase } from "@/services/supabase";
 
 const D = 864e5;
 
-export type ProfileRow = { id: string; name: string; handle: string; role: Role; badge_id: string | null };
+export type ProfileRow = { id: string; name: string; handle: string; role: Role; badge_id: string | null; seed: string | null };
 export type PostRow = {
   id: string;
   author_id: string;
@@ -49,7 +50,7 @@ type SquadRow = {
   squad_members: { user_id: string }[];
 };
 
-export const PROFILE = "id, name, handle, role, badge_id";
+export const PROFILE = "id, name, handle, role, badge_id, seed";
 // posts and profiles are also linked through verifications, reactions and comments: name the FK for each embed.
 export const POST =
   "id, author_id, comune_id, challenge_id, action, photo, proof, caption, place, audience, squad_id, group_id, spot_id, created_at, " +
@@ -57,7 +58,14 @@ export const POST =
   `reactions(user_id, emoji), comments(id, author_id, text, created_at, author:profiles!comments_author_id_fkey(${PROFILE}))`;
 const SQUAD = "id, name, kind, place, comune_id, code, points, quest, monthly, month, squad_members(user_id)";
 
-export const toUser = (p: ProfileRow): User => ({ id: p.id, name: p.name, handle: p.handle, role: p.role, badgeId: isBadgeId(p.badge_id) ? p.badge_id : null });
+export const toUser = (p: ProfileRow): User => ({
+  id: p.id,
+  name: p.name,
+  handle: p.handle,
+  role: p.role,
+  badgeId: isBadgeId(p.badge_id) ? p.badge_id : null,
+  seed: isSeedId(p.seed) ? p.seed : undefined,
+});
 
 export type Feed = { posts: Post[]; profiles: Record<string, User>; myReactions: Record<string, string> };
 
@@ -206,10 +214,17 @@ export async function fetchProfiles(ids: string[]): Promise<Record<string, User>
 
 export class HandleTaken extends Error {}
 
-export async function saveProfile(me: string, p: { name: string; handle: string; role: Role; badgeId?: BadgeId | null }, comune: Comune | null) {
+export async function saveProfile(
+  me: string,
+  p: { name: string; handle: string; role: Role; badgeId?: BadgeId | null; seed?: SeedId | null },
+  comune: Comune | null,
+) {
   const { error } = await db()
     .from("profiles")
-    .upsert({ id: me, name: p.name, handle: p.handle, role: p.role, badge_id: p.badgeId ?? null, comune_id: comune?.id ?? null }, { onConflict: "id" });
+    .upsert(
+      { id: me, name: p.name, handle: p.handle, role: p.role, badge_id: p.badgeId ?? null, seed: p.seed ?? null, comune_id: comune?.id ?? null },
+      { onConflict: "id" },
+    );
   if (error?.code === "23505") throw new HandleTaken(p.handle);
   if (error) throw error;
 }
@@ -230,6 +245,28 @@ export async function handleFree(handle: string, me: string | null): Promise<boo
   const { data, error } = await db().from("profiles").select("id").eq("handle", handle).maybeSingle();
   if (error) throw error;
   return !data || data.id === me;
+}
+
+// Which of these handles nobody has yet. Works before sign-in (onboarding checks while you type).
+export async function freeHandles(candidates: string[]): Promise<Set<string>> {
+  const { data, error } = await db().rpc("free_handles", { candidates: candidates.slice(0, 12) });
+  if (error) throw error;
+  return new Set((data as string[] | null) ?? []);
+}
+
+// Lifetime Seeds of these people, computed by the database: how far each plant has grown.
+export async function fetchSeeds(ids: string[]): Promise<Record<string, number>> {
+  if (!ids.length) return {};
+  const { data, error } = await db().rpc("profile_seeds", { ids: ids.slice(0, 200) });
+  if (error) throw error;
+  return Object.fromEntries(((data as { id: string; seeds: number }[] | null) ?? []).map((r) => [r.id, r.seeds]));
+}
+
+// How many seeds are planted in a Comune: "you're seed no. X".
+export async function countPlanted(comuneId: string): Promise<number> {
+  const { count, error } = await db().from("profiles").select("id", { count: "exact", head: true }).eq("comune_id", comuneId);
+  if (error) throw error;
+  return count ?? 0;
 }
 
 // ---------- media ----------

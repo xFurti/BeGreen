@@ -30,11 +30,14 @@ import Svg, { Circle } from "react-native-svg";
 import { Icon, type IconName } from "@/components/icon";
 import { Blobs, LeafMark, LeafSwitch } from "@/components/nature";
 import { ProofMedia } from "@/components/proof-media";
+import { SeedBuddy } from "@/components/seed-buddy";
+import { SeedTip, useMySeed } from "@/components/seed-ui";
 import { toast } from "@/components/toast";
 import { Button, Chip, IconButton, LiveDot, Mono, Press, SdgTags, useCountUp } from "@/components/ui";
 import { CATEGORIES } from "@/data/community";
 import { ACTION_LIST, ACTIONS, type ActionId } from "@/data/actions";
 import { DEMO_BY_ACTION } from "@/data/demo";
+import { plantStage, STAGE_IDS } from "@/data/seeds";
 import type { Audience, Media } from "@/data/types";
 import { useKeyboardCover } from "@/hooks/use-keyboard-cover";
 import { actionCopy } from "@/i18n/content";
@@ -45,7 +48,7 @@ import { persistMedia, proofWithinBudget } from "@/services/media";
 import { canStopProof, displaySeconds, noteProgress, outcomeFromRecording, PROOF_SECONDS } from "@/services/proof-recording.mjs";
 import { canClaimDrop, DROP_BONUS, seedsFor } from "@/services/rewards";
 import { hasBackend } from "@/services/supabase";
-import { mineOf, postedToday, sdgsOf, streakOf, useApp } from "@/store/app-store";
+import { mineOf, postedToday, sdgsOf, seedsOf, streakOf, useApp } from "@/store/app-store";
 import { linkableSpotId, syncCommunity, useCommunity, useJoined } from "@/store/community-store";
 import { F, R } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
@@ -167,7 +170,48 @@ type Result = {
   destination: string;
   pending: boolean;
   newGoals: number[];
+  // Your seed's stage before and after this proof, when it grew.
+  grew?: { from: number; to: number };
 };
+
+// The moment your seed grows: it shows the old stage, then springs into the new one.
+function Grew({ from, to, delay }: { from: number; to: number; delay: number }) {
+  const { C } = useTheme();
+  const { t } = useI18n();
+  const seed = useMySeed();
+  const [stage, setStage] = useState(from);
+  useEffect(() => {
+    const id = setTimeout(() => {
+      haptic.success();
+      setStage(to);
+    }, delay + 500);
+    return () => clearTimeout(id);
+  }, [to, delay]);
+  const label = to >= 4 ? t("seed.growth.grewMax") : t("seed.growth.grew", { stage: t(`seed.stages.${STAGE_IDS[to]}`) });
+  return (
+    <Animated.View
+      entering={FadeInDown.delay(delay).springify().damping(18)}
+      accessible
+      accessibilityLabel={label}
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+        padding: 10,
+        borderRadius: R.lg,
+        borderCurve: "continuous",
+        backgroundColor: C.forest2,
+        borderWidth: 1,
+        borderColor: C.forestLine,
+      }}
+    >
+      <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: C.mint, alignItems: "center", justifyContent: "flex-end", overflow: "hidden" }}>
+        <SeedBuddy seed={seed} stage={stage} mood="wow" size={52} animated />
+      </View>
+      <Text style={{ flex: 1, fontFamily: F.semibold, fontSize: 15, letterSpacing: -0.2, color: C.lime }}>{label}</Text>
+    </Animated.View>
+  );
+}
 
 function StatCard({
   icon,
@@ -413,6 +457,14 @@ function Done(r: Result) {
         )}
         {r.unlocked && (
           <BannerRow icon="lock" title={t("capture.unlocked")} sub={t("capture.unlockedSub")} delay={420} />
+        )}
+        {r.grew && <Grew from={r.grew.from} to={r.grew.to} delay={500} />}
+        {r.newGoals.length > 0 && (
+          <SeedTip
+            id="goals"
+            stage={r.grew?.to ?? 1}
+            text={t("seed.tips.goals", { goals: [...r.newGoals].sort((a, b) => a - b).map((g) => `SDG ${g}`).join(", ") })}
+          />
         )}
       </ScrollView>
 
@@ -755,6 +807,8 @@ export default function Capture() {
       });
       const now = useApp.getState();
       const after = mineOf(now.posts, now.userId);
+      const stageBefore = plantStage(seedsOf(before, s.verifiedCount));
+      const stageAfter = plantStage(seedsOf(after, now.verifiedCount));
       setResult({
         seeds: seedsFor(posted),
         streak: streakOf(after),
@@ -765,6 +819,7 @@ export default function Capture() {
         destination: audience === "group" ? selectedGroup!.name : audience === "public" ? t("common.everyone") : place,
         pending: !!posted.pending,
         newGoals: ACTIONS[action].sdgs.filter((g) => !goalsBefore.has(g)),
+        grew: stageAfter > stageBefore ? { from: stageBefore, to: stageAfter } : undefined,
       });
       setStep("done");
     } catch {

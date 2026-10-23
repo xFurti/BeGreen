@@ -18,7 +18,7 @@ BeGreen is built for the brief **“2. La mia sostenibilità”**: it takes sust
 
 | Screen | What it does |
 | --- | --- |
-| **Onboarding** | Four-slide story (Proof, not promises / Your city, decoded / Small steps, together / 17 goals, one tiny act at a time), then name, public handle, role and your Comune. Starting creates an anonymous account (no email, no password). |
+| **Onboarding** | «Plant your seed»: your seed, a buddy with a face, asks one thing at a time. Where to plant it (your position or a search, without leaving the screen), then the live ground of that Comune (air, rain or dry days, soil moisture, each with its source) with the seed reacting to it, and today's Drop opening like a bud. Then your name, your @ (checked while you type, with free alternatives when it's taken), your role and the kind of seed (sunflower, oak, lavender, poppy, tomato, fir). A card shows how friends will see you; hold to plant creates an anonymous account (no email, no password). A short welcome («you're seed no. X in {Comune}») explains why the camera is needed before the phone asks, and leads to the first proof. Reduce Motion turns the animations into fades, and hold-to-plant becomes a tap for screen readers. |
 | **Comune** | Search any Italian Comune (or use your location to suggest it). Pulse, the Drop, the feed and Community's territory preview follow this choice. |
 | **Feed** | Today's Drop, a countdown, local participants, your daily proof and an entry to Community. Lenses: *Comune / Groups / Everyone*. Group proofs appear only in their chosen group, not automatically in every group the author belongs to. Example proofs remain marked **DEMO**, never verifiable or counted. |
 | **Capture** | Photo → 2–5 second proof → review. Choose your Comune, Everyone or one group; a missing group blocks submission rather than publishing elsewhere. The group’s public/private visibility is explained. Completion celebrates Seeds, streak, contribution and Agenda 2030 goals, not rank or overtakes. Pending uploads keep their selected destination and are identified as local. |
@@ -34,7 +34,11 @@ BeGreen is built for the brief **“2. La mia sostenibilità”**: it takes sust
 | **Weekly leaderboard** | Optional secondary screen inside a city or group. No app-wide rank in Feed, Me or completion. Uses the most recent loaded proofs from the last 7 days; the UI labels it as a sample. |
 | **How to** | For people who don't know where to start: a searchable **“Where does it go?”** lookup (pizza box, Tetra Pak, receipts…), the six Italian waste streams, and three steps for every act. |
 | **Old squad links** | `/squad/:id` redirects to its migrated group, `/new-squad` to group creation and `/league` to Community. Historical screen implementations are retained outside the router in `components/legacy-*`; they are not imported by the app. |
-| **Me** | Streak, Seeds, verified count, **Agenda 2030** grid (which of the 17 UN goals your proofs moved, plus days left to 2030), estimated impact, a Memories calendar, badges with a requirement each and one you equip as a title next to your name (also in the feed and in League), saved places, your contributions, settings. |
+| **Me** | Your seed's plant and how far the next stage is (seed → sprout at the first Seeds → seedling 60 → plant 200 → bloom 500; it never shrinks, it only looks thirsty when the streak breaks), streak, Seeds, verified count, **Agenda 2030** grid, estimated impact, a Memories calendar, badges, saved places, contributions and settings (where you can change your seed). |
+
+### Your seed
+
+The plant is everyone's avatar when there's no photo: in the feed, community leaderboards, posts and member pages. The species is stored in `profiles.seed`; lifetime Seeds come from the `profile_seeds` database function (the stage is never written by the app). The first time something matters, the seed explains it once: today's Drop, peer verification, Pulse and the first Agenda 2030 goal. When a proof makes it grow, the celebration shows the new stage.
 
 ## How the brief is covered
 
