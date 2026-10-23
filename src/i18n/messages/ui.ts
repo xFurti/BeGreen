@@ -689,7 +689,7 @@ export const uiMessages = defineMessages(
       title: "Classifica",
       member: "1 membro",
       alone: "Nessun altro a {place} ha pubblicato questa settimana. Condividi BeGreen e sfida qualcuno di vero.",
-      ranking: "Squadre",
+      ranking: "Comuni",
       footnoteComune: "Tutte le persone che hanno pubblicato a {place} negli ultimi 7 giorni, per semi. Le prove false vengono segnalate e li perdono.",
       town: "Squadre in città",
       townBody: "Classi, associazioni e gruppi di {place}, in ordine di semi guadagnati con le prove.",
