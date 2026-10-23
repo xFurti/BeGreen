@@ -50,7 +50,7 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "lint": "expo lint",
-    "test": "node --test .github/scripts/*.test.cjs",
+    "test": "node --test .github/scripts/*.test.cjs src/services/proof-recording.test.mjs",
     "verify": "npm run typecheck && npm run lint && npm test"
   },
   "private": true
