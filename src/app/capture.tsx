@@ -37,6 +37,7 @@ import { HIDDEN_PLACE } from "@/i18n/persist";
 import { usePulse } from "@/hooks/use-pulse";
 import { persistMedia } from "@/services/media";
 import { canStopProof, displaySeconds, noteProgress, outcomeFromRecording, PROOF_SECONDS } from "@/services/proof-recording.mjs";
+import { canClaimDrop, seedsFor } from "@/services/rewards";
 import { hasBackend } from "@/services/supabase";
 import { leagueOf, mineOf, postedToday, sdgsOf, streakOf, useApp, useAuthor } from "@/store/app-store";
 import { C, F, R, T } from "@/theme/tokens";
@@ -287,8 +288,9 @@ export default function Capture() {
   const { t } = useI18n();
   const place = comune?.name ?? pulse.place.name;
   // Only a challenge the backend knows about can be claimed (or any, when running on-device only).
-  const dropDone = useApp((s) => s.posts.some((p) => p.authorId === s.userId && p.challengeId === drop.id));
-  const dropOpen = !drop.offline && (drop.shared || !hasBackend) && !dropDone;
+  const dropOpen = useApp((s) => canClaimDrop(drop, s.posts, s.userId, hasBackend));
+  const [posting, setPosting] = useState(false);
+  const submitting = useRef(false);
 
   useEffect(() => {
     if (realCamera && perm && !perm.granted && perm.canAskAgain) requestPerm();
@@ -402,43 +404,50 @@ export default function Capture() {
     }
   };
 
-  const post = () => {
-    if (!photo || !proof) return;
-    const s = useApp.getState();
-    const before = mineOf(s.posts, s.userId);
-    const wasUnlocked = postedToday(before);
-    const goalsBefore = sdgsOf(before);
-    const leagueBefore = leagueOf(s.posts, s.userId, s.comune?.id, author);
-    const isDrop = action === drop.action && dropOpen;
-    const toSquad = audience === "squad" && squadId ? squadId : undefined;
-    addPost({
-      action,
-      photo: typeof photo === "string" ? persistMedia(photo) : photo,
-      proof: typeof proof === "string" ? persistMedia(proof) : proof,
-      caption: caption.trim(),
-      audience: audience === "squad" && !toSquad ? "comune" : audience,
-      place: shareSpot ? place : HIDDEN_PLACE,
-      challengeId: isDrop ? drop.id : undefined,
-      squadId: toSquad,
-    });
-    const now = useApp.getState();
-    const after = mineOf(now.posts, now.userId);
-    const leagueAfter = leagueOf(now.posts, now.userId, now.comune?.id, author);
-    const rankBefore = leagueBefore.findIndex((r) => r.me) + 1;
-    const rankAfter = leagueAfter.findIndex((r) => r.me) + 1;
-    setResult({
-      seeds: ACTIONS[action].seeds + (isDrop ? 10 : 0),
-      streak: streakOf(after),
-      unlocked: !wasUnlocked,
-      isDrop,
-      action,
-      rankBefore,
-      rankAfter,
-      passed: leagueAfter.slice(rankAfter, rankBefore).map((r) => r.name),
-      next: rankAfter > 1 ? { name: leagueAfter[rankAfter - 2].name, gap: leagueAfter[rankAfter - 2].points - leagueAfter[rankAfter - 1].points } : undefined,
-      newGoals: ACTIONS[action].sdgs.filter((g) => !goalsBefore.has(g)),
-    });
-    setStep("done");
+  const post = async () => {
+    if (!photo || !proof || submitting.current) return;
+    submitting.current = true;
+    setPosting(true);
+    try {
+      const s = useApp.getState();
+      const before = mineOf(s.posts, s.userId);
+      const wasUnlocked = postedToday(before);
+      const goalsBefore = sdgsOf(before);
+      const leagueBefore = leagueOf(s.posts, s.userId, s.comune?.id, author);
+      const isDrop = action === drop.action && canClaimDrop(drop, s.posts, s.userId, hasBackend);
+      const toSquad = audience === "squad" && squadId ? squadId : undefined;
+      const posted = await addPost({
+        action,
+        photo: typeof photo === "string" ? persistMedia(photo) : photo,
+        proof: typeof proof === "string" ? persistMedia(proof) : proof,
+        caption: caption.trim(),
+        audience: audience === "squad" && !toSquad ? "comune" : audience,
+        place: shareSpot ? place : HIDDEN_PLACE,
+        challengeId: isDrop ? drop.id : undefined,
+        squadId: toSquad,
+      });
+      const now = useApp.getState();
+      const after = mineOf(now.posts, now.userId);
+      const leagueAfter = leagueOf(now.posts, now.userId, now.comune?.id, author);
+      const rankBefore = leagueBefore.findIndex((r) => r.me) + 1;
+      const rankAfter = leagueAfter.findIndex((r) => r.me) + 1;
+      setResult({
+        seeds: seedsFor(posted),
+        streak: streakOf(after),
+        unlocked: !wasUnlocked,
+        isDrop: !!posted.isDrop,
+        action,
+        rankBefore,
+        rankAfter,
+        passed: leagueAfter.slice(rankAfter, rankBefore).map((r) => r.name),
+        next: rankAfter > 1 ? { name: leagueAfter[rankAfter - 2].name, gap: leagueAfter[rankAfter - 2].points - leagueAfter[rankAfter - 1].points } : undefined,
+        newGoals: ACTIONS[action].sdgs.filter((g) => !goalsBefore.has(g)),
+      });
+      setStep("done");
+    } finally {
+      submitting.current = false;
+      setPosting(false);
+    }
   };
 
   // ----- render -----
@@ -582,7 +591,7 @@ export default function Capture() {
           </View>
         </ScrollView>
         <View style={{ paddingHorizontal: 16, paddingBottom: cover > 0 ? 10 : bottom + 10, paddingTop: 8 }}>
-          <Button label={t("capture.post")} kind="green" trailing={`+${a.seeds + (isDropAct ? 10 : 0)}`} onPress={post} />
+          <Button label={t("capture.post")} kind="green" trailing={`+${seedsFor({ action, isDrop: isDropAct })}`} onPress={post} loading={posting} />
         </View>
       </View>
     );

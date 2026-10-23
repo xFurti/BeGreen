@@ -12,6 +12,8 @@ import { formatNumber } from "@/i18n/format";
 import type { Language } from "@/i18n/schema";
 import { useI18n } from "@/i18n/use-i18n";
 import type { Drop } from "@/services/drop";
+import { canClaimDrop, seedsFor } from "@/services/rewards";
+import { hasBackend } from "@/services/supabase";
 import { useApp } from "@/store/app-store";
 import { C, F, T } from "@/theme/tokens";
 
@@ -43,6 +45,7 @@ export default function DropSheet() {
   const place = comune?.name ?? pulse.place.name;
   const a = actionCopy(t, drop.action);
   const left = useCountdown();
+  const bonus = useApp((s) => canClaimDrop(drop, s.posts, s.userId, hasBackend));
   const rows = readings(drop.data, t, language);
 
   const go = (path: "/capture" | "/guide") => {
@@ -121,7 +124,7 @@ export default function DropSheet() {
       </Text>
 
       <View style={{ gap: 8 }}>
-        <Button label={t("dropSheet.doIt", { act: a.label })} kind="green" trailing={`+${a.seeds + 10}`} icon={a.icon} onPress={() => go("/capture")} />
+        <Button label={t("dropSheet.doIt", { act: a.label })} kind="green" trailing={`+${seedsFor({ action: drop.action, isDrop: bonus })}`} icon={a.icon} onPress={() => go("/capture")} />
         <Button label={t("dropSheet.show")} kind="ghost" icon="book" onPress={() => go("/guide")} />
       </View>
     </ScrollView>
