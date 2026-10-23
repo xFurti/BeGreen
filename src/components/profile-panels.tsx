@@ -4,13 +4,11 @@ import { useState, type ReactNode } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Agenda } from "@/components/profile-agenda";
 import { BadgeSheet, BadgeTile } from "@/components/badge-sheet";
-import { ComuneSection } from "@/components/comune-card";
 import { Icon, type IconName } from "@/components/icon";
 import { IconButton, Press } from "@/components/ui";
 import { ACTIONS } from "@/data/actions";
 import { BADGES, earnedBadges, type BadgeId } from "@/data/badges";
 import type { Post } from "@/data/types";
-import { useComune } from "@/hooks/use-comune";
 import { formatDecimal, formatNumber, intlLocale, weekdayInitials } from "@/i18n/format";
 import { useI18n } from "@/i18n/use-i18n";
 import { badgeStatsOf, sdgsOf, useApp } from "@/store/app-store";
@@ -76,8 +74,6 @@ export function ImpactPanel({
   const [width, setWidth] = useState(0);
   const profile = useApp((s) => s.profile);
   const equip = useApp((s) => s.equipBadge);
-  const pulse = useApp((s) => s.pulse);
-  const comune = useComune();
   const totals = impact(posts);
   const stats = badgeStatsOf(posts, verifications);
   const badge = BADGES.find((b) => b.id === selected);
@@ -112,15 +108,6 @@ export function ImpactPanel({
       <View style={{ gap: 16 }}>
         <PanelTitle title={t("me.agenda")} detail={`${sdgsOf(posts).size}/17`} />
         <Agenda posts={posts} />
-      </View>
-      <View style={{ gap: 16 }}>
-        <PanelTitle
-          title={t("myComune.title")}
-          action={
-            <IconButton icon="info" label={t("myComune.sources")} bg="transparent" color={C.mute} onPress={() => router.push("/sources")} />
-          }
-        />
-        <ComuneSection view={comune} pulse={pulse} />
       </View>
       <View style={{ gap: 16 }}>
         <PanelTitle title={t("me.badges")} detail={`${earnedBadges(stats).length}/${BADGES.length}`} />
