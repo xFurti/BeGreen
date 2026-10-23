@@ -172,9 +172,9 @@ test("community: explore before joining, members add places, private stays priva
   await as(B, `insert into spot_flags (spot_id, reason, note) values ('${s.id}', 'outdated', 'closed on Saturdays now')`);
   assert.equal((await as(A, `select status from spots where id = '${s.id}'`))[0].status, "active");
   assert.equal((await as(A, `select reason from spot_flags where spot_id = '${s.id}'`)).length, 0);
+  // "Out of date" from one and "wrong" from another reach the threshold together.
   await as(C, `select join_community('alto-vicentino')`);
   await as(C, `insert into spot_flags (spot_id, reason) values ('${s.id}', 'wrong')`);
-  await as(C, `insert into spot_flags (spot_id, reason) values ('${s.id}', 'outdated')`);
   assert.equal((await as(A, `select status from spots where id = '${s.id}'`))[0].status, "toVerify");
   await as(A, `update spots set address = 'Via Pasubio 12, Schio', status = 'toVerify' where id = '${s.id}'`);
   assert.equal((await as(A, `select status from spots where id = '${s.id}'`))[0].status, "active");

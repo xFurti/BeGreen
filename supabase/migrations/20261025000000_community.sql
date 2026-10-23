@@ -203,7 +203,10 @@ language plpgsql security definer set search_path = public as $$
 declare
   n int;
 begin
-  select count(*) into n from public.spot_flags where spot_id = new.spot_id and reason = new.reason;
+  -- "Out of date" and "wrong" share one threshold, counted in people: one person flagging both is still one.
+  select count(distinct user_id) into n from public.spot_flags
+  where spot_id = new.spot_id
+    and (reason = new.reason or (new.reason in ('outdated', 'wrong') and reason in ('outdated', 'wrong')));
   if new.reason = 'inappropriate' and n >= 3 then
     update public.spots set hidden = true where id = new.spot_id;
   elsif new.reason in ('outdated', 'wrong') and n >= 2 then
