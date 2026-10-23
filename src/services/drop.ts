@@ -41,7 +41,7 @@ function snapshot(p: Pulse): Drop["data"] {
   if (p.weather) d.temp = p.weather.temp;
   if (p.water) Object.assign(d, { rain7: p.water.rain7, dryDays: p.water.dryDays });
   if (p.soil) d.soilMoisture = p.soil.moisture;
-  if (p.nature) d.species = p.nature.speciesCount;
+  if (p.nature) d.plantSpecies = p.nature.speciesCount;
   if (p.areas?.[0]) Object.assign(d, { area: p.areas[0].name, areaKm: p.areas[0].km });
   return d;
 }
@@ -79,8 +79,10 @@ function render(action: ActionId, d: Drop["data"], lang: Language): Text | null 
     return { title: t("drop.plant.title"), why: t("drop.plant.why", { moisture, temp }), metric: t("drop.plant.metric", { moisture }) };
   }
   if (action === "spot") {
-    const species = num("species");
-    if (species == null) return null;
+    // A saved challenge's old `species` reading included animals. Keep its ID
+    // and action, but don't present that total as a count of plants.
+    const species = num("plantSpecies");
+    if (species == null) return { title: t("drop.spot.legacyTitle"), why: t("drop.spot.legacyWhy"), metric: t("drop.spot.legacyMetric") };
     const count = n(species);
     return { title: t("drop.spot.title", { count }), why: t("drop.spot.why", { city, count }), metric: t("drop.spot.metric", { count }) };
   }

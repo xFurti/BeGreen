@@ -55,12 +55,12 @@ export async function fetchCitizenAir(p: Place) {
   return citizenPm25(parseSensorCommunity(raw));
 }
 
-// GBIF: distinct species recorded within 5 km over the last 5 years (facet count, no records downloaded).
+// GBIF: plant species within 5 km over the last 5 years (6 = Plantae in the GBIF backbone).
 export async function fetchSpecies(p: Place): Promise<{ species: number; records: number }> {
   const y = new Date().getFullYear();
   const j = await getJSON<any>(
     `https://api.gbif.org/v1/occurrence/search?geoDistance=${p.lat},${p.lon},5km&year=${y - 5},${y}` +
-      `&occurrenceStatus=PRESENT&limit=0&facet=speciesKey&facetLimit=2000`,
+      `&occurrenceStatus=PRESENT&taxonKey=6&limit=0&facet=speciesKey&facetLimit=2000`,
   );
   return { species: j.facets?.[0]?.counts?.length ?? 0, records: j.count ?? 0 };
 }

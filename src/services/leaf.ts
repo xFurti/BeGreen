@@ -26,6 +26,8 @@ export const SUGGESTED_KEYS = ["answers.suggested.bike", "answers.suggested.pm",
 type Ctx = { pulse: Pulse; insights: Insight[]; audience: Explain; language: Language };
 
 const has = (q: string, ...words: string[]) => words.some((w) => q.includes(w));
+const asksForAnimals = (q: string) => has(q, "animal", "bird", "uccell", "insect", "insett", "bug", "mammal", "reptil", "rettil", "fish", "pesci", "amphib", "anfib", "arachn", "aracn", "mollusc", "mollusk", "fauna");
+const asksForNature = (q: string) => asksForAnimals(q) || has(q, "species", "specie", "live", "vive", "vivon", "nature", "natur", "biodivers", "park", "parco", "protected", "protet", "flora", "plants near", "plants grow", "piante vicin", "quali piante");
 
 export function answerLocally(question: string, ctx: Ctx): LeafAnswer {
   const { pulse, insights, audience, language } = ctx;
@@ -33,6 +35,28 @@ export function answerLocally(question: string, ctx: Ctx): LeafAnswer {
   const q = question.toLowerCase();
   const find = (k: Insight["key"]) => insights.find((i) => i.key === k);
   const n = (value: number) => formatNumber(value, language);
+
+  if (asksForNature(q)) {
+    const nature = pulse.nature;
+    const areas = pulse.areas ?? [];
+    const list = nature?.top
+      .slice(0, 5)
+      .map((s) => t("answers.sightings", { name: s.common ?? s.name, count: n(s.count) }))
+      .join("\n");
+    const areaList = areas
+      .slice(0, 3)
+      .map((a) => t("answers.areaItem", { name: a.name, km: n(a.km) }))
+      .join(", ");
+    return {
+      text:
+        (asksForAnimals(q) ? t("answers.animalsOutside") : "") +
+        (nature ? nature.speciesCount === 0 ? t("answers.speciesEmpty") : t("answers.species", { count: n(nature.speciesCount), list: list ?? "" }) : t("answers.speciesMiss")) +
+        (areas.length ? t("answers.areas", { list: areaList }) : "") +
+        t("answers.speciesCaveat"),
+      cites: ["inat", "osm"],
+      mode: "local",
+    };
+  }
 
   if (has(q, "reliab", "trust", "accurate", "source", "data", "fonte", "fonti", "affidabil", "attendibil", "precis", "dati", "fiducia")) {
     const kinds = Array.from(new Set(insights.flatMap((i) => i.sources).map((s) => SOURCES[s].kind)));
@@ -101,27 +125,6 @@ export function answerLocally(question: string, ctx: Ctx): LeafAnswer {
     };
   }
 
-  if (has(q, "species", "specie", "animal", "bird", "uccell", "live", "vive", "vivon", "nature", "natur", "biodivers", "park", "parco", "protected", "protet")) {
-    const nature = pulse.nature;
-    const areas = pulse.areas ?? [];
-    const list = nature?.top
-      .slice(0, 5)
-      .map((s) => t("answers.sightings", { name: s.common ?? s.name, count: n(s.count) }))
-      .join("\n");
-    const areaList = areas
-      .slice(0, 3)
-      .map((a) => t("answers.areaItem", { name: a.name, km: n(a.km) }))
-      .join(", ");
-    return {
-      text:
-        (nature ? t("answers.species", { count: n(nature.speciesCount), list: list ?? "" }) : t("answers.speciesMiss")) +
-        (areas.length ? t("answers.areas", { list: areaList }) : "") +
-        t("answers.speciesCaveat"),
-      cites: ["inat", "osm"],
-      mode: "local",
-    };
-  }
-
   if (has(q, "class", "classe", "school", "scuola", "squad", "squadra", "comune", "project", "progett", "week", "settiman", "teacher", "insegn", "docent")) {
     const air = find("air");
     const top = insights.filter((i) => i.level === "bad")[0] ?? air ?? insights[0];
@@ -149,6 +152,8 @@ export function answerLocally(question: string, ctx: Ctx): LeafAnswer {
 }
 
 export async function askLeaf(question: string, ctx: Ctx): Promise<LeafAnswer> {
+  // Keep biodiversity answers in this view's plant-only scope, even with an AI endpoint.
+  if (asksForNature(question.toLowerCase())) return answerLocally(question, ctx);
   const endpoint = process.env.EXPO_PUBLIC_LEAF_ENDPOINT;
   if (endpoint) {
     try {
