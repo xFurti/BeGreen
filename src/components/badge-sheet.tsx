@@ -35,7 +35,7 @@ export function BadgeTile({ badge: b, stats, equipped, size, onOpen }: {
 export function BadgeSheet({ badge: b, stats, equipped, onEquip, onUnequip, onClose }: {
   badge: Badge; stats: BadgeStats; equipped: boolean; onEquip: () => void; onUnequip: () => void; onClose: () => void;
 }) {
-  const titleRef = useRef<ComponentRef<typeof Text>>(null);
+  const titleRef = useRef<ComponentRef<typeof View>>(null);
   const { bottom, top } = useSafeAreaInsets();
   const { t } = useI18n();
   const earned = b.earned(stats);
@@ -49,7 +49,9 @@ export function BadgeSheet({ badge: b, stats, equipped, onEquip, onUnequip, onCl
           style={{ maxHeight: "90%", width: "100%", maxWidth: 560, alignSelf: "center", backgroundColor: C.bg, borderTopLeftRadius: 28, borderTopRightRadius: 28 }}>
           <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: bottom + 24, gap: 20 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-              <Text ref={titleRef} tabIndex={-1} accessibilityRole="header" style={[T.title, { flex: 1 }]}>{t("badges.details")}</Text>
+              <View ref={titleRef} tabIndex={-1} style={{ flex: 1 }}>
+                <Text accessibilityRole="header" style={T.title}>{t("badges.details")}</Text>
+              </View>
               <IconButton icon="close" label={t("common.close")} onPress={onClose} />
             </View>
             <Image source={BADGE_ART[b.id]} accessibilityLabel={t(b.name)} style={{ width: 140, height: 140, alignSelf: "center" }} />
