@@ -4,6 +4,7 @@ import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-nativ
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { DropTag } from "@/components/drop-tag";
 import { Icon } from "@/components/icon";
 import { VERIFY_GOAL, VerifyBar } from "@/components/post-card";
 import { ProofMedia } from "@/components/proof-media";
@@ -65,7 +66,7 @@ export default function PostDetail() {
             </Mono>
           </View>
           {post.isDemo && <Tag label={t("common.demo")} />}
-          {post.isDrop && <Tag label={t("common.drop")} solid />}
+          {post.isDrop && <DropTag post={post} />}
         </View>
 
         <ProofMedia

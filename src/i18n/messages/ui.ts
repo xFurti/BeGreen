@@ -142,6 +142,7 @@ export const uiMessages = defineMessages(
       findSquad: "Find a squad",
     },
     post: {
+      openDrop: "Open today’s Drop: {title}",
       verifiedBy: "Verified by {names}",
       verify: "Verify",
       verifyA11y: "Verify this proof",
@@ -631,6 +632,7 @@ export const uiMessages = defineMessages(
       findSquad: "Trova una squadra",
     },
     post: {
+      openDrop: "Apri il Drop di oggi: {title}",
       verifiedBy: "Verificato da {names}",
       verify: "Verifica",
       verifyA11y: "Verifica questa prova",
