@@ -2,8 +2,6 @@ import { Image } from "expo-image";
 import { useEffect, useState, type ReactNode } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
 import Animated, {
-  FadeInUp,
-  FadeOutUp,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
@@ -12,13 +10,14 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { create } from "zustand";
 
 import { Icon, type IconName } from "@/components/icon";
 import { LeafMark } from "@/components/nature";
 import { SOURCE_KINDS, SOURCES, type SourceId } from "@/data/sources";
 import type { Media } from "@/data/types";
-import { C, F, R, shadow, T } from "@/theme/tokens";
+import { sourceCopy, sourceKindCopy } from "@/i18n/content";
+import { useI18n } from "@/i18n/use-i18n";
+import { C, F, R, T } from "@/theme/tokens";
 import { haptic } from "@/utils/format";
 
 // ---------- Logo ----------
@@ -137,7 +136,9 @@ export function Button({
       ) : (
         <>
           {icon && <Icon name={icon} size={size === "sm" ? 14 : 17} color={kind === "green" ? C.lime : fg} />}
-          <Text style={{ color: fg, fontFamily: F.medium, fontSize: size === "sm" ? 14 : 16, letterSpacing: -0.2 }}>{label}</Text>
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72} style={{ color: fg, fontFamily: F.medium, fontSize: size === "sm" ? 14 : 16, letterSpacing: -0.2 }}>
+            {label}
+          </Text>
           {trailing && (
             <Text style={{ color: fg, opacity: 0.55, fontFamily: F.monoMedium, fontSize: size === "sm" ? 12 : 13 }}>{trailing}</Text>
           )}
@@ -241,7 +242,9 @@ export function Chip({
       }}
     >
       {icon && <Icon name={icon} size={14} color={fg} />}
-      <Text style={{ color: fg, fontFamily: F.medium, fontSize: 14, letterSpacing: -0.15 }}>{label}</Text>
+      <Text numberOfLines={1} style={{ color: fg, fontFamily: F.medium, fontSize: 14, letterSpacing: -0.15 }}>
+        {label}
+      </Text>
     </View>
   );
   return onPress ? (
@@ -284,18 +287,20 @@ export function SdgTags({ goals, dark }: { goals: number[]; dark?: boolean }) {
 }
 
 export function SourceBadge({ id, onPress, dark }: { id: SourceId; onPress?: () => void; dark?: boolean }) {
+  const { t } = useI18n();
   const src = SOURCES[id];
-  const k = SOURCE_KINDS[src.kind];
+  const kind = sourceKindCopy(t, src.kind);
+  const card = sourceCopy(t, id);
   const body = (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 6, height: 22 }}>
-      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: k.color }} />
-      <Text style={{ fontFamily: F.monoMedium, fontSize: 10.5, letterSpacing: 0.4, color: dark ? C.nightMute : C.mute }}>
-        {k.short.toUpperCase()} · {src.provider.split(" ")[0].replace(/[()]/g, "").toUpperCase()}
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 6, height: 22, flexShrink: 1 }}>
+      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: SOURCE_KINDS[src.kind].color }} />
+      <Text numberOfLines={1} style={{ fontFamily: F.monoMedium, fontSize: 10.5, letterSpacing: 0.4, color: dark ? C.nightMute : C.mute, flexShrink: 1 }}>
+        {kind.short.toUpperCase()} · {src.mark}
       </Text>
     </View>
   );
   return onPress ? (
-    <Press onPress={onPress} accessibilityLabel={`Source: ${src.name}`}>
+    <Press onPress={onPress} accessibilityLabel={t("common.source", { name: card.name })}>
       {body}
     </Press>
   ) : (
@@ -340,7 +345,12 @@ export function Segmented<V extends string>({
               boxShadow: on && !dark ? "0 1px 3px rgba(0,0,0,0.08), 0 1px 1px rgba(0,0,0,0.04)" : undefined,
             }}
           >
-            <Text style={{ fontFamily: F.medium, fontSize: 14, letterSpacing: -0.15, color: on ? C.forest : dark ? C.nightMute : C.mute }}>
+            <Text
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.78}
+              style={{ fontFamily: F.medium, fontSize: 14, letterSpacing: -0.15, color: on ? C.forest : dark ? C.nightMute : C.mute }}
+            >
               {o.label}
             </Text>
           </Pressable>
@@ -377,7 +387,9 @@ export function TextTabs<V extends string>({
             }}
             style={{ flexDirection: "row", alignItems: "flex-start", gap: 3 }}
           >
-            <Text style={{ fontFamily: F.medium, fontSize: 22, letterSpacing: -0.8, color: on ? C.ink : C.faint }}>{o.label}</Text>
+            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ fontFamily: F.medium, fontSize: 22, letterSpacing: -0.8, color: on ? C.ink : C.faint }}>
+              {o.label}
+            </Text>
             {o.count !== undefined && (
               <Text style={{ fontFamily: F.monoMedium, fontSize: 10, color: on ? C.ink : C.faint, marginTop: 2 }}>{o.count}</Text>
             )}
@@ -501,49 +513,4 @@ export function useCountUp(target: number, ms = 700) {
   return n;
 }
 
-// ---------- Toast ----------
-
-type ToastMsg = { id: number; text: string; icon?: IconName };
-const useToast = create<{ msg: ToastMsg | null }>(() => ({ msg: null }));
-let toastTimer: ReturnType<typeof setTimeout> | undefined;
-
-export function toast(text: string, icon?: IconName) {
-  clearTimeout(toastTimer);
-  useToast.setState({ msg: { id: Date.now(), text, icon } });
-  toastTimer = setTimeout(() => useToast.setState({ msg: null }), 2400);
-}
-
-export function Toaster() {
-  const msg = useToast((s) => s.msg);
-  const { top } = useSafeAreaInsets();
-  if (!msg) return null;
-  return (
-    <Animated.View
-      key={msg.id}
-      entering={FadeInUp.springify().damping(18)}
-      exiting={FadeOutUp.duration(200)}
-      pointerEvents="none"
-      style={{ position: "absolute", top: top + 8, left: 0, right: 0, alignItems: "center" }}
-    >
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 8,
-          backgroundColor: C.forest,
-          paddingHorizontal: 16,
-          paddingVertical: 12,
-          minHeight: 44,
-          borderRadius: 22,
-          boxShadow: shadow.lift,
-          maxWidth: "90%",
-        }}
-      >
-        {msg.icon && <Icon name={msg.icon} size={15} color={C.lime} />}
-        <Text numberOfLines={2} style={{ flexShrink: 1, color: C.white, fontFamily: F.medium, fontSize: 14, lineHeight: 19, letterSpacing: -0.1 }}>
-          {msg.text}
-        </Text>
-      </View>
-    </Animated.View>
-  );
-}
+export { toast, Toaster } from "@/components/toast";
