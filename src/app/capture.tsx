@@ -3,7 +3,7 @@ import { CameraView, useCameraPermissions, type CameraType } from "expo-camera";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, Share, Text, TextInput, View } from "react-native";
 import Animated, {
   Easing,
@@ -36,14 +36,13 @@ import { useI18n } from "@/i18n/use-i18n";
 import { HIDDEN_PLACE } from "@/i18n/persist";
 import { usePulse } from "@/hooks/use-pulse";
 import { persistMedia } from "@/services/media";
+import { canStopProof, displaySeconds, noteProgress, outcomeFromRecording, PROOF_SECONDS } from "@/services/proof-recording.mjs";
 import { hasBackend } from "@/services/supabase";
 import { leagueOf, mineOf, postedToday, sdgsOf, streakOf, useApp, useAuthor } from "@/store/app-store";
 import { C, F, R, T } from "@/theme/tokens";
 import { haptic } from "@/utils/format";
 
 type Step = "snap" | "proof" | "review" | "done";
-const PROOF_SECONDS = 5;
-const MIN_PROOF = 2;
 // The camera runs at 4:3; held upright that's 3 wide by 4 tall.
 const CAMERA_RATIO = 3 / 4;
 
@@ -265,7 +264,10 @@ export default function Capture() {
   const [secs, setSecs] = useState(0);
   const [ready, setReady] = useState(false);
   const [frame, setFrame] = useState<Size | null>(null);
-  const recStart = useRef(0);
+  const [proofFailed, setProofFailed] = useState(false);
+  const alive = useRef(true);
+  const recordingRef = useRef(false);
+  const nativeSeconds = useRef<number | null>(null);
   const progress = useSharedValue(0);
   const shutter = useSharedValue(1);
 
@@ -293,10 +295,11 @@ export default function Capture() {
   }, [perm, realCamera, requestPerm]);
 
   useEffect(() => {
-    if (!recording) return;
-    const id = setInterval(() => setSecs(Math.min(PROOF_SECONDS, Math.floor((Date.now() - recStart.current) / 1000))), 200);
-    return () => clearInterval(id);
-  }, [recording]);
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
 
   const shutterStyle = useAnimatedStyle(() => ({ transform: [{ scale: shutter.value }] }));
   const bump = () => {
@@ -316,29 +319,61 @@ export default function Capture() {
   };
 
   const startProof = async () => {
-    if (!cam.current) return;
+    const camera = cam.current;
+    if (!camera || recordingRef.current) return;
     haptic.thud();
+    recordingRef.current = true;
+    nativeSeconds.current = null;
+    setProofFailed(false);
     setSecs(0);
     setRecording(true);
-    recStart.current = Date.now();
     progress.set(0);
-    progress.set(withTiming(1, { duration: PROOF_SECONDS * 1000, easing: Easing.linear }));
+    let outcome = outcomeFromRecording(undefined);
     try {
-      const v = await cam.current.recordAsync({ maxDuration: PROOF_SECONDS, codec: "avc1" });
-      if (v?.uri) {
-        setProof(v.uri);
-        haptic.success();
-        setStep("review");
-      }
+      outcome = outcomeFromRecording(
+        await camera.recordAsync({ maxDuration: PROOF_SECONDS, progressUpdateInterval: 0.2, codec: "avc1" }),
+      );
+    } catch (error) {
+      outcome = outcomeFromRecording(undefined, error);
     } finally {
-      setRecording(false);
-      progress.set(0);
+      recordingRef.current = false;
+      if (alive.current) {
+        setRecording(false);
+        progress.set(0);
+      }
     }
+    if (!alive.current) return;
+    if (outcome.kind === "saved") {
+      setProof(outcome.uri);
+      setProofFailed(false);
+      haptic.success();
+      setStep("review");
+      return;
+    }
+    setProofFailed(true);
   };
 
   const stopProof = () => {
-    if (Date.now() - recStart.current < MIN_PROOF * 1000) return;
+    if (!canStopProof({ nativeSeconds: nativeSeconds.current })) return;
     cam.current?.stopRecording();
+  };
+
+  const onRecordingProgress = useCallback(
+    (event: { duration: number; fileSize: number }) => {
+      if (!recordingRef.current) return;
+      const next = noteProgress({ nativeSeconds: nativeSeconds.current }, event);
+      nativeSeconds.current = next.nativeSeconds;
+      if (!alive.current || next.nativeSeconds == null) return;
+      setSecs(displaySeconds(next));
+      progress.set(withTiming(Math.min(1, next.nativeSeconds / PROOF_SECONDS), { duration: 200, easing: Easing.linear }));
+    },
+    [progress],
+  );
+
+  const closeCamera = () => {
+    alive.current = false;
+    if (recordingRef.current) cam.current?.stopRecording();
+    router.back();
   };
 
   const pick = async (kind: "images" | "videos") => {
@@ -561,7 +596,7 @@ export default function Capture() {
   return (
     <View style={{ flex: 1, backgroundColor: C.black }}>
       <View style={{ paddingTop: top + 6, paddingHorizontal: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-        <IconButton icon="close" label={t("capture.close")} bg={C.night2} color={C.white} onPress={() => router.back()} />
+        <IconButton icon="close" label={t("capture.close")} bg={C.night2} color={C.white} onPress={closeCamera} />
         <Steps step={step} />
         <IconButton
           icon="help"
@@ -606,6 +641,7 @@ export default function Capture() {
                 enableTorch={isProof && flash}
                 mirror={facing === "front"}
                 onCameraReady={() => setReady(true)}
+                onRecordingProgress={onRecordingProgress}
               />
             )
           )}
@@ -647,13 +683,13 @@ export default function Capture() {
 
           <View pointerEvents="none" style={{ position: "absolute", left: 16, right: 16, bottom: 16, alignItems: "center" }}>
             <Animated.View
-              key={`${step}${recording}`}
+              key={`${step}${recording}${proofFailed}`}
               entering={FadeInDown.springify().damping(18)}
               exiting={FadeOut}
               style={{ backgroundColor: "rgba(0,0,0,0.5)", paddingHorizontal: 14, paddingVertical: 10, borderRadius: R.md, maxWidth: 320 }}
             >
               <Text style={{ color: C.white, fontFamily: F.medium, fontSize: 14, textAlign: "center", lineHeight: 19 }}>
-                {recording ? t("capture.recording") : hint}
+                {recording ? t("capture.recording") : proofFailed ? t("capture.proofFailed") : hint}
               </Text>
             </Animated.View>
           </View>
