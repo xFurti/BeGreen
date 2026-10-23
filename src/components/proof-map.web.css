@@ -1,0 +1,34 @@
+/* Layout needed by our Leaflet tile/photo map. No default marker or layer images. */
+.leaflet-container { overflow: hidden; outline-offset: 2px; -webkit-tap-highlight-color: transparent; }
+.leaflet-pane, .leaflet-tile, .leaflet-marker-icon, .leaflet-marker-shadow,
+.leaflet-tile-container, .leaflet-pane > svg, .leaflet-pane > canvas,
+.leaflet-zoom-box, .leaflet-image-layer { position: absolute; left: 0; top: 0; }
+.leaflet-container img.leaflet-tile { max-width: none !important; max-height: none !important; padding: 0; border: 0; }
+.leaflet-tile, .leaflet-marker-icon { user-select: none; -webkit-user-drag: none; }
+.leaflet-tile { visibility: hidden; }
+.leaflet-tile-loaded { visibility: inherit; }
+.leaflet-pane { z-index: 400; }
+.leaflet-tile-pane { z-index: 200; }
+.leaflet-overlay-pane { z-index: 400; }
+.leaflet-shadow-pane { z-index: 500; }
+.leaflet-marker-pane { z-index: 600; }
+.leaflet-tooltip-pane { z-index: 650; }
+.leaflet-popup-pane { z-index: 700; }
+.leaflet-zoom-animated { transform-origin: 0 0; }
+.leaflet-zoom-anim .leaflet-zoom-animated { transition: transform .25s cubic-bezier(0,0,.25,1); }
+.leaflet-zoom-anim .leaflet-tile { transition: none; }
+.leaflet-zoom-anim .leaflet-zoom-hide { visibility: hidden; }
+.leaflet-interactive, .leaflet-marker-icon { cursor: pointer; }
+.leaflet-grab { cursor: grab; }
+.leaflet-dragging .leaflet-grab { cursor: grabbing; }
+.leaflet-touch-zoom { touch-action: pan-x pan-y; }
+.leaflet-touch-drag { touch-action: pinch-zoom; }
+.leaflet-touch-drag.leaflet-touch-zoom { touch-action: none; }
+.leaflet-top, .leaflet-bottom { position: absolute; z-index: 800; pointer-events: none; }
+.leaflet-top { top: 0; } .leaflet-bottom { bottom: 0; }
+.leaflet-left { left: 0; } .leaflet-right { right: 0; }
+.leaflet-control { position: relative; z-index: 800; pointer-events: auto; }
+.leaflet-right .leaflet-control { float: right; }
+.leaflet-control-attribution { background: Canvas; color: CanvasText; padding: 3px 6px; font: 11px/1.4 sans-serif; }
+.leaflet-control-attribution a { color: inherit; }
+@media (prefers-reduced-motion: reduce) { .leaflet-zoom-anim .leaflet-zoom-animated { transition: none; } }

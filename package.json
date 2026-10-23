@@ -9,6 +9,7 @@
     "@expo/vector-icons": "^15.0.2",
     "@supabase/supabase-js": "^2.118.0",
     "expo": "~58.0.17",
+    "expo-asset": "~58.0.18",
     "expo-blur": "~58.0.5",
     "expo-camera": "~58.0.12",
     "expo-constants": "~58.0.13",
@@ -23,6 +24,7 @@
     "expo-linking": "~58.0.14",
     "expo-localization": "~58.0.5",
     "expo-location": "~58.0.18",
+    "expo-maps": "~58.0.10",
     "expo-router": "~58.0.25",
     "expo-splash-screen": "~58.0.11",
     "expo-sqlite": "~58.0.13",
@@ -39,10 +41,12 @@
     "react-native-svg": "15.16.0",
     "react-native-web": "^0.21.4",
     "react-native-worklets": "0.13.0",
-    "zustand": "^5.0.16"
+    "zustand": "^5.0.16",
+    "leaflet": "^1.9.4"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.11",
+    "@types/leaflet": "^1.9.22",
     "@types/react": "~19.3.0",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~58.0.4",
@@ -55,7 +59,7 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "lint": "expo lint",
-    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test .github/scripts/*.test.cjs tests/*.test.ts supabase/tests/*.test.mjs src/services/proof-recording.test.mjs && node --import ./scripts/register-alias.mjs --test src/i18n/i18n.test.ts src/services/*.test.ts",
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test .github/scripts/*.test.cjs tests/*.test.ts tests/*.test.cjs supabase/tests/*.test.mjs src/services/proof-recording.test.mjs && node --import ./scripts/register-alias.mjs --test src/i18n/i18n.test.ts src/services/*.test.ts",
     "verify": "npm run typecheck && npm run lint && npm test"
   },
   "private": true

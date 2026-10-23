@@ -3,10 +3,12 @@ import { actionMessages } from "@/i18n/messages/actions";
 import { generatedMessages } from "@/i18n/messages/generated";
 import { guideMessages } from "@/i18n/messages/guide";
 import { referenceMessages } from "@/i18n/messages/reference";
+import { profileMessages } from "@/i18n/messages/profile";
 import { uiMessages } from "@/i18n/messages/ui";
 
 const en = {
   ...uiMessages.en,
+  profile: profileMessages.en,
   actions: actionMessages.en,
   ref: referenceMessages.en,
   bins: guideMessages.en.bins,
@@ -18,6 +20,7 @@ const en = {
 
 const it = {
   ...uiMessages.it,
+  profile: profileMessages.it,
   actions: actionMessages.it,
   ref: referenceMessages.it,
   bins: guideMessages.it.bins,

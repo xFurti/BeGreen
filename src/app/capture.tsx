@@ -432,6 +432,8 @@ export default function Capture() {
         caption: caption.trim(),
         audience: audience === "squad" && !toSquad ? "comune" : audience,
         place: shareSpot ? place : HIDDEN_PLACE,
+        // The Comune centre is an area reference, never the location of the act.
+        location: shareSpot && comune ? {lat: comune.lat, lon: comune.lon} : undefined,
         challengeId: isDrop ? drop.id : undefined,
         squadId: toSquad,
       });

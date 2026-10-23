@@ -94,7 +94,7 @@ npm install
 npx expo start          # press i for the iOS simulator, or scan the QR code with Expo Go
 ```
 
-The app runs in **Expo Go**: it uses no custom native code. On a simulator (which has no camera), the capture screen offers **library** and **demo** capture so you can try the whole flow.
+The app runs in **Expo Go**, with a static compatibility preview in the profile map. The interactive native profile map uses **Expo Maps** and requires a new development build (Apple Maps on iOS; Google Maps on Android, with a Maps SDK key configured for that build). Native photo maps use iOS 18 or later; older iOS versions and unconfigured Android builds use the tile preview. Web uses an interactive OpenStreetMap preview. On a simulator (which has no camera), the capture screen offers **library** and **demo** capture so you can try the whole flow. See [docs/profile.md](docs/profile.md) for map setup and area-history limits.
 
 To share the feed between phones, connect a Supabase project:
 

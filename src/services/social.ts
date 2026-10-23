@@ -197,6 +197,18 @@ export async function saveProfile(me: string, p: { name: string; handle: string;
   if (error) throw error;
 }
 
+// Editing identity must not overwrite a badge or Comune changed by another flow.
+export async function saveProfileDetails(me: string, p: { name: string; handle: string; role: Role }) {
+  const { error } = await db()
+    .from("profiles")
+    .update({ name: p.name, handle: p.handle, role: p.role })
+    .eq("id", me)
+    .select("id")
+    .single();
+  if (error?.code === "23505") throw new HandleTaken(p.handle);
+  if (error) throw error;
+}
+
 export async function handleFree(handle: string, me: string | null): Promise<boolean> {
   const { data, error } = await db().from("profiles").select("id").eq("handle", handle).maybeSingle();
   if (error) throw error;

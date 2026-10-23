@@ -34,6 +34,8 @@ export type Post = {
   caption: string;
   captionKey?: string;
   place: string;
+  // Comune centre recorded on this device only; legacy/hidden-area proofs omit it.
+  location?: { lat: number; lon: number };
   createdAt: number;
   verifiedBy: string[];
   reactions: Record<string, number>;
