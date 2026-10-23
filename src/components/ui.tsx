@@ -15,33 +15,15 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { create } from "zustand";
 
 import { Icon, type IconName } from "@/components/icon";
-import { LeafMark, SwayingLeaf } from "@/components/nature";
+import { LeafMark } from "@/components/nature";
 import { SOURCE_KINDS, SOURCES, type SourceId } from "@/data/sources";
 import type { Media } from "@/data/types";
 import { C, F, R, shadow, T } from "@/theme/tokens";
 import { haptic } from "@/utils/format";
 
-// ---------- Wordmark ----------
+// ---------- Logo ----------
 
-// "Be" in ink, "Green" in green, with a leaf growing from the n. On dark, Green turns lime;
-// any other ink colour (a muted footer) keeps the wordmark in one colour. `sway` lets the leaf move in the breeze.
-export function Logo({ size = 28, color = C.ink, dark, sway }: { size?: number; color?: string; dark?: boolean; sway?: boolean }) {
-  const green = dark ? C.lime : color === C.ink ? C.leaf : color;
-  return (
-    <View accessible accessibilityRole="header" accessibilityLabel="BeGreen" style={{ flexDirection: "row", alignItems: "flex-start" }}>
-      <Text style={{ fontFamily: F.medium, fontSize: size, lineHeight: size * 1.1, letterSpacing: -size * 0.06, color }}>
-        Be<Text style={{ color: green }}>Green</Text>
-      </Text>
-      <View style={{ marginLeft: size * 0.02, marginTop: -size * 0.06 }}>
-        {sway ? (
-          <SwayingLeaf size={size * 0.42} color={green} vein={dark ? C.forest : C.white} rotate={8} />
-        ) : (
-          <LeafMark size={size * 0.42} color={green} vein={dark ? C.forest : C.white} rotate={8} />
-        )}
-      </View>
-    </View>
-  );
-}
+export { Logo, LogoMark } from "@/components/logo";
 
 // ---------- Text helpers ----------
 

@@ -200,7 +200,7 @@ export default function Feed() {
         <Press onPress={() => router.push("/leaf")} accessibilityLabel="Ask Leaf" style={{ width: 40, height: 40, justifyContent: "center" }}>
           <Icon name="sparkle" size={21} color={C.leaf} />
         </Press>
-        <Logo size={26} sway />
+        <Logo size={24} />
         <Press onPress={() => router.navigate("/me")} accessibilityLabel="Your profile" style={{ width: 40, alignItems: "flex-end" }}>
           <Avatar name={profile.name || "You"} size={32} />
         </Press>

@@ -289,7 +289,7 @@ export default function Onboarding() {
     <KeyboardAvoidingView behavior={process.env.EXPO_OS === "ios" ? "padding" : undefined} style={{ flex: 1, backgroundColor: C.bg }}>
       <View style={{ paddingTop: top + 10, paddingHorizontal: 20, gap: 14 }}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          <Logo size={24} sway />
+          <Logo size={24} />
           {page < last ? (
             <Pressable onPress={() => go(last)} hitSlop={10} accessibilityRole="button">
               <Mono color={C.ink}>Skip</Mono>
