@@ -14,12 +14,14 @@ import { useI18n } from "@/i18n/use-i18n";
 import { composerInset } from "@/services/keyboard-inset";
 import { answerLocally, askLeaf, SUGGESTED_KEYS } from "@/services/leaf";
 import { useApp } from "@/store/app-store";
-import { C, F, R, T } from "@/theme/tokens";
+import { F, R } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
 
 type Turn = { id: number; question: string; pending: boolean; ai: { text: string; cites: SourceId[]; language: "it" | "en" } | null };
 
 export default function Leaf() {
+  const { C, T } = useTheme();
   const { bottom } = useSafeAreaInsets();
   const { ref: keyboardRoot, cover } = useKeyboardCover();
   const { pulse, insights } = usePulse();
@@ -135,9 +137,9 @@ export default function Leaf() {
                   key={key}
                   onPress={() => ask(t(key))}
                   accessibilityRole="button"
-                  style={{ paddingHorizontal: 14, paddingVertical: 10, borderRadius: R.pill, borderWidth: 1, borderColor: C.mint2 }}
+                  style={{ paddingHorizontal: 14, paddingVertical: 10, borderRadius: R.pill, borderWidth: 1, borderColor: C.band }}
                 >
-                  <Text style={{ fontFamily: F.medium, fontSize: 14, letterSpacing: -0.15, color: C.forest }}>{t(key)}</Text>
+                  <Text style={{ fontFamily: F.medium, fontSize: 14, letterSpacing: -0.15, color: C.forestInk }}>{t(key)}</Text>
                 </Pressable>
               ))}
             </View>

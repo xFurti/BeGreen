@@ -9,14 +9,29 @@ import { ACTION_LIST, type ActionId } from "@/data/actions";
 import { BINS, searchItems, type BinId } from "@/data/guide";
 import { actionCopy, binCopy, itemCopy } from "@/i18n/content";
 import { useI18n } from "@/i18n/use-i18n";
-import { C, F, R, T } from "@/theme/tokens";
+import { F, R } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
 
 function Swatch({ bin, size = 12 }: { bin: BinId; size?: number }) {
-  return <View style={{ width: size, height: size, borderRadius: size / 3, backgroundColor: BINS[bin].swatch }} />;
+  const { C, scheme } = useTheme();
+  // The residual bin is black: on the dark theme it needs an edge to show.
+  return (
+    <View
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 3,
+        backgroundColor: BINS[bin].swatch,
+        borderWidth: scheme === "dark" ? 1 : 0,
+        borderColor: C.faint,
+      }}
+    />
+  );
 }
 
 function Steps({ id }: { id: ActionId }) {
+  const { C, T } = useTheme();
   const { t } = useI18n();
   return (
     <View style={{ gap: 12 }}>
@@ -33,6 +48,7 @@ function Steps({ id }: { id: ActionId }) {
 }
 
 export default function Guide() {
+  const { C, T } = useTheme();
   const params = useLocalSearchParams<{ action?: ActionId; from?: string }>();
   const [q, setQ] = useState("");
   const [open, setOpen] = useState<ActionId | null>(params.action ?? null);
@@ -83,7 +99,7 @@ export default function Guide() {
                 return (
                 <View key={it.id} style={{ paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: C.line, gap: 6 }}>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                    <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3 }}>{copy.name}</Text>
+                    <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3, color: C.ink }}>{copy.name}</Text>
                     <Swatch bin={it.bin} />
                     <Mono color={C.ink}>{binCopy(t, it.bin).name}</Mono>
                   </View>
@@ -165,7 +181,7 @@ export default function Guide() {
                 style={{ flexDirection: "row", alignItems: "center", gap: 12, height: 58 }}
               >
                 <Icon name={a.icon} size={17} color={C.ink} />
-                <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3 }}>{copy.label}</Text>
+                <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3, color: C.ink }}>{copy.label}</Text>
                 <Mono>+{a.seeds}</Mono>
                 <View style={{ transform: [{ rotate: on ? "90deg" : "0deg" }] }}>
                   <Icon name="chevron" size={12} color={C.mute} />

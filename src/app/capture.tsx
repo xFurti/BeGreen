@@ -3,6 +3,7 @@ import { CameraView, useCameraPermissions, type CameraType } from "expo-camera";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, Share, Text, TextInput, View } from "react-native";
 import Animated, {
@@ -40,7 +41,8 @@ import { canStopProof, displaySeconds, noteProgress, outcomeFromRecording, PROOF
 import { canClaimDrop, seedsFor } from "@/services/rewards";
 import { hasBackend } from "@/services/supabase";
 import { leagueOf, mineOf, postedToday, sdgsOf, streakOf, useApp, useAuthor } from "@/store/app-store";
-import { C, F, R, T } from "@/theme/tokens";
+import { F, R } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
 
 type Step = "snap" | "proof" | "review" | "done";
@@ -60,12 +62,13 @@ function coverBox({ width, height }: Size) {
 const ACircle = Animated.createAnimatedComponent(Circle);
 
 function RecordRing({ progress, size = 88 }: { progress: SharedValue<number>; size?: number }) {
+  const { C } = useTheme();
   const r = size / 2 - 3;
   const len = 2 * Math.PI * r;
   const props = useAnimatedProps(() => ({ strokeDashoffset: len * (1 - progress.value) }));
   return (
     <Svg width={size} height={size} style={{ position: "absolute", transform: [{ rotate: "-90deg" }] }}>
-      <Circle cx={size / 2} cy={size / 2} r={r} stroke="rgba(255,255,255,0.22)" strokeWidth={4} fill="none" />
+      <Circle cx={size / 2} cy={size / 2} r={r} stroke={C.ring} strokeWidth={4} fill="none" />
       <ACircle
         cx={size / 2}
         cy={size / 2}
@@ -82,6 +85,7 @@ function RecordRing({ progress, size = 88 }: { progress: SharedValue<number>; si
 }
 
 function Steps({ step }: { step: Step }) {
+  const { C } = useTheme();
   const { t } = useI18n();
   const items = [
     { k: "snap", n: "01", label: t("capture.snap") },
@@ -124,6 +128,7 @@ function Burst() {
 }
 
 function Bit({ angle, i }: { angle: number; i: number }) {
+  const { C } = useTheme();
   const t = useSharedValue(0);
   const dist = 120 + (i % 4) * 45;
   const size = 6 + (i % 3) * 4;
@@ -160,6 +165,7 @@ type Result = {
 };
 
 function Row({ icon, title, sub, right, delay }: { icon: IconName; title: string; sub?: string; right?: string; delay: number }) {
+  const { C } = useTheme();
   return (
     <Animated.View
       entering={FadeInDown.delay(delay).springify().damping(18)}
@@ -176,6 +182,7 @@ function Row({ icon, title, sub, right, delay }: { icon: IconName; title: string
 }
 
 function Done(r: Result) {
+  const { C, T } = useTheme();
   const { top, bottom } = useSafeAreaInsets();
   const n = useCountUp(r.seeds, 900);
   const { t } = useI18n();
@@ -248,6 +255,8 @@ function Done(r: Result) {
 // ---------- Screen ----------
 
 export default function Capture() {
+  // The camera steps and the Done screen are dark in both themes; only the review follows it.
+  const { C, T, scheme } = useTheme();
   const params = useLocalSearchParams<{ action?: ActionId }>();
   const { top, bottom } = useSafeAreaInsets();
   const { ref: keyboardRoot, cover } = useKeyboardCover();
@@ -452,13 +461,20 @@ export default function Capture() {
 
   // ----- render -----
 
-  if (step === "done" && result) return <Done {...result} />;
+  if (step === "done" && result)
+    return (
+      <>
+        <StatusBar style="light" />
+        <Done {...result} />
+      </>
+    );
 
   if (step === "review" && photo && proof) {
     const a = actionCopy(t, action);
     const isDropAct = action === drop.action && dropOpen;
     return (
       <View ref={keyboardRoot} collapsable={false} style={{ flex: 1, backgroundColor: C.bg, paddingBottom: cover }}>
+        <StatusBar style={scheme === "dark" ? "light" : "dark"} />
         <View
           style={{
             paddingTop: top + 6,
@@ -477,7 +493,7 @@ export default function Capture() {
               setStep("proof");
             }}
           />
-          <Text style={{ fontFamily: F.medium, fontSize: 17, letterSpacing: -0.3 }}>{t("capture.your")}</Text>
+          <Text style={{ fontFamily: F.medium, fontSize: 17, letterSpacing: -0.3, color: C.ink }}>{t("capture.your")}</Text>
           <IconButton icon="close" label={t("capture.discard")} onPress={() => router.back()} />
         </View>
         <ScrollView contentContainerStyle={{ padding: 16, gap: 26, paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
@@ -584,7 +600,7 @@ export default function Capture() {
           <View style={{ flexDirection: "row", alignItems: "center", gap: 12, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 16 }}>
             <Icon name="location" size={16} />
             <View style={{ flex: 1, gap: 2 }}>
-              <Text style={{ fontFamily: F.medium, fontSize: 15 }}>{t("capture.showArea", { place: place || t("common.yourArea") })}</Text>
+              <Text style={{ fontFamily: F.medium, fontSize: 15, color: C.ink }}>{t("capture.showArea", { place: place || t("common.yourArea") })}</Text>
               <Text style={{ fontFamily: F.regular, fontSize: 13, color: C.mute }}>{t("capture.neighbourhood")}</Text>
             </View>
             <LeafSwitch value={shareSpot} onValueChange={setShareSpot} label={t("capture.showMine")} />
@@ -604,6 +620,7 @@ export default function Capture() {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.black }}>
+      <StatusBar style="light" />
       <View style={{ paddingTop: top + 6, paddingHorizontal: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
         <IconButton icon="close" label={t("capture.close")} bg={C.night2} color={C.white} onPress={closeCamera} />
         <Steps step={step} />
@@ -684,7 +701,7 @@ export default function Capture() {
                 <Mono color={C.white}>00:0{secs}</Mono>
               </Animated.View>
             ) : (
-              <View style={{ backgroundColor: "rgba(0,0,0,0.45)", paddingHorizontal: 10, height: 26, borderRadius: R.pill, justifyContent: "center" }}>
+              <View style={{ backgroundColor: C.scrim, paddingHorizontal: 10, height: 26, borderRadius: R.pill, justifyContent: "center" }}>
                 <Mono color={C.white}>{actionCopy(t, action).label}</Mono>
               </View>
             )}
@@ -695,7 +712,7 @@ export default function Capture() {
               key={`${step}${recording}${proofFailed}`}
               entering={FadeInDown.springify().damping(18)}
               exiting={FadeOut}
-              style={{ backgroundColor: "rgba(0,0,0,0.5)", paddingHorizontal: 14, paddingVertical: 10, borderRadius: R.md, maxWidth: 320 }}
+              style={{ backgroundColor: C.scrim, paddingHorizontal: 14, paddingVertical: 10, borderRadius: R.md, maxWidth: 320 }}
             >
               <Text style={{ color: C.white, fontFamily: F.medium, fontSize: 14, textAlign: "center", lineHeight: 19 }}>
                 {recording ? t("capture.recording") : proofFailed ? t("capture.proofFailed") : hint}

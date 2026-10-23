@@ -24,9 +24,10 @@ import {
 } from "@/services/comune-levels";
 import type { Pulse } from "@/services/env";
 import { aqiBand, type Level } from "@/services/interpret";
-import { C, F, R, T } from "@/theme/tokens";
+import { F, R, type Palette } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 
-const DOT: Record<Level, string> = { good: C.green, ok: C.amber, bad: C.red, info: C.faint };
+const dot = (C: Palette): Record<Level, string> => ({ good: C.green, ok: C.amber, bad: C.red, info: C.faint });
 
 type Row = { key: string; icon: IconName; label: string; value: string; unit?: string; level: Level; note: string; source: SourceId; when: string; loading?: boolean };
 
@@ -174,6 +175,7 @@ function rowsFor(view: ComuneView, pulse: Pulse | null, t: Translator, lang: Lan
 }
 
 export function ComuneSection({ view, pulse }: { view: ComuneView; pulse: Pulse | null }) {
+  const { C, T } = useTheme();
   const { t, language } = useI18n();
   const { rows, ask } = rowsFor(view, pulse, t, language);
   const name = view.stats?.name ?? view.id?.name;
@@ -197,7 +199,7 @@ export function ComuneSection({ view, pulse }: { view: ComuneView; pulse: Pulse 
             <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
               <Icon name={r.icon} size={15} color={C.ink} />
               <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 15, letterSpacing: -0.2, color: C.ink }}>{r.label}</Text>
-              {r.loading ? <ActivityIndicator size="small" color={C.mute} /> : <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: DOT[r.level] }} />}
+              {r.loading ? <ActivityIndicator size="small" color={C.mute} /> : <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: dot(C)[r.level] }} />}
             </View>
             <View style={{ flexDirection: "row", alignItems: "baseline", gap: 6, paddingLeft: 25 }}>
               <Text style={{ fontFamily: F.medium, fontSize: 28, letterSpacing: -1.2, color: C.ink, fontVariant: ["tabular-nums"] }}>{r.value}</Text>

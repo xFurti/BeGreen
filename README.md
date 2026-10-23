@@ -100,6 +100,8 @@ npx expo start          # press i for the iOS simulator, or scan the QR code wit
 
 The app runs in **Expo Go**: it uses no custom native code. On a simulator (which has no camera), the capture screen offers **library** and **demo** capture so you can try the whole flow.
 
+**Light and dark theme.** *Me → Appearance* picks System, Light or Dark; System follows the phone. `app.json` sets `userInterfaceStyle: "automatic"`, and Android needs `expo-system-ui` for it, so a development build made before this change has to be rebuilt to follow the phone's theme. Light and Dark also call `Appearance.setColorScheme`, so native sheets follow the choice; System clears that override. Colours live in two palettes in `src/theme/tokens.ts`; components read them through `useTheme()`.
+
 To share the feed between phones, connect a Supabase project:
 
 1. Create a project (or run `eas integrations:supabase:connect`), then in **Authentication → Sign In / Providers** turn on **Allow anonymous sign-ins**.
@@ -141,7 +143,7 @@ assets/                   Icon, splash, demo photos (Unsplash), 5 s proof clips
 
 ## Design system
 
-- **White, black and one living green.** White paper and black ink, with a brand green family in `theme/tokens.ts`: `forest` (deep canopy, for dark surfaces and green text), `leaf` (fills, icons, progress; at least 4.5:1 on white and mint), `lime` (new growth, accents on dark only) and `mint` (soft tints). Data keeps its own signal colours (air bands, source kinds, recording red).
+- **White, black and one living green.** White paper and black ink, with a brand green family in `theme/tokens.ts`: `forest` (deep canopy, for dark surfaces and green text), `leaf` (fills, icons, progress; at least 4.5:1 on white and mint), `lime` (new growth, accents on dark only) and `mint` (soft tints). In the dark palette `leaf` and `forestInk` lighten so small green text stays at 4.5:1, and `band` draws charts and tracks (it matches `mint2` in light). Data keeps its own signal colours (air bands, source kinds, recording red).
 - **Logo** from the BeGreen Brand Kit v1.0 in `components/logo.tsx`: the leaf "B" mark and the lockup, drawn as vectors in Canopy (`#152315`). App icon, Android adaptive icon and splash are Canopy on Proof Lime (`#C8E61A`). Never lime on white, never stretch, rotate or rearrange the lockup; minimum 88 px wide for the lockup, 16 px tall for the mark.
 - **Nature motifs** in `components/nature.tsx`: a sprout for empty states, slowly drifting organic blobs and leaf-shaped corners on the Drop and Pulse cards, a switch that sprouts a leaf (after a [uiverse.io](https://uiverse.io/Creatlydev/white-vampirebat-27) toggle), leaves flying out when you verify a proof and leaf confetti on the celebration (after [React Bits](https://reactbits.dev) Click Spark and Aurora). They are decorative and hidden from screen readers.
 - **Geist Medium** for headlines, tracked tight; Geist for body copy; **Geist Mono** for metadata, labels and numbers (`SDG 13`, `PROOF 0:05`, `09:42:15`).

@@ -35,6 +35,8 @@ import { ensureSession, hasBackend } from "@/services/supabase";
 
 export type Profile = { name: string; handle: string; role: Role; badgeId: BadgeId | null };
 
+export type ThemePref = "system" | "light" | "dark";
+
 type State = {
   language: Language;
   onboarded: boolean;
@@ -42,6 +44,7 @@ type State = {
   userId: string;
   profile: Profile;
   explain: Explain;
+  theme: ThemePref;
   comune: Comune | null;
   place: Place;
   pulse: Pulse | null;
@@ -73,6 +76,7 @@ type NewPost = {
 type Actions = {
   finishOnboarding: (p: Omit<Profile, "badgeId"> & { badgeId?: BadgeId | null }) => void;
   setExplain: (e: Explain) => void;
+  setTheme: (t: ThemePref) => void;
   setComune: (c: Comune) => void;
   setPulse: (p: Pulse) => void;
   setChallenge: (d: Drop) => void;
@@ -97,6 +101,7 @@ const initial: State = {
   userId: "",
   profile: { name: "", handle: "", role: "student", badgeId: null },
   explain: "me",
+  theme: "system",
   comune: null,
   place: DEFAULT_PLACE,
   pulse: null,
@@ -138,6 +143,7 @@ export const useApp = create<State & Actions>()(
         });
       },
       setExplain: (explain) => set({ explain }),
+      setTheme: (theme) => set({ theme }),
       setComune: (comune) => {
         const same = get().comune?.id === comune.id;
         set({
@@ -275,7 +281,8 @@ export const useApp = create<State & Actions>()(
         if (hasBackend && s.onboarded && s.userId) saveProfile(s.userId, profile, s.comune).catch(fail);
       },
       setLanguage: (language) => set({ language }),
-      reset: () => set({ ...initial, language: get().language }),
+      // Theme and language are device preferences, not demo data: both survive a reset.
+      reset: () => set({ ...initial, theme: get().theme, language: get().language }),
     }),
     {
       name: "begreen-v2",
@@ -287,6 +294,7 @@ export const useApp = create<State & Actions>()(
         userId: s.userId,
         profile: s.profile,
         explain: s.explain,
+        theme: s.theme,
         comune: s.comune,
         place: s.place,
         pulse: s.pulse,

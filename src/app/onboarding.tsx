@@ -20,7 +20,8 @@ import { comuneLabel } from "@/services/comuni";
 import { HandleTaken } from "@/services/social";
 import { hasBackend } from "@/services/supabase";
 import { registerProfile, useApp } from "@/store/app-store";
-import { C, F, R, T } from "@/theme/tokens";
+import { F, R } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
 
 const HANDLE = /^[a-z0-9._]{2,24}$/;
@@ -40,6 +41,7 @@ const ROLES: { value: Role; icon: IconName; label: MessageKey; hint: MessageKey 
 ];
 
 function Tile({ src, rotate, x, y, z, w }: { src: number; rotate: string; x: number; y: number; z: number; w: number }) {
+  const { C } = useTheme();
   return (
     <View
       style={{
@@ -64,6 +66,7 @@ function Tile({ src, rotate, x, y, z, w }: { src: number; rotate: string; x: num
 }
 
 function HeroCollage({ width }: { width: number }) {
+  const { C } = useTheme();
   const { t } = useI18n();
   const w = width * 0.5;
   return (
@@ -116,6 +119,7 @@ function HeroCollage({ width }: { width: number }) {
 }
 
 function DataPreview() {
+  const { C } = useTheme();
   const { t } = useI18n();
   const rows = [
     { label: t("onboarding.air"), value: "24", unit: t("onboarding.fair"), kind: "model" as const },
@@ -133,13 +137,13 @@ function DataPreview() {
         >
           <Mono style={{ width: 20 }}>{String(i + 1).padStart(2, "0")}</Mono>
           <View style={{ flex: 1, gap: 4 }}>
-            <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3 }}>{r.label}</Text>
+            <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3, color: C.ink }}>{r.label}</Text>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
               <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: SOURCE_KINDS[r.kind].color }} />
               <Mono>{sourceKindCopy(t, r.kind).short}</Mono>
             </View>
           </View>
-          <Text style={{ fontFamily: F.medium, fontSize: 40, letterSpacing: -2, fontVariant: ["tabular-nums"] }}>{r.value}</Text>
+          <Text style={{ fontFamily: F.medium, fontSize: 40, letterSpacing: -2, fontVariant: ["tabular-nums"], color: C.ink }}>{r.value}</Text>
           <Text style={{ fontFamily: F.regular, fontSize: 13, color: C.mute, width: 78 }}>{r.unit}</Text>
         </Animated.View>
       ))}
@@ -149,6 +153,7 @@ function DataPreview() {
 
 // You start last, then climb. Competition, explained in one animation.
 function RacePreview({ active }: { active: boolean }) {
+  const { C } = useTheme();
   const { t } = useI18n();
   const base: { id: string; name: MessageKey; pts: number }[] = [
     { id: "a", name: "onboarding.race.classmate", pts: 345 },
@@ -208,6 +213,7 @@ function RacePreview({ active }: { active: boolean }) {
 }
 
 function GoalCell({ g, on, delay, size }: { g: number; on: boolean; delay: number; size: number }) {
+  const { C } = useTheme();
   const t = useSharedValue(0);
   useEffect(() => {
     t.set(on ? withDelay(delay, withSpring(1, { damping: 14 })) : 0);
@@ -217,13 +223,14 @@ function GoalCell({ g, on, delay, size }: { g: number; on: boolean; delay: numbe
     <View style={{ width: size, height: size, borderRadius: 12, backgroundColor: C.mint, overflow: "hidden" }}>
       <Text style={{ position: "absolute", top: 8, left: 9, fontFamily: F.medium, fontSize: 18, letterSpacing: -0.6, color: C.forestMute }}>{g}</Text>
       <Animated.View style={[{ position: "absolute", inset: 0, backgroundColor: C.leaf, borderRadius: 12 } as never, fill]}>
-        <Text style={{ position: "absolute", top: 8, left: 9, fontFamily: F.medium, fontSize: 18, letterSpacing: -0.6, color: C.white }}>{g}</Text>
+        <Text style={{ position: "absolute", top: 8, left: 9, fontFamily: F.medium, fontSize: 18, letterSpacing: -0.6, color: C.onLeaf }}>{g}</Text>
       </Animated.View>
     </View>
   );
 }
 
 function GoalsPreview({ active, width }: { active: boolean; width: number }) {
+  const { C } = useTheme();
   const size = Math.floor((width - 5 * 6) / 6);
   const lit = [3, 6, 11, 12, 13, 14, 15, 17];
   return (
@@ -232,13 +239,14 @@ function GoalsPreview({ active, width }: { active: boolean; width: number }) {
         <GoalCell key={g} g={g} size={size} on={active && lit.includes(g)} delay={lit.indexOf(g) * 140} />
       ))}
       <View style={{ width: size, height: size, borderRadius: 12, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-        <Text style={{ fontFamily: F.medium, fontSize: 13, letterSpacing: -0.4 }}>2030</Text>
+        <Text style={{ fontFamily: F.medium, fontSize: 13, letterSpacing: -0.4, color: C.ink }}>2030</Text>
       </View>
     </View>
   );
 }
 
 export default function Onboarding() {
+  const { C, T } = useTheme();
   const { width } = useWindowDimensions();
   const { top, bottom } = useSafeAreaInsets();
   const pager = useRef<ScrollViewInstance>(null);
@@ -326,7 +334,7 @@ export default function Onboarding() {
         </View>
         <View style={{ flexDirection: "row", gap: 4 }}>
           {Array.from({ length: last + 1 }).map((_, i) => (
-            <View key={i} style={{ flex: 1, height: 3, borderRadius: 2, backgroundColor: i <= page ? C.leaf : C.mint2 }} />
+            <View key={i} style={{ flex: 1, height: 3, borderRadius: 2, backgroundColor: i <= page ? C.leaf : C.band }} />
           ))}
         </View>
       </View>
@@ -408,7 +416,7 @@ export default function Onboarding() {
           </View>
 
           <View style={{ gap: 12 }}>
-            <Mono color={C.forest}>{t("onboarding.joining")}</Mono>
+            <Mono color={C.forestInk}>{t("onboarding.joining")}</Mono>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
               {ROLES.map((r) => (
                 <Chip key={r.value} label={t(r.label)} icon={r.icon} active={role === r.value} onPress={() => setRole(r.value)} />
@@ -433,7 +441,7 @@ export default function Onboarding() {
             >
               <Icon name="location" size={17} color={C.leaf} />
               <View style={{ flex: 1, gap: 2 }}>
-                <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2 }}>{comune ? comuneLabel(comune) : t("comune.yourTitle")}</Text>
+                <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2, color: C.ink }}>{comune ? comuneLabel(comune) : t("comune.yourTitle")}</Text>
                 <Text style={{ fontFamily: F.regular, color: C.mute, fontSize: 13 }}>{comune ? t("onboarding.comuneSet") : t("onboarding.comunePick")}</Text>
               </View>
               {comune ? <Icon name="checkSeal" size={20} color={C.leaf} /> : <Mono color={C.ink}>{t("onboarding.choose")}</Mono>}

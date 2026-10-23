@@ -21,8 +21,9 @@ import { profileName, sdgTitle } from "@/i18n/content";
 import { formatDecimal, formatNumber, monthName, weekdayInitials } from "@/i18n/format";
 import { useI18n } from "@/i18n/use-i18n";
 import { supabase } from "@/services/supabase";
-import { badgeStatsOf, dropStaleBadge, sdgsOf, seedsOf, streakOf, useApp, useLeague, useMyPosts } from "@/store/app-store";
-import { C, F, R, T } from "@/theme/tokens";
+import { badgeStatsOf, dropStaleBadge, sdgsOf, seedsOf, streakOf, useApp, useLeague, useMyPosts, type ThemePref } from "@/store/app-store";
+import { F, R } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
 
 const ROLE_LABEL = { student: "roles.student", teacher: "roles.teacher", association: "roles.association", comune: "roles.comune" } as const satisfies Record<string, MessageKey>;
@@ -40,6 +41,7 @@ function impact(posts: Post[]) {
 }
 
 function Agenda({ posts }: { posts: Post[] }) {
+  const { C, T } = useTheme();
   const { t } = useI18n();
   const { width } = useWindowDimensions();
   const touched = sdgsOf(posts);
@@ -91,7 +93,7 @@ function Agenda({ posts }: { posts: Post[] }) {
                   justifyContent: "space-between",
                 }}
               >
-                <Text style={{ fontFamily: F.medium, fontSize: 20, letterSpacing: -0.8, color: on ? C.white : C.forestMute }}>{g}</Text>
+                <Text style={{ fontFamily: F.medium, fontSize: 20, letterSpacing: -0.8, color: on ? C.onLeaf : C.forestMute }}>{g}</Text>
                 {on && <Text style={{ fontFamily: F.monoMedium, fontSize: 9, color: C.mint, alignSelf: "flex-end" }}>×{counts.get(g)}</Text>}
               </Pressable>
             </Animated.View>
@@ -125,6 +127,7 @@ function Agenda({ posts }: { posts: Post[] }) {
 }
 
 function Calendar({ posts }: { posts: Post[] }) {
+  const { C } = useTheme();
   const { t, language } = useI18n();
   const { width } = useWindowDimensions();
   const cell = Math.floor((width - 40) / 7);
@@ -191,6 +194,7 @@ function Calendar({ posts }: { posts: Post[] }) {
 }
 
 function Stat({ value, label, first }: { value: number; label: string; first?: boolean }) {
+  const { C } = useTheme();
   const n = useCountUp(value);
   const { language } = useI18n();
   return (
@@ -204,8 +208,11 @@ function Stat({ value, label, first }: { value: number; label: string; first?: b
 }
 
 export default function Me() {
+  const { C, T } = useTheme();
   const { top } = useSafeAreaInsets();
   const profile = useApp((s) => s.profile);
+  const themePref = useApp((s) => s.theme);
+  const setTheme = useApp((s) => s.setTheme);
   const posts = useMyPosts();
   const verifiedCount = useApp((s) => s.verifiedCount);
   const comune = useApp((s) => s.comune);
@@ -333,6 +340,22 @@ export default function Me() {
           </View>
         </View>
 
+        <View style={{ gap: 12 }}>
+          <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+            <Mono color={C.ink}>{t("me.appearance")}</Mono>
+          </View>
+          <Segmented<ThemePref>
+            label={t("me.appearance")}
+            value={themePref}
+            onChange={setTheme}
+            options={[
+              { value: "system", label: t("me.themeSystem") },
+              { value: "light", label: t("me.themeLight") },
+              { value: "dark", label: t("me.themeDark") },
+            ]}
+          />
+        </View>
+
         <View style={{ borderTopWidth: 1, borderTopColor: C.line }}>
           <View style={{ gap: 10, paddingBottom: 14 }}>
             <Mono color={C.ink}>{t("common.explainFor")}</Mono>
@@ -350,7 +373,7 @@ export default function Me() {
           <Row icon="location" label={t("common.comune")} value={comune?.name} onPress={() => router.push("/comune")} />
           <View style={{ flexDirection: "row", alignItems: "center", gap: 14, minHeight: 56, borderBottomWidth: 1, borderBottomColor: C.line }}>
             <Icon name="globe" size={16} color={C.ink} />
-            <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2 }}>{t("language.row")}</Text>
+            <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2, color: C.ink }}>{t("language.row")}</Text>
             <LanguageSwitch />
           </View>
           <Row icon="book" label={t("me.guide")} onPress={() => router.push("/guide")} />
@@ -387,6 +410,7 @@ export default function Me() {
 }
 
 function Imp({ value, label, right }: { value: string; label: string; right?: boolean }) {
+  const { C } = useTheme();
   return (
     <View
       style={{
@@ -407,6 +431,7 @@ function Imp({ value, label, right }: { value: string; label: string; right?: bo
 }
 
 function Row({ icon, label, value, onPress }: { icon: IconName; label: string; value?: string; onPress: () => void }) {
+  const { C } = useTheme();
   return (
     <Press
       scale={0.99}
@@ -415,7 +440,7 @@ function Row({ icon, label, value, onPress }: { icon: IconName; label: string; v
       style={{ flexDirection: "row", alignItems: "center", gap: 14, height: 56, borderBottomWidth: 1, borderBottomColor: C.line }}
     >
       <Icon name={icon} size={16} color={C.leaf} />
-      <Text numberOfLines={2} style={{ flex: 1, fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2 }}>
+      <Text numberOfLines={2} style={{ flex: 1, fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2, color: C.ink }}>
         {label}
       </Text>
       {value && (

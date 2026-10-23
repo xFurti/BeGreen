@@ -7,10 +7,12 @@ import type { Comune } from "@/data/types";
 import { useI18n } from "@/i18n/use-i18n";
 import { comuneNearMe, searchComuni } from "@/services/comuni";
 import { useApp } from "@/store/app-store";
-import { C, F, T } from "@/theme/tokens";
+import { F } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
 
 export default function ComunePicker() {
+  const { C, T } = useTheme();
   const current = useApp((s) => s.comune);
   const setComune = useApp((s) => s.setComune);
   const { t } = useI18n();

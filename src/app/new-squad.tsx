@@ -10,10 +10,12 @@ import { usePulse } from "@/hooks/use-pulse";
 import { ACT_WEEK, actionCopy, questTitle, squadKindLabel } from "@/i18n/content";
 import { useI18n } from "@/i18n/use-i18n";
 import { useApp } from "@/store/app-store";
-import { C, F, T } from "@/theme/tokens";
+import { F } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
 
 export default function NewSquad() {
+  const { C, T } = useTheme();
   const [name, setName] = useState("");
   const [kind, setKind] = useState<SquadKind>("friends");
   const [busy, setBusy] = useState(false);
