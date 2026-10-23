@@ -68,19 +68,22 @@ function Mine({ post }: { post: Post }) {
   const { t } = useI18n();
   const a = actionCopy(t, post.action);
   return (
-    <Press
-      scale={0.985}
-      onPress={() => router.push({ pathname: "/post/[id]", params: { id: post.id } })}
-      accessibilityLabel={t("feed.todayA11y")}
-      style={{ flexDirection: "row", gap: 14, alignItems: "center" }}
-    >
-      <Image source={post.photo} style={{ width: 62, height: 78, borderRadius: 12, backgroundColor: C.card }} contentFit="cover" priority="low" />
-      <View style={{ flex: 1, gap: 6 }}>
-        <Mono color={C.leaf}>{t("feed.today")}</Mono>
-        <Text style={{ fontFamily: F.medium, fontSize: 18, letterSpacing: -0.5, color: C.ink }}>{a.label}</Text>
-        <VerifyBar post={post} />
-      </View>
-    </Press>
+    <View style={{ gap: 8 }}>
+      <Press
+        scale={0.985}
+        onPress={() => router.push({ pathname: "/post/[id]", params: { id: post.id } })}
+        accessibilityLabel={t("feed.todayA11y")}
+        style={{ flexDirection: "row", gap: 14, alignItems: "center" }}
+      >
+        <Image source={post.photo} style={{ width: 62, height: 78, borderRadius: 12, backgroundColor: C.card }} contentFit="cover" priority="low" />
+        <View style={{ flex: 1, gap: 6 }}>
+          <Mono color={C.leaf}>{t("feed.today")}</Mono>
+          <Text style={{ fontFamily: F.medium, fontSize: 18, letterSpacing: -0.5, color: C.ink }}>{a.label}</Text>
+          {!post.pending && <VerifyBar post={post} />}
+        </View>
+      </Press>
+      {post.pending && <View style={{ paddingLeft: 76 }}><VerifyBar post={post} /></View>}
+    </View>
   );
 }
 
