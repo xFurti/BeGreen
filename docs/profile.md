@@ -16,6 +16,16 @@ New proofs save coordinates rounded to two decimal places (roughly 1 km) only wh
 
 The forest cover is the existing bundled `assets/demo/forest.jpg`. Profile and social data remain local prototype data.
 
+## Concept preview
+
+Mobile web captures (390 × 844), using the branch's demo history:
+
+| Impact | Memories | Map |
+| --- | --- | --- |
+| ![Impact concept](concepts/me-impact.png) | ![Memories concept](concepts/me-memories.png) | ![Map concept](concepts/me-map.png) |
+
+To try the concept: `npm ci`, `npm run web`, skip the onboarding story, enter a name and keep Demo history enabled, then open **Me**. The web route is `/me`. Native map builds have not been verified.
+
 Verification:
 
 ```bash
