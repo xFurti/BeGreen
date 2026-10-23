@@ -39,6 +39,18 @@ import { haptic } from "@/utils/format";
 type Step = "snap" | "proof" | "review" | "done";
 const PROOF_SECONDS = 5;
 const MIN_PROOF = 2;
+// The camera runs at 4:3; held upright that's 3 wide by 4 tall.
+const CAMERA_RATIO = 3 / 4;
+
+type Size = { width: number; height: number };
+
+// The largest 3:4 box that covers the frame, centred. The frame clips the overflow,
+// so the preview is cropped like `cover` instead of being stretched to fit.
+function coverBox({ width, height }: Size) {
+  const w = Math.max(width, height * CAMERA_RATIO);
+  const h = w / CAMERA_RATIO;
+  return { position: "absolute", width: w, height: h, left: (width - w) / 2, top: (height - h) / 2 } as const;
+}
 
 const ACircle = Animated.createAnimatedComponent(Circle);
 
@@ -244,6 +256,7 @@ export default function Capture() {
   const [recording, setRecording] = useState(false);
   const [secs, setSecs] = useState(0);
   const [ready, setReady] = useState(false);
+  const [frame, setFrame] = useState<Size | null>(null);
   const recStart = useRef(0);
   const progress = useSharedValue(0);
   const shutter = useSharedValue(1);
@@ -542,7 +555,12 @@ export default function Capture() {
       </View>
 
       <View style={{ flex: 1, padding: 10, paddingTop: 14 }}>
-        <View style={{ flex: 1, borderRadius: 32, borderCurve: "continuous", overflow: "hidden", backgroundColor: C.night2 }}>
+        <View
+          style={{ flex: 1, borderRadius: 32, borderCurve: "continuous", overflow: "hidden", backgroundColor: C.night2 }}
+          onLayout={({ nativeEvent: { layout: l } }) =>
+            setFrame((f) => (f?.width === l.width && f.height === l.height ? f : { width: l.width, height: l.height }))
+          }
+        >
           {noCamera ? (
             <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 12, padding: 36 }}>
               <Icon name={isProof ? "video" : "camera"} size={28} color={C.white} />
@@ -557,17 +575,21 @@ export default function Capture() {
               {realCamera && perm && !perm.granted && <Button label="Allow camera" kind="inverse" onPress={requestPerm} />}
             </View>
           ) : (
-            <CameraView
-              ref={cam}
-              style={{ flex: 1 }}
-              facing={facing}
-              mode={isProof ? "video" : "picture"}
-              mute
-              flash={flash ? "on" : "off"}
-              enableTorch={isProof && flash}
-              mirror={facing === "front"}
-              onCameraReady={() => setReady(true)}
-            />
+            // Mounted once the frame is measured: on Android the preview keeps the size it first gets.
+            frame && (
+              <CameraView
+                ref={cam}
+                style={coverBox(frame)}
+                ratio="4:3"
+                facing={facing}
+                mode={isProof ? "video" : "picture"}
+                mute
+                flash={flash ? "on" : "off"}
+                enableTorch={isProof && flash}
+                mirror={facing === "front"}
+                onCameraReady={() => setReady(true)}
+              />
+            )
           )}
 
           {isProof && photo && (
