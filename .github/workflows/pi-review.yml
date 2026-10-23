@@ -67,7 +67,9 @@ jobs:
         with:
           script: |
             const { readFileSync } = require('node:fs');
-            core.setOutput('skill', readFileSync('skills/hackathon-review/SKILL.md', 'utf8'));
+            const skill = readFileSync('skills/hackathon-review/SKILL.md', 'utf8');
+            const runtime = readFileSync('.github/pi/review-runtime.md', 'utf8');
+            core.setOutput('skill', `${skill}\n\n${runtime}`);
             await Promise.all([
               github.rest.checks.listForRef({ ...context.repo, ref: process.env.REVIEW_SHA, per_page: 1 }),
               github.rest.actions.listWorkflowRunsForRepo({ ...context.repo, head_sha: process.env.REVIEW_SHA, per_page: 1 }),
