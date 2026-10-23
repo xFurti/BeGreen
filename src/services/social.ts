@@ -43,10 +43,11 @@ type SquadRow = {
 };
 
 const PROFILE = "id, name, handle, role";
+// posts and profiles are also linked through verifications, reactions and comments: name the FK for each embed.
 const POST =
   "id, author_id, comune_id, challenge_id, action, photo, proof, caption, place, audience, squad_id, created_at, " +
-  `author:profiles(${PROFILE}), verifications(user_id, user:profiles(${PROFILE})), reactions(user_id, emoji), ` +
-  `comments(id, author_id, text, created_at, author:profiles(${PROFILE}))`;
+  `author:profiles!posts_author_id_fkey(${PROFILE}), verifications(user_id, user:profiles!verifications_user_id_fkey(${PROFILE})), ` +
+  `reactions(user_id, emoji), comments(id, author_id, text, created_at, author:profiles!comments_author_id_fkey(${PROFILE}))`;
 const SQUAD = "id, name, kind, place, comune_id, code, points, quest, monthly, month, squad_members(user_id)";
 
 const toUser = (p: ProfileRow): User => ({ id: p.id, name: p.name, handle: p.handle, role: p.role });
@@ -219,11 +220,10 @@ const MIME: Record<string, string> = {
 };
 
 async function upload(me: string, m: Media, kind: "photo" | "proof"): Promise<string> {
-  if (typeof m === "number") {
-    const key = assetKey(m);
-    if (!key) throw new Error("Unknown bundled media");
-    return key;
-  }
+  // Bundled demo media are numbers on native and objects or local URLs on web: never upload them.
+  const key = assetKey(m);
+  if (key) return key;
+  if (typeof m !== "string") throw new Error("Unknown bundled media");
   if (/^(https?:|asset:)/.test(m)) return m;
   let bytes: ArrayBuffer;
   let type: string;

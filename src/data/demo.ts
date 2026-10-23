@@ -72,8 +72,11 @@ const REGISTRY: Record<string, number> = {};
   REGISTRY[`${a}.proof`] = SETS[a].clip;
 });
 
-export function assetKey(m: number): string | null {
-  const hit = Object.entries(REGISTRY).find(([, v]) => v === m);
+// On web a bundled asset is an object, and it comes back as a copy after the store is reloaded: compare by value.
+const sameAsset = (a: unknown, b: unknown) => a === b || (typeof a === "object" && typeof b === "object" && JSON.stringify(a) === JSON.stringify(b));
+
+export function assetKey(m: unknown): string | null {
+  const hit = Object.entries(REGISTRY).find(([, v]) => sameAsset(v, m));
   return hit ? `asset:${hit[0]}` : null;
 }
 

@@ -125,7 +125,8 @@ export const useApp = create<State & Actions>()(
           place: { lat: comune.lat, lon: comune.lon, name: comune.name },
           ...(same ? {} : { challenge: null, pulse: null, localSquads: [] }),
         });
-        if (!hasBackend) return;
+        // During onboarding there's no session yet: registerProfile saves the Comune.
+        if (!hasBackend || !get().onboarded) return;
         saveComune(comune)
           .then(() => {
             const s = get();
@@ -267,15 +268,30 @@ export const useApp = create<State & Actions>()(
 
 // ---------- sync with the shared backend ----------
 
+// A post being uploaded must not be sent again by a sync running at the same time.
+const publishing = new Set<string>();
+// Server id → when this device finished publishing it, so a sync that started earlier doesn't drop it.
+const published = new Map<string, number>();
+
 async function publish(post: Post) {
-  const s = useApp.getState();
+  if (publishing.has(post.id)) return;
+  publishing.add(post.id);
   try {
-    const saved = await publishPost(s.userId, post);
+    await send(post);
+  } finally {
+    publishing.delete(post.id);
+  }
+}
+
+async function send(post: Post): Promise<void> {
+  try {
+    const saved = await publishPost(useApp.getState().userId, post);
+    published.set(saved.id, Date.now());
     // Keep the local files on screen: no flicker while the uploaded copies load.
     useApp.setState({ posts: patchPost(useApp.getState().posts, post.id, () => ({ ...saved, photo: post.photo, proof: post.proof })) });
   } catch (e) {
     // Already did today's challenge (e.g. from another phone): post it as a regular proof.
-    if ((e as { code?: string }).code === "23505" && post.challengeId) return publish({ ...post, challengeId: undefined, isDrop: false });
+    if ((e as { code?: string }).code === "23505" && post.challengeId) return send({ ...post, challengeId: undefined, isDrop: false });
     if (__DEV__) console.warn(e);
     toast("Saved on this phone. It’ll post when you’re back online.", "refresh");
   }
@@ -287,6 +303,7 @@ export function syncSocial(): Promise<void> {
   if (!hasBackend) return Promise.resolve();
   if (syncing) return syncing;
   syncing = (async () => {
+    const startedAt = Date.now();
     const s = useApp.getState();
     if (!s.onboarded || !s.comune) return;
     const uid = await ensureSession();
@@ -310,9 +327,11 @@ export function syncSocial(): Promise<void> {
     const known = { ...useApp.getState().profiles, ...feed.profiles };
     const missing = [...new Set([...mine, ...local].flatMap((q) => q.memberIds))].filter((id) => !known[id]);
     const members = await fetchProfiles(missing).catch(() => ({}));
-    const pending = useApp.getState().posts.filter((p) => p.pending);
+    // Keep what's still uploading, and your proofs that finished uploading after the feed was fetched.
+    const fetched = new Set(feed.posts.map((p) => p.id));
+    const keep = useApp.getState().posts.filter((p) => p.pending || ((published.get(p.id) ?? 0) >= startedAt && !fetched.has(p.id)));
     useApp.setState({
-      posts: [...pending, ...feed.posts],
+      posts: [...keep, ...feed.posts],
       profiles: { ...known, ...members },
       reacted: feed.myReactions,
       squads: mine,

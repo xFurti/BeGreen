@@ -38,6 +38,7 @@ export async function ensureChallenge(comune: Comune, pulse: Pulse): Promise<Dro
   const built = { ...buildDrop(pulse, id), offline: pulse.sample };
   if (!supabase) return built;
   try {
+    if (!(await supabase.auth.getSession()).data.session) return built;
     const existing = await load(id);
     if (existing) return existing;
     if (pulse.sample) return built;
