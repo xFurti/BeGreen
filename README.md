@@ -28,7 +28,7 @@ BeGreen is built for the brief **“2. La mia sostenibilità”**: it takes sust
 | **League** | This week's race between everyone posting in your Comune (podium, your gap to the next person, **nudges** for people who haven't posted), your squads with weekly quests and join-by-code, and the ranking of every squad in your Comune. A new squad's first quest follows today's Drop. |
 | **How to** | For people who don't know where to start: a searchable **“Where does it go?”** lookup (pizza box, Tetra Pak, receipts…), the six Italian waste streams, and three steps for every act. |
 | **Squad page** | Quest progress, invite code, and a **Community Report**: anonymised acts by type, estimated impact, which of the 7 areas are covered, today's local context. It can be shared with a school or Comune. |
-| **Me** | Streak, Seeds, verified count, **Agenda 2030** grid (which of the 17 UN goals your proofs moved, plus days left to 2030), estimated impact, a Memories calendar, badges, settings. |
+| **Me** | Streak, Seeds, verified count, **My Comune** (official per-comune indicators for the Province of Vicenza: PM10 from the nearest ARPAV station, CO₂ per resident, land sealed, separate collection, each compared with legal targets or the other 113 comuni; plus live citizen sensors and GBIF species, and one thing to ask your Comune), **Agenda 2030** grid (which of the 17 UN goals your proofs moved, plus days left to 2030), estimated impact, a Memories calendar, badges, settings. |
 
 ## How the brief is covered
 
@@ -48,9 +48,9 @@ BeGreen is built for the brief **“2. La mia sostenibilità”**: it takes sust
 | Interpreting images | Proof photo + video verified by peers today; the backend contract covers image interpretation (species ID, proof checks) |
 | Explanations adapted to the reader | Me / My class / Comune on Pulse, in Leaf and in the defaults set from your role |
 | Sources aren't equivalent | Five source kinds, colour-coded everywhere; each data card's text names its limits (e.g. “model, ~10 km grid, not an ARPA station”) |
-| Some access and terms still to verify | The `verified: false` flag in `src/data/sources.ts` shows a ⚠︎ in *How we know* (ARPA regional stations) |
+| Some access and terms still to verify | The `verified: false` flag in `src/data/sources.ts` shows a ⚠︎ in *How we know* (ISPRA Catasto Rifiuti reuse licence) |
 
-## Data sources (live, no API keys)
+## Data sources (no API keys)
 
 | Domain | Source | Kind |
 | --- | --- | --- |
@@ -58,8 +58,14 @@ BeGreen is built for the brief **“2. La mia sostenibilità”**: it takes sust
 | Weather, rain over the past 7 days and next 3, soil moisture | Open-Meteo | Model |
 | Species seen within 10 km in the last 30 days (research grade) | iNaturalist API | Citizen science |
 | Protected areas and nature reserves within 25 km | OpenStreetMap via Overpass | Open map |
+| Citizen PM2.5 sensors within 10 km (median of the latest readings) | Sensor.Community | Citizen science |
+| Species recorded within 5 km in the last 5 years | GBIF API | Citizen science |
 | Italian Comuni (search, coordinates) | Open-Meteo geocoding (GeoNames) | Open map |
+| PM10 annual mean and exceedance days per station (2025), emissions per comune (INEMAR 2019) | ARPAV open data (bundled CSV extract) | Official |
+| Land sealed per comune (2024) and separate collection per comune (2024) | ISPRA/SNPA, ISPRA Catasto Rifiuti (bundled extract) | Official |
 | Acts, quests, reports | BeGreen (aggregated, anonymised) | Community |
+
+Official per-comune data is a bundled extract for the Province of Vicenza, matched to the Comune you picked by name (or, failing that, by the nearest centroid); datasets, joins and thresholds are documented in `docs/dati-comune.md`.
 
 Each source loads separately, so one outage never empties the Pulse. If everything is offline, the app shows clearly labelled sample data, and a Drop built from sample data is never saved as the Comune's challenge.
 
