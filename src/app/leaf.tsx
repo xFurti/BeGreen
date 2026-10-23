@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { KeyboardAvoidingView, Pressable, ScrollView, Text, TextInput, View, type ScrollViewInstance } from "react-native";
+import { Pressable, ScrollView, Text, TextInput, View, type ScrollViewInstance } from "react-native";
 import Animated, { FadeIn, FadeInDown, FadeInUp } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -8,8 +8,10 @@ import { LeafMark } from "@/components/nature";
 import { Mono, Segmented, SourceBadge } from "@/components/ui";
 import type { SourceId } from "@/data/sources";
 import type { Explain } from "@/data/types";
+import { useKeyboardCover } from "@/hooks/use-keyboard-cover";
 import { usePulse } from "@/hooks/use-pulse";
 import { useI18n } from "@/i18n/use-i18n";
+import { composerInset } from "@/services/keyboard-inset";
 import { answerLocally, askLeaf, SUGGESTED_KEYS } from "@/services/leaf";
 import { useApp } from "@/store/app-store";
 import { C, F, R, T } from "@/theme/tokens";
@@ -19,6 +21,7 @@ type Turn = { id: number; question: string; pending: boolean; ai: { text: string
 
 export default function Leaf() {
   const { bottom } = useSafeAreaInsets();
+  const { ref: keyboardRoot, cover } = useKeyboardCover();
   const { pulse, insights } = usePulse();
   const explain = useApp((s) => s.explain);
   const setExplain = useApp((s) => s.setExplain);
@@ -57,7 +60,7 @@ export default function Leaf() {
   ];
 
   return (
-    <KeyboardAvoidingView behavior={process.env.EXPO_OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
+    <View ref={keyboardRoot} collapsable={false} style={{ flex: 1 }}>
       {/* In a form sheet iOS adopts the first ScrollView as the sheet's own scroller, so the header lives inside it. */}
       <ScrollView
         ref={scroller}
@@ -142,7 +145,7 @@ export default function Leaf() {
       </ScrollView>
 
       <View
-        style={{ flexDirection: "row", gap: 10, paddingHorizontal: 16, paddingTop: 8, paddingBottom: bottom + 10, backgroundColor: C.bg }}
+        style={{ flexDirection: "row", gap: 10, paddingHorizontal: 16, paddingTop: 8, paddingBottom: composerInset(bottom, cover), backgroundColor: C.bg }}
       >
         <TextInput
           value={q}
@@ -168,6 +171,6 @@ export default function Leaf() {
           <Icon name="send" size={17} color={q.trim() ? C.lime : C.faint} />
         </Pressable>
       </View>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
