@@ -420,7 +420,8 @@ export function syncCommunity(extra?: string): Promise<void> {
     const [catalog, roles, blocked] = await Promise.all([api.fetchCommunities(), api.fetchMemberships(uid), api.fetchBlocks()]);
     const state = useCommunity.getState();
     const merged = [...catalog, ...state.catalog.filter((c) => !catalog.some((x) => x.id === c.id) && (roles[c.id] || previews.has(c.id)))];
-    const ids = [...new Set([state.primary, ...Object.keys(roles), extra].filter((x): x is string => !!x && merged.some((c) => c.id === x)))].slice(0, 8);
+    // The page you opened comes first, so the limit below never drops it.
+    const ids = [...new Set([extra, state.primary, ...Object.keys(roles)].filter((x): x is string => !!x && merged.some((c) => c.id === x)))].slice(0, 8);
     const results = await Promise.all(ids.map((id) => api.fetchCommunity(uid, merged.find((c) => c.id === id)!).then((d) => [id, d] as const)));
     const invites = Object.fromEntries(
       await Promise.all(
