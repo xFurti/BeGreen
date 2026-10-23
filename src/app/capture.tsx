@@ -42,7 +42,7 @@ import { canStopProof, displaySeconds, noteProgress, outcomeFromRecording, PROOF
 import { canClaimDrop, seedsFor } from "@/services/rewards";
 import { hasBackend } from "@/services/supabase";
 import { leagueOf, mineOf, postedToday, sdgsOf, streakOf, useApp, useAuthor } from "@/store/app-store";
-import { useCommunity } from "@/store/community-store";
+import { linkableSpotId, useCommunity } from "@/store/community-store";
 import { F, R } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
@@ -447,7 +447,7 @@ export default function Capture() {
         location: shareSpot && comune ? {lat: comune.lat, lon: comune.lon} : undefined,
         challengeId: isDrop ? drop.id : undefined,
         squadId: toSquad,
-        spotId: spotId && !spotId.startsWith("example-") ? spotId : undefined,
+        spotId: linkableSpotId(spotId),
       });
       const now = useApp.getState();
       const after = mineOf(now.posts, now.userId);

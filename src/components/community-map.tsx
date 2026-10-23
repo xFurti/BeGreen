@@ -223,10 +223,14 @@ export function CommunityMap({ community, spots, selectedId, onSelect, interacti
     ref,
     () => ({
       // `z` is how far in, relative to the opening view (2.4 ≈ a neighbourhood).
-      focus: (p, z) => place(proj.toXY(p.lat, p.lon), Math.min(maxS, Math.max(s.get(), startK * (z ?? 2.4))), true),
+      focus: (p, z) => {
+        place(proj.toXY(p.lat, p.lon), Math.min(maxS, Math.max(s.get(), startK * (z ?? 2.4))), true);
+        // A picker follows programmatic moves too, so "confirm" takes the point now under the crosshair.
+        setTimeout(reportCenter, 400);
+      },
       zoomBy: zoomAround,
     }),
-    [place, proj, s, maxS, startK, zoomAround],
+    [place, proj, s, maxS, startK, zoomAround, reportCenter],
   );
 
   const bw = box?.w ?? 0;

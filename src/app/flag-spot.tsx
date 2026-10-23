@@ -27,7 +27,7 @@ export default function FlagSpot() {
   const author = useAuthor();
   const flag = useCommunity((s) => s.flag);
   const block = useCommunity((s) => s.block);
-  const mine = useCommunity((s) => s.myFlags[id]) ?? NO_FLAGS;
+  const mine = useCommunity((s) => s.myFlags[spot?.id ?? id]) ?? NO_FLAGS;
   const [reason, setReason] = useState<Exclude<FlagReason, "resolved"> | null>(null);
   const [note, setNote] = useState("");
   if (!spot) return null;

@@ -52,6 +52,8 @@ type State = {
   invites: Record<string, string>;
   filters: MapFilters;
   syncedAt: Record<string, number>;
+  // A place published from this phone: its local id, which screens and proofs may still hold, to the server's.
+  aliases: Record<string, string>;
 };
 
 export type NewSpot = Omit<Spot, "id" | "authorId" | "createdAt" | "updatedAt" | "saves" | "going" | "reactions" | "comments" | "status"> & {
@@ -99,6 +101,7 @@ const initial: State = {
   invites: {},
   filters: NO_FILTERS,
   syncedAt: {},
+  aliases: {},
 };
 
 const localId = () => `local-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
@@ -364,12 +367,16 @@ export async function joinCity(c: Community): Promise<boolean> {
   return useCommunity.getState().join(c.id);
 }
 
+// Cities opened from search this session: kept in the catalog through syncs until someone creates them.
+const previews = new Set<string>();
+
 // A city you found in search but nobody has started yet: shown so you can look before joining.
 export function previewCity(c: Comune): Community {
   const own = comuneCommunity(c);
   const s = useCommunity.getState();
   const known = s.catalog.find((x) => x.id === own.id);
   if (known) return known;
+  previews.add(own.id);
   useCommunity.setState({ catalog: [...s.catalog, own] });
   return own;
 }
@@ -388,6 +395,7 @@ async function publishSpot(spot: Spot, challengeId?: string) {
       // Keep the local photo on screen: no flicker while the uploaded copy loads.
       spots: s.spots.map((x) => (x.id === spot.id ? { ...saved, photo: spot.photo ?? saved.photo } : x)),
       saved: s.saved[spot.id] ? { ...s.saved, [saved.id]: s.saved[spot.id] } : s.saved,
+      aliases: { ...s.aliases, [spot.id]: saved.id },
     });
     if (challengeId) useCommunity.getState().contribute(challengeId, { spotId: saved.id });
   } catch (e) {
@@ -411,7 +419,7 @@ export function syncCommunity(extra?: string): Promise<void> {
 
     const [catalog, roles, blocked] = await Promise.all([api.fetchCommunities(), api.fetchMemberships(uid), api.fetchBlocks()]);
     const state = useCommunity.getState();
-    const merged = [...catalog, ...state.catalog.filter((c) => !catalog.some((x) => x.id === c.id) && roles[c.id])];
+    const merged = [...catalog, ...state.catalog.filter((c) => !catalog.some((x) => x.id === c.id) && (roles[c.id] || previews.has(c.id)))];
     const ids = [...new Set([state.primary, ...Object.keys(roles), extra].filter((x): x is string => !!x && merged.some((c) => c.id === x)))].slice(0, 8);
     const results = await Promise.all(ids.map((id) => api.fetchCommunity(uid, merged.find((c) => c.id === id)!).then((d) => [id, d] as const)));
     const invites = Object.fromEntries(
@@ -555,8 +563,15 @@ export function useCommunitySpots(c?: Community): { spots: Spot[]; real: number 
   }, [all, blocked, c, meId]);
 }
 
+// The place a proof can point to: the server's id once published; nothing for examples or places still uploading.
+export function linkableSpotId(id?: string): string | undefined {
+  if (!id || id.startsWith("example-")) return undefined;
+  const real = useCommunity.getState().aliases[id] ?? id;
+  return hasBackend && isLocal(real) ? undefined : real;
+}
+
 export function useSpot(id?: string): Spot | undefined {
-  const spot = useCommunity((s) => s.spots.find((x) => x.id === id));
+  const spot = useCommunity((s) => s.spots.find((x) => x.id === (id && s.aliases[id]) || x.id === id));
   const catalog = useCommunity((s) => s.catalog);
   return useMemo(() => {
     if (spot || !id?.startsWith("example-")) return spot;

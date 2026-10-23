@@ -30,10 +30,11 @@ export default function SpotDetail() {
   const posts = useApp((s) => s.posts);
   const community = useCommunityById(spot?.communityId);
   const role = useCommunity((s) => (spot ? s.roles[spot.communityId] : undefined));
-  const going = useCommunity((s) => !!s.going[id]);
-  const myFlags = useCommunity((s) => s.myFlags[id]) ?? NO_FLAGS;
+  const sid = spot?.id ?? id;
+  const going = useCommunity((s) => !!s.going[sid]);
+  const myFlags = useCommunity((s) => s.myFlags[sid]) ?? NO_FLAGS;
   const blocked = useCommunity((s) => s.blocked);
-  const reacted = useCommunity((s) => s.reacted[id]);
+  const reacted = useCommunity((s) => s.reacted[sid]);
   const { toggleGoing, comment, react, editSpot, removeSpot, verify, hide, flag } = useCommunity.getState();
   const [text, setText] = useState("");
 
