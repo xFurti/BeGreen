@@ -3,6 +3,7 @@ import { memo, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import Animated, { FadeIn, FadeInDown, ZoomIn } from "react-native-reanimated";
 
+import { DropTag } from "@/components/drop-tag";
 import { Icon } from "@/components/icon";
 import { LeafBurst } from "@/components/nature";
 import { ProofMedia } from "@/components/proof-media";
@@ -218,7 +219,7 @@ export const PostCard = memo(function PostCard({
           </Mono>
         </View>
         {post.isDemo && <Tag label={t("common.demo")} />}
-        {post.isDrop && <Tag label={t("common.drop")} solid />}
+        {post.isDrop && <DropTag post={post} />}
       </View>
 
       <ProofMedia
