@@ -57,7 +57,7 @@ export default function Welcome() {
             <Mono color={C.leaf}>{t("welcome.kicker")}</Mono>
             <Text style={[T.hero, { fontSize: 42, lineHeight: 44 }]}>{t("welcome.greeting", { handle: profile.handle || t("common.youInline") })}</Text>
             <Text style={{ fontFamily: F.regular, fontSize: 16, lineHeight: 23, color: C.ink2 }}>
-              {seed !== null && comune ? t("welcome.seed", { count: seed, place: comune.name }) : t("welcome.localGreeting", { place: comune?.name ?? t("common.yourArea") })}
+              {seed !== null && seed >= 1 && comune ? t("welcome.seed", { count: seed, place: comune.name }) : t("welcome.localGreeting", { place: comune?.name ?? t("common.yourArea") })}
             </Text>
           </View>
 
