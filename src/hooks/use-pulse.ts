@@ -1,10 +1,11 @@
-import * as Location from "expo-location";
 import { useEffect, useMemo } from "react";
 import { create } from "zustand";
 
-import { buildDrop } from "@/services/drop";
-import { fetchAreas, fetchPulse, SAMPLE_PULSE, type Place } from "@/services/env";
+import { ensureChallenge } from "@/services/challenge";
+import { buildDrop, challengeId } from "@/services/drop";
+import { fetchAreas, fetchPulse, SAMPLE_PULSE, type Pulse } from "@/services/env";
 import { buildInsights } from "@/services/interpret";
+import { hasBackend } from "@/services/supabase";
 import { useApp } from "@/store/app-store";
 
 const FRESH_MS = 20 * 60 * 1000;
@@ -12,21 +13,15 @@ let inflight: Promise<void> | null = null;
 
 const useLoading = create<{ loading: boolean }>(() => ({ loading: false }));
 
-export function refreshPulse(relocate = false): Promise<void> {
+// Live data for the Comune you picked (its coordinates, not your GPS).
+export function refreshPulse(): Promise<void> {
   if (inflight) return inflight;
   useLoading.setState({ loading: true });
   inflight = (async () => {
-    const { setPlace, setPulse } = useApp.getState();
-    let p = useApp.getState().place;
-    if (relocate) {
-      const here = await locate();
-      if (here) {
-        p = here;
-        setPlace(here);
-      }
-    }
-    setPulse(await fetchPulse(p, useApp.getState().pulse));
-    const place = p;
+    const place = useApp.getState().place;
+    const pulse = await fetchPulse(place, useApp.getState().pulse);
+    useApp.getState().setPulse(pulse);
+    await syncChallenge(pulse);
     fetchAreas(place)
       .then((areas) => ({ areas, areasStatus: undefined }))
       .catch(() => ({ areas: undefined, areasStatus: "error" as const }))
@@ -43,47 +38,49 @@ export function refreshPulse(relocate = false): Promise<void> {
   return inflight;
 }
 
-export async function locate(): Promise<Place | null> {
-  try {
-    const perm = await Location.getForegroundPermissionsAsync();
-    if (!perm.granted) return null;
-    const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-    // Coarsen to ~1 km: enough for local data, kinder to privacy.
-    const lat = Math.round(pos.coords.latitude * 100) / 100;
-    const lon = Math.round(pos.coords.longitude * 100) / 100;
-    let name = "Your area";
-    if (process.env.EXPO_OS !== "web") {
-      const [g] = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lon });
-      name = g?.city ?? g?.subregion ?? g?.region ?? name;
-    }
-    return { lat, lon, name };
-  } catch {
-    return null;
-  }
+// Once today's challenge is settled it doesn't change, even when slower data arrives later.
+async function syncChallenge(pulse: Pulse) {
+  const { comune, challenge } = useApp.getState();
+  if (!comune) return;
+  const id = challengeId(comune.id);
+  if (challenge?.id === id && !challenge.offline && (challenge.shared || !hasBackend)) return;
+  const next = await ensureChallenge(comune, pulse);
+  if (useApp.getState().comune?.id === comune.id) useApp.getState().setChallenge(next);
 }
 
 export function usePulse() {
   const pulse = useApp((s) => s.pulse);
   const place = useApp((s) => s.place);
+  const comune = useApp((s) => s.comune);
+  const challenge = useApp((s) => s.challenge);
   const explain = useApp((s) => s.explain);
-  const squads = useApp((s) => s.squads);
+  const posts = useApp((s) => s.posts);
   const loading = useLoading((s) => s.loading);
+  const expected = challengeId(comune?.id ?? place.name);
 
   useEffect(() => {
-    const stale = !pulse || Date.now() - pulse.fetchedAt > FRESH_MS || pulse.place.lat !== place.lat || pulse.place.lon !== place.lon;
-    if (stale) refreshPulse(!pulse);
-  }, [pulse, place]);
+    const stale =
+      !pulse ||
+      Date.now() - pulse.fetchedAt > FRESH_MS ||
+      pulse.place.lat !== place.lat ||
+      pulse.place.lon !== place.lon ||
+      (!!comune && challenge?.id !== expected);
+    if (stale) refreshPulse();
+  }, [pulse, place, comune, challenge, expected]);
 
   const data = useMemo(() => pulse ?? { ...SAMPLE_PULSE, place }, [pulse, place]);
 
   const derived = useMemo(() => {
-    const comune = squads.find((s) => s.kind === "comune");
-    const insights = buildInsights(data, {
-      carFree: comune?.monthly.move ?? 0,
-      areaName: comune?.name.split("·").pop()?.trim() ?? data.place.name,
-    });
-    return { insights, drop: buildDrop(data) };
-  }, [data, squads]);
+    const month = new Date().toISOString().slice(0, 7);
+    const carFree = posts.filter(
+      (p) => !p.isDemo && p.action === "move" && p.comuneId === comune?.id && new Date(p.createdAt).toISOString().startsWith(month),
+    ).length;
+    const insights = buildInsights(data, { carFree, areaName: comune?.name ?? data.place.name });
+    const drop = challenge?.id === expected ? challenge : { ...buildDrop(data, expected), offline: true };
+    return { insights, drop };
+  }, [data, posts, comune, challenge, expected]);
 
-  return { pulse: data, ready: !!pulse, loading: loading || !pulse, refresh: refreshPulse, explain, ...derived };
+  // Not ready while today's shared challenge is still on its way, so its title doesn't flip.
+  const settled = challenge?.id === expected || !loading;
+  return { pulse: data, ready: !!pulse && settled, loading: loading || !pulse, refresh: refreshPulse, explain, ...derived };
 }

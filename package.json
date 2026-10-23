@@ -7,6 +7,7 @@
     "@expo-google-fonts/geist-mono": "^0.4.3",
     "@expo/metro-runtime": "~58.0.15",
     "@expo/vector-icons": "^15.0.2",
+    "@supabase/supabase-js": "^2.118.0",
     "expo": "~58.0.17",
     "expo-blur": "~58.0.5",
     "expo-camera": "~58.0.12",
@@ -38,6 +39,7 @@
     "zustand": "^5.0.16"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.11",
     "@types/react": "~19.3.0",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~58.0.4",
@@ -50,7 +52,7 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "lint": "expo lint",
-    "test": "node --test .github/scripts/*.test.cjs",
+    "test": "node --test .github/scripts/*.test.cjs supabase/tests/*.test.mjs",
     "verify": "npm run typecheck && npm run lint && npm test"
   },
   "private": true

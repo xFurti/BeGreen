@@ -226,7 +226,7 @@ export default function PulseScreen() {
             tintColor={C.ink}
             onRefresh={async () => {
               setRefreshing(true);
-              await refresh(true);
+              await refresh();
               setRefreshing(false);
             }}
           />
@@ -235,13 +235,18 @@ export default function PulseScreen() {
         <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" }}>
           <View style={{ gap: 6 }}>
             <Text style={T.display}>Pulse</Text>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <Press
+              scale={0.98}
+              onPress={() => router.push("/comune")}
+              accessibilityLabel={`Comune: ${pulse.place.name}. Change`}
+              style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
+            >
               <Icon name="location" size={11} color={C.mute} />
               <Mono>
                 {pulse.place.name} · {loading ? "updating" : `${timeAgo(pulse.fetchedAt)} ago`}
               </Mono>
               {loading && <ActivityIndicator size="small" color={C.mute} />}
-            </View>
+            </Press>
           </View>
           <View style={{ flexDirection: "row", gap: 8 }}>
             <IconButton icon="info" label="How we know" onPress={() => router.push("/sources")} />
