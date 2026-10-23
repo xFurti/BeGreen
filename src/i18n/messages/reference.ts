@@ -93,8 +93,8 @@ export const referenceMessages = defineMessages(
       o3: "ozone, made by sunlight + pollution",
     },
     sampleSpecies: {
-      squirrel: "Eastern Gray Squirrel",
-      pigeon: "Common Wood Pigeon",
+      daisy: "Common Daisy",
+      dandelion: "Common Dandelion",
       ivy: "Common Ivy",
     },
     sourceKinds: {
@@ -146,7 +146,7 @@ export const referenceMessages = defineMessages(
         terms: "CC BY 4.0 · non-commercial free tier",
       },
       inat: {
-        name: "Species observations",
+        name: "Plant observations",
         provider: "iNaturalist (research-grade only)",
         terms: "Per-photo Creative Commons licences · attribution shown",
       },
@@ -181,7 +181,7 @@ export const referenceMessages = defineMessages(
         terms: "ODbL · identifiable user agent required · not official stations",
       },
       gbif: {
-        name: "Species records",
+        name: "Plant records",
         provider: "GBIF (museums, surveys and citizen science)",
         terms: "Licence per dataset (CC0 / CC BY / CC BY-NC) · cite GBIF.org",
       },
@@ -279,8 +279,8 @@ export const referenceMessages = defineMessages(
       o3: "ozono, formato da sole e inquinamento",
     },
     sampleSpecies: {
-      squirrel: "Scoiattolo grigio",
-      pigeon: "Colombaccio",
+      daisy: "Pratolina",
+      dandelion: "Tarassaco comune",
       ivy: "Edera comune",
     },
     sourceKinds: {
@@ -332,7 +332,7 @@ export const referenceMessages = defineMessages(
         terms: "CC BY 4.0 · piano gratuito non commerciale",
       },
       inat: {
-        name: "Osservazioni di specie",
+        name: "Osservazioni di piante",
         provider: "iNaturalist (solo grado ricerca)",
         terms: "Licenze Creative Commons per foto · attribuzione visibile",
       },
@@ -367,7 +367,7 @@ export const referenceMessages = defineMessages(
         terms: "ODbL · serve uno user agent identificabile · non sono stazioni ufficiali",
       },
       gbif: {
-        name: "Segnalazioni di specie",
+        name: "Segnalazioni di piante",
         provider: "GBIF (musei, monitoraggi e citizen science)",
         terms: "Licenza per dataset (CC0 / CC BY / CC BY-NC) · citare GBIF.org",
       },

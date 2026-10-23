@@ -12,6 +12,8 @@ import { formatNumber } from "@/i18n/format";
 import type { Language } from "@/i18n/schema";
 import { useI18n } from "@/i18n/use-i18n";
 import type { Drop } from "@/services/drop";
+import { canClaimDrop, seedsFor } from "@/services/rewards";
+import { hasBackend } from "@/services/supabase";
 import { useApp } from "@/store/app-store";
 import { F } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
@@ -24,7 +26,7 @@ const READINGS: { key: string; label: MessageKey; unit?: string; pct?: boolean; 
   { key: "rain7", label: "dropSheet.readings.rain7", unit: "mm" },
   { key: "dryDays", label: "dropSheet.readings.dryDays" },
   { key: "soilMoisture", label: "dropSheet.readings.soil", pct: true },
-  { key: "species", label: "dropSheet.readings.species", unitKey: "dropSheet.readings.speciesUnit" },
+  { key: "plantSpecies", label: "dropSheet.readings.species", unitKey: "dropSheet.readings.speciesUnit" },
   { key: "area", label: "dropSheet.readings.area" },
 ];
 
@@ -45,6 +47,7 @@ export default function DropSheet() {
   const place = comune?.name ?? pulse.place.name;
   const a = actionCopy(t, drop.action);
   const left = useCountdown();
+  const bonus = useApp((s) => canClaimDrop(drop, s.posts, s.userId, hasBackend));
   const rows = readings(drop.data, t, language);
 
   const go = (path: "/capture" | "/guide") => {
@@ -55,14 +58,18 @@ export default function DropSheet() {
   return (
     <ScrollView contentContainerStyle={{ padding: 22, paddingTop: 30, gap: 30 }}>
       <View style={{ gap: 14 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <LiveDot color={C.leaf} />
-          <Mono color={C.forestInk}>{t("dropSheet.title")}</Mono>
-          <Mono>· {place}</Mono>
-          <View style={{ flex: 1 }} />
-          <Mono color={C.forestInk} style={{ fontVariant: ["tabular-nums"] }}>
-            {left}
-          </Mono>
+        <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}>
+          <View style={{ flex: 1, gap: 4 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <LiveDot color={C.leaf} />
+              <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 14, color: C.forest }}>{t("dropSheet.title")}</Text>
+            </View>
+            <Mono>{place}</Mono>
+          </View>
+          <View style={{ alignItems: "flex-end", gap: 4 }}>
+            <Mono color={C.forestInk} style={{ fontVariant: ["tabular-nums"] }}>{left}</Mono>
+            <Text style={{ fontFamily: F.regular, fontSize: 12, color: C.mute }}>{t("dropCard.leftToday")}</Text>
+          </View>
         </View>
         <Text style={[T.hero, { fontSize: 40, lineHeight: 42 }]}>{drop.title}</Text>
         <SdgTags goals={a.sdgs} />
@@ -119,7 +126,7 @@ export default function DropSheet() {
       </Text>
 
       <View style={{ gap: 8 }}>
-        <Button label={t("dropSheet.doIt", { act: a.label })} kind="green" trailing={`+${a.seeds + 10}`} icon={a.icon} onPress={() => go("/capture")} />
+        <Button label={t("dropSheet.doIt", { act: a.label })} kind="green" trailing={`+${seedsFor({ action: drop.action, isDrop: bonus })}`} icon={a.icon} onPress={() => go("/capture")} />
         <Button label={t("dropSheet.show")} kind="ghost" icon="book" onPress={() => go("/guide")} />
       </View>
     </ScrollView>

@@ -3,9 +3,11 @@ import { memo, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import Animated, { FadeIn, FadeInDown, ZoomIn } from "react-native-reanimated";
 
+import { DropTag } from "@/components/drop-tag";
 import { Icon } from "@/components/icon";
 import { LeafBurst } from "@/components/nature";
 import { ProofMedia } from "@/components/proof-media";
+import { TitledName } from "@/components/titled-name";
 import { Avatar, Mono, Press, SdgTags, Tag } from "@/components/ui";
 import type { Post } from "@/data/types";
 import { actionCopy, placeLabel, textOf } from "@/i18n/content";
@@ -205,6 +207,7 @@ export const PostCard = memo(function PostCard({
   const { C } = useTheme();
   const react = useApp((s) => s.react);
   const mine = useApp((s) => s.reacted[post.id]);
+  const flagged = useApp((s) => !!s.flagged[post.id]);
   const { t, language } = useI18n();
   const a = useAuthor()(post.authorId);
   const action = actionCopy(t, post.action);
@@ -216,13 +219,14 @@ export const PostCard = memo(function PostCard({
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
         <Avatar src={a.avatar} name={a.name} size={34} />
         <View style={{ flex: 1, gap: 2 }}>
-          <Text style={{ fontFamily: F.semibold, fontSize: 15, letterSpacing: -0.2, color: C.ink }}>{a.name}</Text>
+          <TitledName name={a.name} badgeId={a.badgeId} style={{ fontFamily: F.semibold, fontSize: 15, letterSpacing: -0.2, color: C.ink }} />
           <Mono>
             {placeLabel(post.place, t)} · {timeAgo(post.createdAt, language)}
           </Mono>
         </View>
         {post.isDemo && <Tag label={t("common.demo")} />}
-        {post.isDrop && <Tag label={t("common.drop")} solid />}
+        {post.isDrop && <DropTag post={post} />}
+        {flagged && <Tag label={t("post.flaggedTag")} />}
       </View>
 
       <ProofMedia

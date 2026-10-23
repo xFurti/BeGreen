@@ -16,6 +16,8 @@ import { formatNumber, timeAgo } from "@/i18n/format";
 import { useI18n } from "@/i18n/use-i18n";
 import type { Pulse } from "@/services/env";
 import { aqiBand, type Insight, type Level } from "@/services/interpret";
+import { canClaimDrop, seedsFor } from "@/services/rewards";
+import { hasBackend } from "@/services/supabase";
 import { useApp } from "@/store/app-store";
 import { F, R, type Palette } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
@@ -98,7 +100,7 @@ function Extra({ k, pulse }: { k: Insight["key"]; pulse: Pulse }) {
         {pulse.nature.top.slice(0, 10).map((s) => (
           <View key={s.id} style={{ width: 120, gap: 6 }}>
             <View style={{ width: 120, height: 150, borderRadius: 16, overflow: "hidden", backgroundColor: C.card }}>
-              {s.photo ? <Image source={s.photo} style={{ flex: 1 }} contentFit="cover" transition={200} /> : null}
+              {s.photo ? <Image source={s.photo} style={{ flex: 1 }} contentFit="cover" transition={200} priority="low" /> : null}
               <View style={{ position: "absolute", top: 8, left: 8, backgroundColor: C.scrim, paddingHorizontal: 6, height: 18, borderRadius: 9, justifyContent: "center" }}>
                 <Mono color={C.white} size={10}>
                   ×{s.count}
@@ -227,6 +229,7 @@ export default function PulseScreen() {
   const lever = bad[0];
   const air = pulse.air ? aqiBand(pulse.air.aqi, language) : null;
   const da = actionCopy(t, drop.action);
+  const bonus = useApp((s) => canClaimDrop(drop, s.posts, s.userId, hasBackend));
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
@@ -320,7 +323,7 @@ export default function PulseScreen() {
                 kind="inverse"
                 icon={da.icon}
                 label={t("pulse.doDrop")}
-                trailing={`+${da.seeds + 10}`}
+                trailing={`+${seedsFor({ action: drop.action, isDrop: bonus })}`}
                 onPress={() => router.push({ pathname: "/capture", params: { action: drop.action } })}
               />
             </Animated.View>

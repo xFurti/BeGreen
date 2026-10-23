@@ -4,7 +4,7 @@ import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, Share, Text, TextInput, View } from "react-native";
 import Animated, {
   Easing,
@@ -37,6 +37,8 @@ import { useI18n } from "@/i18n/use-i18n";
 import { HIDDEN_PLACE } from "@/i18n/persist";
 import { usePulse } from "@/hooks/use-pulse";
 import { persistMedia } from "@/services/media";
+import { canStopProof, displaySeconds, noteProgress, outcomeFromRecording, PROOF_SECONDS } from "@/services/proof-recording.mjs";
+import { canClaimDrop, seedsFor } from "@/services/rewards";
 import { hasBackend } from "@/services/supabase";
 import { leagueOf, mineOf, postedToday, sdgsOf, streakOf, useApp, useAuthor } from "@/store/app-store";
 import { F, R } from "@/theme/tokens";
@@ -44,8 +46,6 @@ import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
 
 type Step = "snap" | "proof" | "review" | "done";
-const PROOF_SECONDS = 5;
-const MIN_PROOF = 2;
 // The camera runs at 4:3; held upright that's 3 wide by 4 tall.
 const CAMERA_RATIO = 3 / 4;
 
@@ -274,7 +274,10 @@ export default function Capture() {
   const [secs, setSecs] = useState(0);
   const [ready, setReady] = useState(false);
   const [frame, setFrame] = useState<Size | null>(null);
-  const recStart = useRef(0);
+  const [proofFailed, setProofFailed] = useState(false);
+  const alive = useRef(true);
+  const recordingRef = useRef(false);
+  const nativeSeconds = useRef<number | null>(null);
   const progress = useSharedValue(0);
   const shutter = useSharedValue(1);
 
@@ -294,18 +297,20 @@ export default function Capture() {
   const { t } = useI18n();
   const place = comune?.name ?? pulse.place.name;
   // Only a challenge the backend knows about can be claimed (or any, when running on-device only).
-  const dropDone = useApp((s) => s.posts.some((p) => p.authorId === s.userId && p.challengeId === drop.id));
-  const dropOpen = !drop.offline && (drop.shared || !hasBackend) && !dropDone;
+  const dropOpen = useApp((s) => canClaimDrop(drop, s.posts, s.userId, hasBackend));
+  const [posting, setPosting] = useState(false);
+  const submitting = useRef(false);
 
   useEffect(() => {
     if (realCamera && perm && !perm.granted && perm.canAskAgain) requestPerm();
   }, [perm, realCamera, requestPerm]);
 
   useEffect(() => {
-    if (!recording) return;
-    const id = setInterval(() => setSecs(Math.min(PROOF_SECONDS, Math.floor((Date.now() - recStart.current) / 1000))), 200);
-    return () => clearInterval(id);
-  }, [recording]);
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
 
   const shutterStyle = useAnimatedStyle(() => ({ transform: [{ scale: shutter.value }] }));
   const bump = () => {
@@ -325,29 +330,61 @@ export default function Capture() {
   };
 
   const startProof = async () => {
-    if (!cam.current) return;
+    const camera = cam.current;
+    if (!camera || recordingRef.current) return;
     haptic.thud();
+    recordingRef.current = true;
+    nativeSeconds.current = null;
+    setProofFailed(false);
     setSecs(0);
     setRecording(true);
-    recStart.current = Date.now();
     progress.set(0);
-    progress.set(withTiming(1, { duration: PROOF_SECONDS * 1000, easing: Easing.linear }));
+    let outcome = outcomeFromRecording(undefined);
     try {
-      const v = await cam.current.recordAsync({ maxDuration: PROOF_SECONDS });
-      if (v?.uri) {
-        setProof(v.uri);
-        haptic.success();
-        setStep("review");
-      }
+      outcome = outcomeFromRecording(
+        await camera.recordAsync({ maxDuration: PROOF_SECONDS, progressUpdateInterval: 0.2, codec: "avc1" }),
+      );
+    } catch (error) {
+      outcome = outcomeFromRecording(undefined, error);
     } finally {
-      setRecording(false);
-      progress.set(0);
+      recordingRef.current = false;
+      if (alive.current) {
+        setRecording(false);
+        progress.set(0);
+      }
     }
+    if (!alive.current) return;
+    if (outcome.kind === "saved") {
+      setProof(outcome.uri);
+      setProofFailed(false);
+      haptic.success();
+      setStep("review");
+      return;
+    }
+    setProofFailed(true);
   };
 
   const stopProof = () => {
-    if (Date.now() - recStart.current < MIN_PROOF * 1000) return;
+    if (!canStopProof({ nativeSeconds: nativeSeconds.current })) return;
     cam.current?.stopRecording();
+  };
+
+  const onRecordingProgress = useCallback(
+    (event: { duration: number; fileSize: number }) => {
+      if (!recordingRef.current) return;
+      const next = noteProgress({ nativeSeconds: nativeSeconds.current }, event);
+      nativeSeconds.current = next.nativeSeconds;
+      if (!alive.current || next.nativeSeconds == null) return;
+      setSecs(displaySeconds(next));
+      progress.set(withTiming(Math.min(1, next.nativeSeconds / PROOF_SECONDS), { duration: 200, easing: Easing.linear }));
+    },
+    [progress],
+  );
+
+  const closeCamera = () => {
+    alive.current = false;
+    if (recordingRef.current) cam.current?.stopRecording();
+    router.back();
   };
 
   const pick = async (kind: "images" | "videos") => {
@@ -376,44 +413,50 @@ export default function Capture() {
     }
   };
 
-  const post = () => {
-    if (!photo || !proof) return;
-    const s = useApp.getState();
-    const before = mineOf(s.posts, s.userId);
-    const name = (id: string) => author(id).name;
-    const wasUnlocked = postedToday(before);
-    const goalsBefore = sdgsOf(before);
-    const leagueBefore = leagueOf(s.posts, s.userId, s.comune?.id, name);
-    const isDrop = action === drop.action && dropOpen;
-    const toSquad = audience === "squad" && squadId ? squadId : undefined;
-    addPost({
-      action,
-      photo: typeof photo === "string" ? persistMedia(photo) : photo,
-      proof: typeof proof === "string" ? persistMedia(proof) : proof,
-      caption: caption.trim(),
-      audience: audience === "squad" && !toSquad ? "comune" : audience,
-      place: shareSpot ? place : HIDDEN_PLACE,
-      challengeId: isDrop ? drop.id : undefined,
-      squadId: toSquad,
-    });
-    const now = useApp.getState();
-    const after = mineOf(now.posts, now.userId);
-    const leagueAfter = leagueOf(now.posts, now.userId, now.comune?.id, name);
-    const rankBefore = leagueBefore.findIndex((r) => r.me) + 1;
-    const rankAfter = leagueAfter.findIndex((r) => r.me) + 1;
-    setResult({
-      seeds: ACTIONS[action].seeds + (isDrop ? 10 : 0),
-      streak: streakOf(after),
-      unlocked: !wasUnlocked,
-      isDrop,
-      action,
-      rankBefore,
-      rankAfter,
-      passed: leagueAfter.slice(rankAfter, rankBefore).map((r) => r.name),
-      next: rankAfter > 1 ? { name: leagueAfter[rankAfter - 2].name, gap: leagueAfter[rankAfter - 2].points - leagueAfter[rankAfter - 1].points } : undefined,
-      newGoals: ACTIONS[action].sdgs.filter((g) => !goalsBefore.has(g)),
-    });
-    setStep("done");
+  const post = async () => {
+    if (!photo || !proof || submitting.current) return;
+    submitting.current = true;
+    setPosting(true);
+    try {
+      const s = useApp.getState();
+      const before = mineOf(s.posts, s.userId);
+      const wasUnlocked = postedToday(before);
+      const goalsBefore = sdgsOf(before);
+      const leagueBefore = leagueOf(s.posts, s.userId, s.comune?.id, author);
+      const isDrop = action === drop.action && canClaimDrop(drop, s.posts, s.userId, hasBackend);
+      const toSquad = audience === "squad" && squadId ? squadId : undefined;
+      const posted = await addPost({
+        action,
+        photo: typeof photo === "string" ? persistMedia(photo) : photo,
+        proof: typeof proof === "string" ? persistMedia(proof) : proof,
+        caption: caption.trim(),
+        audience: audience === "squad" && !toSquad ? "comune" : audience,
+        place: shareSpot ? place : HIDDEN_PLACE,
+        challengeId: isDrop ? drop.id : undefined,
+        squadId: toSquad,
+      });
+      const now = useApp.getState();
+      const after = mineOf(now.posts, now.userId);
+      const leagueAfter = leagueOf(now.posts, now.userId, now.comune?.id, author);
+      const rankBefore = leagueBefore.findIndex((r) => r.me) + 1;
+      const rankAfter = leagueAfter.findIndex((r) => r.me) + 1;
+      setResult({
+        seeds: seedsFor(posted),
+        streak: streakOf(after),
+        unlocked: !wasUnlocked,
+        isDrop: !!posted.isDrop,
+        action,
+        rankBefore,
+        rankAfter,
+        passed: leagueAfter.slice(rankAfter, rankBefore).map((r) => r.name),
+        next: rankAfter > 1 ? { name: leagueAfter[rankAfter - 2].name, gap: leagueAfter[rankAfter - 2].points - leagueAfter[rankAfter - 1].points } : undefined,
+        newGoals: ACTIONS[action].sdgs.filter((g) => !goalsBefore.has(g)),
+      });
+      setStep("done");
+    } finally {
+      submitting.current = false;
+      setPosting(false);
+    }
   };
 
   // ----- render -----
@@ -564,7 +607,7 @@ export default function Capture() {
           </View>
         </ScrollView>
         <View style={{ paddingHorizontal: 16, paddingBottom: cover > 0 ? 10 : bottom + 10, paddingTop: 8 }}>
-          <Button label={t("capture.post")} kind="green" trailing={`+${a.seeds + (isDropAct ? 10 : 0)}`} onPress={post} />
+          <Button label={t("capture.post")} kind="green" trailing={`+${seedsFor({ action, isDrop: isDropAct })}`} onPress={post} loading={posting} />
         </View>
       </View>
     );
@@ -579,7 +622,7 @@ export default function Capture() {
     <View style={{ flex: 1, backgroundColor: C.black }}>
       <StatusBar style="light" />
       <View style={{ paddingTop: top + 6, paddingHorizontal: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-        <IconButton icon="close" label={t("capture.close")} bg={C.night2} color={C.white} onPress={() => router.back()} />
+        <IconButton icon="close" label={t("capture.close")} bg={C.night2} color={C.white} onPress={closeCamera} />
         <Steps step={step} />
         <IconButton
           icon="help"
@@ -617,11 +660,14 @@ export default function Capture() {
                 ratio="4:3"
                 facing={facing}
                 mode={isProof ? "video" : "picture"}
+                videoQuality="720p"
+                videoBitrate={4_000_000}
                 mute
                 flash={flash ? "on" : "off"}
                 enableTorch={isProof && flash}
                 mirror={facing === "front"}
                 onCameraReady={() => setReady(true)}
+                onRecordingProgress={onRecordingProgress}
               />
             )
           )}
@@ -663,13 +709,13 @@ export default function Capture() {
 
           <View pointerEvents="none" style={{ position: "absolute", left: 16, right: 16, bottom: 16, alignItems: "center" }}>
             <Animated.View
-              key={`${step}${recording}`}
+              key={`${step}${recording}${proofFailed}`}
               entering={FadeInDown.springify().damping(18)}
               exiting={FadeOut}
               style={{ backgroundColor: C.scrim, paddingHorizontal: 14, paddingVertical: 10, borderRadius: R.md, maxWidth: 320 }}
             >
               <Text style={{ color: C.white, fontFamily: F.medium, fontSize: 14, textAlign: "center", lineHeight: 19 }}>
-                {recording ? t("capture.recording") : hint}
+                {recording ? t("capture.recording") : proofFailed ? t("capture.proofFailed") : hint}
               </Text>
             </Animated.View>
           </View>
@@ -700,7 +746,9 @@ export default function Capture() {
           {isProof && !noCamera ? (
             <RecordRing progress={progress} />
           ) : (
-            <View style={{ position: "absolute", width: 88, height: 88, borderRadius: 44, borderWidth: 4, borderColor: C.white }} />
+            <Svg width={88} height={88} pointerEvents="none" style={{ position: "absolute" }}>
+              <Circle cx={44} cy={44} r={41} stroke={C.white} strokeWidth={4} fill="none" />
+            </Svg>
           )}
           <Animated.View style={shutterStyle}>
             <View

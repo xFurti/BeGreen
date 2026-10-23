@@ -45,11 +45,17 @@ export function applyPersisted<T extends Record<string, unknown>>(
       )
     : raw.squads;
 
+  // Older caches counted every kingdom. Keep the other readings and the user's
+  // history, but reload Nature before showing a plant count.
+  const pulse = raw.pulse as { nature?: { taxon?: string }; fetchedAt?: number } | undefined;
+  const nextPulse = pulse?.nature && pulse.nature.taxon !== "Plantae" ? { ...pulse, nature: undefined, fetchedAt: 0 } : pulse;
+
   return {
     ...raw,
     language,
     ...(profile ? { profile: nextProfile } : {}),
     ...(place ? { place: nextPlace } : {}),
     ...(Array.isArray(raw.squads) ? { squads } : {}),
+    ...(pulse ? { pulse: nextPulse } : {}),
   };
 }

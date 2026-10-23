@@ -1,4 +1,5 @@
 import type { ActionId } from "@/data/actions";
+import type { BadgeId } from "@/data/badges";
 
 // A bundled asset (require()) or a file / remote URI.
 export type Media = number | string;
@@ -11,6 +12,7 @@ export type User = {
   name: string;
   handle: string;
   role?: Role;
+  badgeId?: BadgeId | null;
   avatar?: Media;
   tag?: string;
 };

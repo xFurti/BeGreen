@@ -5,6 +5,7 @@ import Animated, { FadeInDown, LinearTransition } from "react-native-reanimated"
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Icon } from "@/components/icon";
+import { TitledName } from "@/components/titled-name";
 import { Avatar, AvatarStack, Bar, Button, IconButton, Mono, Press, SectionHeader, TextTabs, toast, TopCover } from "@/components/ui";
 import { ACTIONS } from "@/data/actions";
 import { KIND } from "@/data/squad-kinds";
@@ -36,9 +37,7 @@ function Podium({ top3 }: { top3: Racer[] }) {
             {place === 1 && <Icon name="crown" size={16} color={C.leaf} />}
             <Avatar src={r.avatar} name={r.name} size={place === 1 ? 56 : 46} ring={r.me ? C.leaf : undefined} />
             <View style={{ alignItems: "center", gap: 1 }}>
-              <Text numberOfLines={1} style={{ fontFamily: F.medium, fontSize: 14, letterSpacing: -0.2, color: C.ink }}>
-                {r.name}
-              </Text>
+              <TitledName name={r.name} badgeId={r.badgeId} align="center" style={{ fontFamily: F.medium, fontSize: 14, letterSpacing: -0.2, color: C.ink }} />
               <Mono>{r.points}</Mono>
             </View>
             <View
@@ -89,9 +88,11 @@ function RacerRow({ r, rank, index }: { r: Racer; rank: number; index: number })
       </Mono>
       <Avatar src={r.avatar} name={r.name} size={36} invert={r.me} />
       <View style={{ flex: 1, gap: 2 }}>
-        <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3, color: r.me ? C.white : C.ink }}>
-          {r.me && r.name !== you ? `${r.name} (${t("common.youInline")})` : r.name}
-        </Text>
+        <TitledName
+          name={r.me && r.name !== you ? `${r.name} (${t("common.youInline")})` : r.name}
+          badgeId={r.badgeId}
+          style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3, color: r.me ? C.white : C.ink }}
+        />
         <Text style={{ fontFamily: F.regular, fontSize: 12, color: r.me ? C.forestMute : C.mute }}>
           {r.postedToday ? t("league.begreened") : t("league.notYet")}
         </Text>

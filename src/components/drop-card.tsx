@@ -54,7 +54,7 @@ export function DropCard({
     <Press
       scale={0.985}
       disabled={!ready}
-      accessibilityLabel={t("dropCard.a11y", { title: drop.title })}
+      accessibilityLabel={t("dropCard.a11y", { title: drop.title, time: left })}
       onPress={() => router.push("/drop")}
       // Leaf-shaped: two round corners, two tight ones.
       style={{
@@ -72,14 +72,20 @@ export function DropCard({
       <View pointerEvents="none" style={{ position: "absolute", right: -18, bottom: -26, opacity: 0.14 }}>
         <LeafMark size={150} color={C.lime} vein={C.forest} rotate={-12} />
       </View>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-        <LiveDot color={done ? C.forestMute : C.lime} />
-        <Mono color={C.white}>{done ? t("dropCard.done") : t("dropCard.today")}</Mono>
-        <Mono color={C.forestMute}>· {place}</Mono>
-        <View style={{ flex: 1 }} />
-        <Mono color={C.forestMute} style={{ fontVariant: ["tabular-nums"] }}>
-          {left}
-        </Mono>
+      <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}>
+        <View style={{ flex: 1, gap: 4 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <LiveDot color={done ? C.forestMute : C.lime} />
+            <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 14, color: C.white }}>
+              {done ? t("dropCard.done") : t("dropCard.today")}
+            </Text>
+          </View>
+          <Mono color={C.forestMute}>{place}</Mono>
+        </View>
+        <View style={{ alignItems: "flex-end", gap: 4 }}>
+          <Mono color={C.forestMute} style={{ fontVariant: ["tabular-nums"] }}>{left}</Mono>
+          <Text style={{ fontFamily: F.regular, fontSize: 12, color: C.forestMute }}>{t("dropCard.leftToday")}</Text>
+        </View>
       </View>
 
       <Text style={{ fontFamily: F.medium, fontSize: 32, lineHeight: 34, letterSpacing: -1.4, color: C.white }}>

@@ -241,9 +241,9 @@ export function buildInsights(p: Pulse, community: { carFree: number; areaName: 
       status: t("insights.status.within10"),
       level: "info",
       explain: {
-        me: t("insights.nature.me", { count: num(n.speciesCount, lang), top: topName ? t("insights.nature.top", { name: topName }) : "" }),
-        class: t("insights.nature.class", { count: num(n.speciesCount, lang) }),
-        comune: t("insights.nature.comune", { count: num(n.speciesCount, lang) }),
+        me: n.speciesCount === 0 ? t("insights.nature.empty") : t("insights.nature.me", { count: num(n.speciesCount, lang), top: topName ? t("insights.nature.top", { name: topName }) : "" }),
+        class: n.speciesCount === 0 ? t("insights.nature.empty") : t("insights.nature.class", { count: num(n.speciesCount, lang) }),
+        comune: n.speciesCount === 0 ? t("insights.nature.empty") : t("insights.nature.comune", { count: num(n.speciesCount, lang) }),
       },
       act: { action: "spot", label: t("insights.nature.act") },
       sources: ["inat"],
