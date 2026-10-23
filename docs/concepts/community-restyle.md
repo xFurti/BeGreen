@@ -1,66 +1,48 @@
-# Proposta Community
+# Community · revisione 2
 
-Branch: `design/community-restyle`, da `main` aggiornato (`148b5e4`).
+Branch: `design/community-restyle`. Anteprima direttamente nell’app Expo; nessuna PR aperta e nessuna modifica pubblicata su main.
 
-Richiesta: proporre e mostrare un restyle della Community, prima di aprire una PR. La pagina attuale alterna territorio, gruppi e di nuovo Comune; la proposta raccoglie questi contenuti in due sezioni selezionabili.
+## Riscontro recepito
 
-## Struttura proposta
+- Restano le due sezioni **Territorio / Gruppi**. Il selettore rimane visibile durante lo scorrimento, con indicatore animato e dissolvenza del contenuto.
+- **Un solo Cambia**, in alto in Territorio, apre la selezione globale del Comune (`/comune`). Eliminati il collegamento «Altre community locali» e l’elenco ripetuto dei Comuni in fondo.
+- La scheda mappa è più ampia, con comando esplicito **Esplora la mappa**. Sia la copertina sia il comando aprono la schermata `/map/[id]` già presente su main.
+- **La mappa non è stata riscritta**: route, `MapScreen` e `CommunityMap` sono identici a main. Ricerca, categorie, punti d’interesse, filtri, legenda, zoom e posizione rimangono quelli esistenti. Non sono aggiunti punti fittizi per riempirla.
+- L’accesso alla community del Comune è separato dalla mappa e apre il dettaglio esistente, dove rimane anche l’adesione. I contributi recenti reali rimangono in Territorio.
+- **Gruppi** ha una creazione in evidenza, una riga per il codice d’invito e schede con tipo, numero di membri e privacy. Le schede aprono il dettaglio del gruppo esistente. Nel pannello Gruppi non si ripete il Comune.
+- Nuove animazioni disattivate con «Riduci movimento». Colori del tema, traduzioni italiano/inglese e dati dello store esistente; nessuna nuova dipendenza o modifica al backend.
 
-- **Territorio**, all’apertura: Comune con comando **Cambia**, una scheda per mappa e community locale, contributi vicini e ricerca di altre community locali.
-- **Gruppi**: comandi **Nuovo gruppo** e **Ho un codice** sempre in cima, seguiti dallo stato vuoto oppure dall’elenco. Si apre ogni gruppo dalla sua scheda; inviti, membri e impostazioni restano nel dettaglio esistente.
-- Il selettore Territorio / Gruppi resta visibile durante lo scorrimento. La navigazione principale e il pulsante di cattura conservano il loro posto.
+## Aprire l’anteprima
 
-Il Comune non viene ripetuto in fondo alla pagina. L’adesione resta nel dettaglio locale, già accessibile con **Esplora Verona**. Il comando **Cambia** riguarda il Comune selezionato per tutta l’app; la ricerca delle altre community permette invece di esplorare senza cambiare selezione.
-
-## Anteprima
-
-Il prototipo è separato dall’app Expo: nessun componente, servizio, traduzione o dato reale è stato modificato. Usa i colori e il carattere Geist del progetto. I pannelli dimostrativi rendono verificabile il percorso prima dell’implementazione; non definiscono una riscrittura delle schermate di dettaglio.
-
-Dopo aver installato le dipendenze del progetto, dalla radice di questo worktree:
+Dalla radice del worktree `/home/xfurti/Projects/BeGreen-community-restyle`, con le dipendenze installate:
 
 ```bash
-python -m http.server 8094 --bind 127.0.0.1
+EXPO_NO_DOTENV=1 npm run web -- --port 8095
 ```
 
-Aprire <http://127.0.0.1:8094/docs/concepts/community-restyle.html>.
+Aprire <http://localhost:8095/community>. Il vecchio HTML contiene soltanto un rimando a questa anteprima: il pannello con la mappa statica della prima proposta è stato rimosso.
 
-Da provare:
+L’anteprima locale senza backend usa le normali schermate dell’app. Per un browser nuovo occorre completare l’onboarding. Le schermate salvate usano un profilo locale di anteprima a Verona e un gruppo creato localmente dal nome **Amici in verde · Demo**, con un membro. Nessun account o gruppo remoto è stato modificato.
 
-1. Passare tra **Territorio** e **Gruppi**.
-2. In Gruppi, scegliere **Mostra gruppi di esempio**. Su desktop ci sono anche i comandi di scenario nel pannello laterale.
-3. Aprire un gruppo; provare la creazione e l’ingresso con `DEMO123`. Gli altri codici mostrano un errore esplicito.
-4. Aprire mappa, Comune e ricerca. Solo Verona è disponibile in questa anteprima.
-
-Tutti i dati dei gruppi sono marcati come esempi. Le simulazioni restano in memoria e si azzerano ricaricando la pagina. La mappa è una vista statica di Verona: non presenta segnaposti o contributi inventati e non simula zoom o trascinamento. Le categorie nel pannello mappa mostrano solo lo stato dimostrativo. La barra principale è rappresentata per valutare gli spazi; la navigazione dell’app non è simulata.
-
-Screenshot:
+## Schermate
 
 - [Territorio](community-restyle-territorio.png)
-- [Gruppi, stato vuoto](community-restyle-gruppi-vuoti.png)
-- [Gruppi, con esempi](community-restyle-gruppi.png)
+- [Mappa esistente aperta dalla scheda](community-restyle-mappa.png)
+- [Gruppi senza iscrizioni](community-restyle-gruppi-vuoti.png)
+- [Gruppo locale di esempio](community-restyle-gruppi.png)
+- [Tema chiaro, inglese, 320 px](community-restyle-light-en-320.png)
 
-## Collegamenti per l’implementazione successiva
+## Verifica
 
-Da confermare dopo il riscontro sulla proposta. I percorsi esistenti sono:
+`npm run verify` superato: typecheck, lint e test dei workflow, servizi e migrazioni Supabase.
 
-| Comando | Destinazione esistente |
-| --- | --- |
-| Cambia Comune | `/comune` (selezione globale) |
-| Apri mappa | `/map/[id]` del Comune selezionato |
-| Esplora Verona | `/community/[id]` del Comune selezionato |
-| Aggiungi un contributo | Mappa e percorso di aggiunta esistente, con gli attuali requisiti di accesso |
-| Altre community locali | `/communities` |
-| Nuovo gruppo | `/new-community` |
-| Ho un codice | `/join` |
-| Scheda di un gruppo | `/community/[id]` del gruppo scelto |
+Controllati nel browser:
 
-L’implementazione dovrà mantenere i Comuni già seguiti, la ricerca completa, visibilità e autorizzazioni, aggiornamento dei dati, localizzazione, entrambi i temi e accessibilità. Nessuna nuova funzione backend o modifica delle iscrizioni è prevista per questo restyle.
+- sezioni e stato selezionato; un solo comando Cambia in Territorio, assente in Gruppi;
+- apertura della vera mappa di Verona con barra di ricerca, tutte le categorie, filtri, legenda, zoom e ritorno alla Community;
+- apertura del selettore del Comune;
+- apertura del form gruppo, creazione locale, presenza nell’elenco e apertura del dettaglio;
+- apertura dell’inserimento codice;
+- tema scuro italiano a 430 px e tema chiaro inglese a 320 px, senza scorrimento orizzontale della pagina.
 
-## Verifica di questa proposta
-
-- `npm run verify`: superato (typecheck, lint, 86 + 62 test).
-- `node --check docs/concepts/community-restyle.js`: superato.
-- Anteprima osservata nel browser a larghezza mobile, con font e immagini caricati; controllati cambio sezione, elenco con esempi, creazione simulata, errore codice e ingresso dimostrativo. Screenshot salvati a 430 × 1000.
-- Nessuna verifica nativa iOS/Android: il risultato di questa fase è un prototipo HTML, non una modifica all’app.
-
-PR e merge attendono il riscontro richiesto dall’utente.
+Verifica visiva web; nessuna prova su dispositivo nativo iOS/Android in questa fase. Storage, permessi e schermate dei dettagli mantengono il comportamento esistente. PR e merge attendono il nuovo riscontro sul design.
