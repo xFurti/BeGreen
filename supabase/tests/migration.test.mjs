@@ -138,3 +138,139 @@ test("challenge reward survives a database round trip and is credited once to th
     assert.equal((await as(A, `select points from squads where id = '${s.id}'`))[0].points, base * 2 + 10);
   }
 });
+
+test("community: explore before joining, members add places, private stays private", async () => {
+  const C = "00000000-0000-0000-0000-00000000000c";
+  await db.exec(`insert into auth.users values ('${C}') on conflict do nothing`);
+  await as(C, `insert into profiles (id, name, handle) values ('${C}', 'Cleo', 'cleo')`);
+
+  // Anyone can read the community before joining; nobody can just insert a membership.
+  assert.equal((await as(A, `select name from communities where id = 'alto-vicentino'`))[0].name, "Alto Vicentino");
+  await rejects(A, `insert into community_members (community_id, user_id) values ('alto-vicentino', '${A}')`);
+  const spot = `insert into spots (community_id, kind, category, title, lat, lon) values ('alto-vicentino', 'useful', 'repair', 'Ciclofficina', 45.71, 11.36) returning id`;
+  await rejects(A, spot);
+
+  assert.equal((await as(A, `select join_community('alto-vicentino') as ok`))[0].ok, true);
+  assert.equal((await as(B, `select join_community('alto-vicentino') as ok`))[0].ok, true);
+  const [s] = await as(A, spot);
+  // Verification and hiding are not the author's to set.
+  await rejects(A, `insert into spots (community_id, kind, category, title, verified_at) values ('alto-vicentino', 'discovery', 'discover', 'x', now())`);
+  await rejects(A, `update spots set verified_at = now() where id = '${s.id}'`);
+  await rejects(A, `select verify_spot('${s.id}')`);
+  assert.equal((await as(B, `update spots set title = 'mine now' where id = '${s.id}' returning id`)).length, 0);
+  // Events need a date; a place is optional only as a whole.
+  await rejects(A, `insert into spots (community_id, kind, category, title) values ('alto-vicentino', 'event', 'events', 'Pulizia')`);
+  await rejects(A, `insert into spots (community_id, kind, category, title, lat) values ('alto-vicentino', 'moment', 'moments', 'Hi', 45.7)`);
+
+  // Saves, reactions and RSVPs are your own.
+  await as(B, `insert into spot_saves (spot_id) values ('${s.id}')`);
+  await rejects(B, `insert into spot_saves (spot_id, user_id) values ('${s.id}', '${A}')`);
+  await as(B, `insert into spot_reactions (spot_id, user_id, emoji) values ('${s.id}', '${B}', '💚')`);
+  await as(B, `insert into spot_comments (spot_id, text) values ('${s.id}', 'Open on Saturdays?')`);
+
+  // Two people say it's out of date → to verify; the author's edit clears it.
+  await as(B, `insert into spot_flags (spot_id, reason, note) values ('${s.id}', 'outdated', 'closed on Saturdays now')`);
+  assert.equal((await as(A, `select status from spots where id = '${s.id}'`))[0].status, "active");
+  assert.equal((await as(A, `select reason from spot_flags where spot_id = '${s.id}'`)).length, 0);
+  // "Out of date" from one and "wrong" from another reach the threshold together.
+  await as(C, `select join_community('alto-vicentino')`);
+  await as(C, `insert into spot_flags (spot_id, reason) values ('${s.id}', 'wrong')`);
+  assert.equal((await as(A, `select status from spots where id = '${s.id}'`))[0].status, "toVerify");
+  await as(A, `update spots set address = 'Via Pasubio 12, Schio', status = 'toVerify' where id = '${s.id}'`);
+  assert.equal((await as(A, `select status from spots where id = '${s.id}'`))[0].status, "active");
+
+  // A report two people say is fixed becomes resolved.
+  const [r] = await as(A, `insert into spots (community_id, kind, category, title, lat, lon) values ('alto-vicentino', 'report', 'reports', 'Rifiuti abbandonati', 45.7, 11.4) returning id`);
+  await as(B, `insert into spot_flags (spot_id, reason) values ('${r.id}', 'resolved')`);
+  await as(C, `insert into spot_flags (spot_id, reason) values ('${r.id}', 'resolved')`);
+  assert.equal((await as(A, `select status from spots where id = '${r.id}'`))[0].status, "resolved");
+
+  // Three inappropriate flags hide a place from everyone but its author.
+  const [bad] = await as(B, `insert into spots (community_id, kind, category, title) values ('alto-vicentino', 'moment', 'moments', 'Meh') returning id`);
+  for (const u of [A, C]) await as(u, `insert into spot_flags (spot_id, reason) values ('${bad.id}', 'inappropriate')`);
+  assert.equal((await as(A, `select id from spots where id = '${bad.id}'`)).length, 1);
+  await db.exec(`insert into auth.users values ('00000000-0000-0000-0000-00000000000d') on conflict do nothing`);
+  const D = "00000000-0000-0000-0000-00000000000d";
+  await as(D, `insert into profiles (id, name, handle) values ('${D}', 'Dario', 'dario')`);
+  await as(D, `select join_community('alto-vicentino')`);
+  await as(D, `insert into spot_flags (spot_id, reason) values ('${bad.id}', 'inappropriate')`);
+  assert.equal((await as(A, `select id from spots where id = '${bad.id}'`)).length, 0);
+  assert.equal((await as(B, `select id from spots where id = '${bad.id}'`)).length, 1);
+
+  // A moderator verifies.
+  await db.exec(`update community_members set role = 'moderator' where community_id = 'alto-vicentino' and user_id = '${C}'`);
+  await as(C, `select verify_spot('${s.id}')`);
+  assert.ok((await as(B, `select verified_at from spots where id = '${s.id}'`))[0].verified_at);
+
+  // Proofs can point to a place.
+  await as(B, `insert into posts (author_id, action, photo, proof, spot_id) values ('${B}', 'rewear', 'p', 'v', '${s.id}')`);
+
+  // A private community: name visible, content and members only after joining with the code.
+  const [{ code }] = await as(
+    A,
+    `select create_community('classe-4b-schio', 'Classe 4B', 'school', 'Our class', 'Schio', 'private', 45.71, 11.36, '{"w":11.3,"s":45.6,"e":11.4,"n":45.8}', '{Schio}') as code`,
+  );
+  assert.match(code, /^[A-Z0-9]{6}$/);
+  await as(A, `insert into spots (community_id, kind, category, title, lat, lon) values ('classe-4b-schio', 'discovery', 'discover', 'Cortile', 45.71, 11.36)`);
+  assert.equal((await as(B, `select name from communities where id = 'classe-4b-schio'`)).length, 1);
+  assert.equal((await as(B, `select id from spots where community_id = 'classe-4b-schio'`)).length, 0);
+  assert.equal((await as(B, `select user_id from community_members where community_id = 'classe-4b-schio'`)).length, 0);
+  await rejects(B, `select code from community_codes`);
+  assert.equal((await as(B, `select community_invite('classe-4b-schio') as c`))[0].c, null);
+  assert.equal((await as(B, `select join_community('classe-4b-schio', 'WRONG1') as ok`))[0].ok, false);
+  assert.equal((await as(B, `select join_community('classe-4b-schio', '${code.toLowerCase()}') as ok`))[0].ok, true);
+  assert.equal((await as(B, `select id from spots where community_id = 'classe-4b-schio'`)).length, 1);
+  assert.equal((await as(A, `select community_invite('classe-4b-schio') as c`))[0].c, code);
+});
+
+test("groups: every group has a code, any member shares it, the code alone joins", async () => {
+  // A public group of friends still gets a code; cities don't need one.
+  const [{ code }] = await as(
+    A,
+    `select create_community('amici-schio-x1y', 'Amici di Schio', 'friends', '', 'Schio', 'public', 45.71, 11.36, '{"w":11.3,"s":45.6,"e":11.4,"n":45.8}', '{Schio}') as code`,
+  );
+  assert.match(code, /^[A-Z0-9]{6}$/);
+  assert.equal(
+    (await as(A, `select create_community('comune-3165185', 'Verona', 'territory', '', 'Verona', 'public', 45.44, 10.99, '{"w":10.9,"s":45.4,"e":11.1,"n":45.5}', '{Verona}') as code`))[0].code,
+    null,
+  );
+  await rejects(A, `select create_community('club-x', 'Club', 'club', '', '', 'public', 45.7, 11.3, '{}', '{}')`);
+
+  // Unknown codes open nothing; the right one, in any case and with spaces, joins.
+  assert.equal((await as(B, `select community_invite('amici-schio-x1y') as c`))[0].c, null);
+  assert.equal((await as(B, `select join_by_code('NOPE00') as id`))[0].id, null);
+  assert.equal((await as(B, `select join_by_code(' ${code.toLowerCase()} ') as id`))[0].id, "amici-schio-x1y");
+  assert.equal((await as(B, `select role from community_members where community_id = 'amici-schio-x1y' and user_id = '${B}'`))[0].role, "member");
+  // Now B can invite others too; joining twice is harmless.
+  assert.equal((await as(B, `select community_invite('amici-schio-x1y') as c`))[0].c, code);
+  assert.equal((await as(B, `select join_by_code('${code}') as id`))[0].id, "amici-schio-x1y");
+  await rejects(B, `select code from community_codes`);
+});
+
+test("community challenges: members launch them, contributions only while open", async () => {
+  const [x] = await as(
+    A,
+    `insert into community_challenges (community_id, template, title, goal, ends_at) values ('alto-vicentino', 'fivePlaces', 'Five places', 5, now() + interval '14 days') returning id`,
+  );
+  const outsider = "00000000-0000-0000-0000-0000000000ee";
+  await db.exec(`insert into auth.users values ('${outsider}') on conflict do nothing`);
+  await as(outsider, `insert into profiles (id, name, handle) values ('${outsider}', 'Eve', 'eve')`);
+  await rejects(outsider, `insert into community_challenges (community_id, title, goal, ends_at) values ('alto-vicentino', 'Nope', 3, now() + interval '1 day')`);
+  await rejects(outsider, `insert into challenge_entries (challenge_id) values ('${x.id}')`);
+  await as(B, `insert into challenge_entries (challenge_id, note) values ('${x.id}', 'Found the old mill')`);
+  await rejects(B, `insert into challenge_entries (challenge_id, user_id) values ('${x.id}', '${A}')`);
+  assert.equal((await as(outsider, `select id from challenge_entries where challenge_id = '${x.id}'`)).length, 1);
+
+  const [old] = await as(
+    A,
+    `insert into community_challenges (community_id, title, goal, starts_at, ends_at) values ('alto-vicentino', 'Old one', 3, now() - interval '10 days', now() - interval '1 day') returning id`,
+  );
+  await rejects(B, `insert into challenge_entries (challenge_id) values ('${old.id}')`);
+});
+
+test("blocks: your list is yours alone", async () => {
+  await as(A, `insert into blocks (blocked_id) values ('${B}')`);
+  await rejects(A, `insert into blocks (blocked_id) values ('${A}')`);
+  assert.equal((await as(B, `select * from blocks`)).length, 0);
+  assert.equal((await as(A, `select blocked_id from blocks`))[0].blocked_id, B);
+});

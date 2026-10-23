@@ -1,5 +1,5 @@
 import { Image } from "expo-image";
-import { router } from "expo-router";
+import { router, type Href } from "expo-router";
 import { useEffect, useRef, useState, type ComponentRef, type ReactNode } from "react";
 import {
   AccessibilityInfo,
@@ -28,6 +28,7 @@ import { useI18n } from "@/i18n/use-i18n";
 import { HandleTaken } from "@/services/social";
 import { supabase } from "@/services/supabase";
 import { badgeStatsOf, dropStaleBadge, seedsOf, streakOf, useApp, useLeague, useMyPosts, type ThemePref } from "@/store/app-store";
+import { useCommunity } from "@/store/community-store";
 import { earnedBadges } from "@/data/badges";
 import { F, type Palette } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
@@ -328,10 +329,12 @@ function Settings({ onClose, onEdit }: { onClose: () => void; onEdit: () => void
   const setExplain = useApp((s) => s.setExplain);
   const comune = useApp((s) => s.comune);
   const reset = useApp((s) => s.reset);
+  const userId = useApp((s) => s.userId);
+  const savedCount = useCommunity((s) => Object.keys(s.saved).length);
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
-  const go = (path: "/comune" | "/guide" | "/sources" | "/leaf") => {
+  const go = (path: Href) => {
     onClose();
     router.push(path);
   };
@@ -371,6 +374,8 @@ function Settings({ onClose, onEdit }: { onClose: () => void; onEdit: () => void
         <LanguageSwitch />
       </View>
       <View>
+        <SettingRow icon="bookmarkFill" label={`${t("community.me.saved")}${savedCount ? ` · ${savedCount}` : ""}`} onPress={() => go("/saved")} />
+        <SettingRow icon="pin" label={t("community.me.contributions")} onPress={() => go({ pathname: "/member/[id]", params: { id: userId } })} />
         <SettingRow icon="book" label={t("me.guide")} onPress={() => go("/guide")} />
         <SettingRow icon="shield" label={t("me.sources")} onPress={() => go("/sources")} />
         <SettingRow icon="sparkle" label={t("common.askLeaf")} onPress={() => go("/leaf")} />
@@ -396,6 +401,7 @@ function Settings({ onClose, onEdit }: { onClose: () => void; onEdit: () => void
                 const result = await supabase?.auth.signOut();
                 if (result?.error) throw result.error;
                 reset();
+                useCommunity.getState().reset();
                 onClose();
                 router.replace("/onboarding");
               } catch {

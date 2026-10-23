@@ -20,7 +20,7 @@ export default function TabsLayout() {
       <Tabs tabBar={(p) => <TabBar {...p} />} screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: C.bg } }}>
         <Tabs.Screen name="index" />
         <Tabs.Screen name="pulse" />
-        <Tabs.Screen name="league" />
+        <Tabs.Screen name="community" />
         <Tabs.Screen name="me" />
       </Tabs>
       <Toaster />

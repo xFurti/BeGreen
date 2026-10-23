@@ -76,6 +76,7 @@ type NewPost = {
   location?: Post["location"];
   challengeId?: string;
   squadId?: string;
+  spotId?: string;
 };
 
 type Actions = {
