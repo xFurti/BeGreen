@@ -1,6 +1,6 @@
 # PR #56 — profilo compatibile con main
 
-Commit verificato: `69d7e0e51cf30eed8a607f52759c183b6192ec74`, con main `d3f3805cc0d0b041294517de8b30f90fff9d2d5b` integrato.
+Commit finale: `e60e9ddfcf4460246af723b9717449226b4efcb5` (UI acquisita su `69d7e0e`; il successivo commit aggiunge solo una dichiarazione TypeScript per il CSS), con main `d3f3805cc0d0b041294517de8b30f90fff9d2d5b` integrato.
 
 Verifiche eseguite il 23 ottobre 2026 in checkout isolato:
 
@@ -16,3 +16,5 @@ I JSON contengono gli esiti dettagliati. Gli screenshot sono acquisizioni reali 
 Limiti: nessun test su dispositivo iOS/Android e nessuna build nativa firmata. L’export controlla il bundle, non le mappe Google/Apple su un telefono. Expo Go, iOS <18 e Android senza chiave usano l’anteprima a tile; la mappa nativa interattiva richiede una development/store build configurata. Le aree sono centri dei Comuni registrati sul dispositivo, non posizioni GPS dei gesti né uno storico condiviso nel backend.
 
 Le vecchie immagini `docs/concepts/` sulla PR documentano soltanto il concept originale. Queste immagini mostrano la versione integrata; non è stato ricostruito un prima con gli stessi dati del prototipo precedente.
+
+La prima CI ha rilevato un import CSS privo di dichiarazione nei checkout puliti, mascherato localmente dai tipi generati da Expo. Il commit finale include `proof-map-css.d.ts`. Ripetuti `npm ci` e `npm run verify` con Node 24 in un nuovo worktree, senza `.expo` o `expo-env.d.ts` e senza avviare Expo: typecheck, lint e tutti gli 85 test passati.
