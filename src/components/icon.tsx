@@ -43,6 +43,7 @@ const MAP = {
   recycle: ["arrow.3.trianglepath", "sync"],
   trash: ["trash.fill", "trash"],
   bottle: ["waterbottle.fill", "flask"],
+  walk: ["figure.walk", "walk-outline"],
   plant: ["leaf.arrow.triangle.circlepath", "flower-outline"],
   binoculars: ["binoculars.fill", "eye"],
   fork: ["fork.knife", "restaurant"],
