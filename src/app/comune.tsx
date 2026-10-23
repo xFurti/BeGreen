@@ -4,6 +4,7 @@ import { ActivityIndicator, ScrollView, Text, TextInput, View } from "react-nati
 import { Icon } from "@/components/icon";
 import { Button, Mono, Press } from "@/components/ui";
 import type { Comune } from "@/data/types";
+import { useI18n } from "@/i18n/use-i18n";
 import { comuneNearMe, searchComuni } from "@/services/comuni";
 import { useApp } from "@/store/app-store";
 import { C, F, T } from "@/theme/tokens";
@@ -12,6 +13,7 @@ import { haptic } from "@/utils/format";
 export default function ComunePicker() {
   const current = useApp((s) => s.comune);
   const setComune = useApp((s) => s.setComune);
+  const { t } = useI18n();
   const [q, setQ] = useState("");
   const [results, setResults] = useState<{ q: string; list: Comune[] }>({ q: "", list: [] });
   const [status, setStatus] = useState<"idle" | "searching" | "error" | "locating" | "noLocation">("idle");
@@ -53,12 +55,9 @@ export default function ComunePicker() {
   return (
     <ScrollView contentContainerStyle={{ padding: 22, paddingTop: 30, gap: 24 }} keyboardShouldPersistTaps="handled">
       <View style={{ gap: 10 }}>
-        <Mono>Your Comune</Mono>
-        <Text style={[T.hero, { fontSize: 38, lineHeight: 40 }]}>Where do you go green?</Text>
-        <Text style={T.callout}>
-          Today’s challenge is built from this Comune’s live air, water, soil and nature data. Everyone here gets the same one, and sees
-          each other’s proofs.
-        </Text>
+        <Mono>{t("comune.yourTitle")}</Mono>
+        <Text style={[T.hero, { fontSize: 38, lineHeight: 40 }]}>{t("comune.title")}</Text>
+        <Text style={T.callout}>{t("comune.body")}</Text>
       </View>
 
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10, borderBottomWidth: 1, borderBottomColor: q ? C.leaf : C.line }}>
@@ -66,26 +65,26 @@ export default function ComunePicker() {
         <TextInput
           value={q}
           onChangeText={setQ}
-          placeholder="Search a Comune"
+          placeholder={t("comune.search")}
           placeholderTextColor={C.faint}
           autoFocus
           autoCorrect={false}
           returnKeyType="search"
-          accessibilityLabel="Search a Comune"
+          accessibilityLabel={t("comune.search")}
           style={{ flex: 1, height: 60, fontSize: 26, fontFamily: F.medium, letterSpacing: -1, color: C.ink }}
         />
         {status === "searching" && <ActivityIndicator color={C.mute} />}
       </View>
 
       <Button
-        label={status === "locating" ? "Finding your Comune…" : "Use my location"}
+        label={status === "locating" ? t("comune.locating") : t("comune.nearMe")}
         icon="location"
         kind="ghost"
         disabled={status === "locating"}
         onPress={nearMe}
       />
-      {status === "noLocation" && <Text style={T.caption}>Couldn’t find your Comune from your location. Search it by name instead.</Text>}
-      {status === "error" && <Text style={T.caption}>Search is offline right now. Check your connection and try again.</Text>}
+      {status === "noLocation" && <Text style={T.caption}>{t("comune.noLocation")}</Text>}
+      {status === "error" && <Text style={T.caption}>{t("comune.offline")}</Text>}
 
       <View>
         {shown.map((c) => {
@@ -115,7 +114,7 @@ export default function ComunePicker() {
             </View>
           );
         })}
-        {answered && status === "idle" && shown.length === 0 && <Text style={T.caption}>No Comune called “{q.trim()}”.</Text>}
+        {answered && status === "idle" && shown.length === 0 && <Text style={T.caption}>{t("comune.none", { q: q.trim() })}</Text>}
       </View>
     </ScrollView>
   );

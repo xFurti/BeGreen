@@ -7,17 +7,22 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ComuneSection } from "@/components/comune-card";
 import { Icon, type IconName } from "@/components/icon";
+import { LanguageSwitch } from "@/components/language-switch";
 import { Avatar, IconButton, Logo, Mono, Press, SectionHeader, TopCover, useCountUp } from "@/components/ui";
 import { ACTIONS } from "@/data/actions";
-import { daysTo2030, SDG_LIST, SDGS } from "@/data/sdgs";
+import { daysTo2030, SDG_LIST } from "@/data/sdgs";
 import type { Post } from "@/data/types";
 import { useComune } from "@/hooks/use-comune";
+import type { MessageKey } from "@/i18n/catalog";
+import { profileName, sdgTitle } from "@/i18n/content";
+import { formatDecimal, formatNumber, monthName, weekdayInitials } from "@/i18n/format";
+import { useI18n } from "@/i18n/use-i18n";
 import { supabase } from "@/services/supabase";
 import { sdgsOf, seedsOf, streakOf, useApp, useLeague, useMyPosts } from "@/store/app-store";
 import { C, F, R, T } from "@/theme/tokens";
 import { haptic } from "@/utils/format";
 
-const ROLE_LABEL = { student: "Student", teacher: "Teacher", association: "Association", comune: "Comune" } as const;
+const ROLE_LABEL = { student: "roles.student", teacher: "roles.teacher", association: "roles.association", comune: "roles.comune" } as const satisfies Record<string, MessageKey>;
 
 function impact(posts: Post[]) {
   const t = { co2: 0, items: 0, litres: 0, records: 0 };
@@ -32,6 +37,7 @@ function impact(posts: Post[]) {
 }
 
 function Agenda({ posts }: { posts: Post[] }) {
+  const { t } = useI18n();
   const { width } = useWindowDimensions();
   const touched = sdgsOf(posts);
   const [sel, setSel] = useState<number | null>(null);
@@ -50,7 +56,7 @@ function Agenda({ posts }: { posts: Post[] }) {
             <Animated.View key={g} entering={FadeIn.delay(i * 25)}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`SDG ${g}: ${SDGS[g]}${on ? ", moved" : ""}`}
+                accessibilityLabel={`${t("me.sdg", { n: g, title: sdgTitle(t, g) })}${on ? t("common.sdgMoved") : ""}`}
                 onPress={() => {
                   haptic.tap();
                   setSel(active ? null : g);
@@ -77,21 +83,22 @@ function Agenda({ posts }: { posts: Post[] }) {
           <Text numberOfLines={1} style={{ fontFamily: F.medium, fontSize: 15, letterSpacing: -0.7, color: C.lime }}>
             {daysTo2030()}
           </Text>
-          <Text style={{ fontFamily: F.monoMedium, fontSize: 8, color: C.forestMute, lineHeight: 10 }}>DAYS TO 2030</Text>
+          <Text style={{ fontFamily: F.monoMedium, fontSize: 8, color: C.forestMute, lineHeight: 10 }}>{t("me.daysTo")}</Text>
         </View>
       </View>
       <Text style={[T.callout, { minHeight: 42 }]}>
         {sel ? (
           <>
             <Text style={{ fontFamily: F.medium, color: C.ink }}>
-              SDG {sel} · {SDGS[sel]}.
+              SDG {sel} · {sdgTitle(t, sel)}.
             </Text>{" "}
-            {touched.has(sel) ? `You moved it ${counts.get(sel)} time${counts.get(sel) === 1 ? "" : "s"}.` : "Not yet. Which act could move it?"}
+            {touched.has(sel)
+              ? t(counts.get(sel) === 1 ? "me.movedOnce" : "me.movedMany", { count: counts.get(sel) ?? 0 })
+              : t("me.notYet")}
           </>
         ) : (
           <>
-            You’ve moved <Text style={{ fontFamily: F.medium, color: C.ink }}>{touched.size} of 17</Text> UN goals. Tap one to see it. Collect
-            them all before 2030.
+            {t("me.touched", { count: touched.size })}
           </>
         )}
       </Text>
@@ -100,6 +107,7 @@ function Agenda({ posts }: { posts: Post[] }) {
 }
 
 function Calendar({ posts }: { posts: Post[] }) {
+  const { t, language } = useI18n();
   const { width } = useWindowDimensions();
   const cell = Math.floor((width - 40) / 7);
   const now = new Date();
@@ -118,7 +126,7 @@ function Calendar({ posts }: { posts: Post[] }) {
   return (
     <View style={{ gap: 8 }}>
       <View style={{ flexDirection: "row" }}>
-        {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
+        {weekdayInitials(language).map((d, i) => (
           <Mono key={i} style={{ flex: 1, textAlign: "center" }}>
             {d}
           </Mono>
@@ -134,7 +142,7 @@ function Calendar({ posts }: { posts: Post[] }) {
                 <Pressable
                   disabled={!p}
                   onPress={() => p && router.push({ pathname: "/post/[id]", params: { id: p.id } })}
-                  accessibilityLabel={p ? `${ACTIONS[p.action].label} on day ${d}` : `Day ${d}`}
+                  accessibilityLabel={p ? t("post.dayAct", { act: t(`actions.${p.action}.label`), day: d }) : t("post.day", { day: d })}
                   style={{
                     flex: 1,
                     borderRadius: 9,
@@ -166,10 +174,11 @@ function Calendar({ posts }: { posts: Post[] }) {
 
 function Stat({ value, label, first }: { value: number; label: string; first?: boolean }) {
   const n = useCountUp(value);
+  const { language } = useI18n();
   return (
     <View style={{ flex: 1, gap: 4, paddingLeft: first ? 0 : 14, borderLeftWidth: first ? 0 : 1, borderLeftColor: C.line }}>
       <Text style={{ fontFamily: F.medium, fontSize: 34, lineHeight: 38, letterSpacing: -1.6, color: C.ink, fontVariant: ["tabular-nums"] }}>
-        {n.toLocaleString("en")}
+        {formatNumber(n, language)}
       </Text>
       <Mono>{label}</Mono>
     </View>
@@ -185,6 +194,7 @@ export default function Me() {
   const explain = useApp((s) => s.explain);
   const setExplain = useApp((s) => s.setExplain);
   const reset = useApp((s) => s.reset);
+  const { t, language } = useI18n();
   const pulse = useApp((s) => s.pulse);
   const comuneView = useComune();
   const league = useLeague();
@@ -194,18 +204,18 @@ export default function Me() {
   const badgeSize = Math.floor((width - 40 - 16) / 3);
   const streak = streakOf(posts);
   const seeds = seedsOf(posts, verifiedCount);
-  const place = comune?.name ?? "your Comune";
+  const place = comune?.name ?? t("comune.yours");
   const imp = impact(posts);
   const kinds = new Set(posts.map((p) => p.action));
   const goals = sdgsOf(posts);
 
   const badges: { icon: IconName; label: string; on: boolean }[] = [
-    { icon: "camera", label: "First proof", on: posts.length > 0 },
-    { icon: "flame", label: "7-day streak", on: streak >= 7 },
-    { icon: "bike", label: "Car-free ×5", on: posts.filter((p) => p.action === "move").length >= 5 },
-    { icon: "binoculars", label: "Spotter", on: kinds.has("spot") },
-    { icon: "shield", label: "Verifier ×10", on: verifiedCount >= 10 },
-    { icon: "globe", label: "10 of 17 goals", on: goals.size >= 10 },
+    { icon: "camera", label: t("me.b1"), on: posts.length > 0 },
+    { icon: "flame", label: t("me.b2"), on: streak >= 7 },
+    { icon: "bike", label: t("me.b3"), on: posts.filter((p) => p.action === "move").length >= 5 },
+    { icon: "binoculars", label: t("me.b4"), on: kinds.has("spot") },
+    { icon: "shield", label: t("me.b5"), on: verifiedCount >= 10 },
+    { icon: "globe", label: t("me.b6"), on: goals.size >= 10 },
   ];
 
   return (
@@ -213,56 +223,54 @@ export default function Me() {
       <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ paddingTop: top + 10, paddingHorizontal: 20, paddingBottom: 140, gap: 40 }}>
         <View style={{ gap: 20 }}>
           <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" }}>
-            <Avatar name={profile.name || "You"} size={76} ring={C.lime} />
+            <Avatar name={profileName(profile.name, t)} size={76} ring={C.lime} />
             <IconButton
               icon="share"
-              label="Share profile"
-              onPress={() =>
-                Share.share({ message: `I’m on a ${streak}-day BeGreen streak and #${rank} in ${place} this week. Beat that. 🌱 #BeGreen` })
-              }
+              label={t("me.share")}
+              onPress={() => Share.share({ message: t("me.shareTextIn", { streak, rank, place }) })}
             />
           </View>
           <View style={{ gap: 6 }}>
-            <Text style={[T.hero, { fontSize: 40, lineHeight: 42 }]}>{profile.name || "You"}</Text>
+            <Text style={[T.hero, { fontSize: 40, lineHeight: 42 }]}>{profileName(profile.name, t)}</Text>
             <Mono>
-              @{profile.handle || "you"} · {ROLE_LABEL[profile.role]} · #{rank} in {place}
+              @{profile.handle || t("common.youInline")} · {t(ROLE_LABEL[profile.role])} · {t("me.rankIn", { rank, place })}
             </Mono>
           </View>
           <View style={{ flexDirection: "row" }}>
-            <Stat value={streak} label="Day streak" first />
-            <Stat value={seeds} label="Seeds" />
-            <Stat value={posts.filter((p) => p.verifiedBy.length >= 3).length} label="Verified" />
+            <Stat value={streak} label={t("me.streak")} first />
+            <Stat value={seeds} label={t("common.seeds")} />
+            <Stat value={posts.filter((p) => p.verifiedBy.length >= 3).length} label={t("me.verified")} />
           </View>
         </View>
 
         <Animated.View entering={FadeInDown.delay(80)} style={{ gap: 16 }}>
-          <SectionHeader index="01" title="Agenda 2030" action={`${goals.size}/17`} />
+          <SectionHeader index="01" title={t("me.agenda")} action={`${goals.size}/17`} />
           <Agenda posts={posts} />
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(120)} style={{ gap: 16 }}>
-          <SectionHeader index="02" title="My Comune" action="Sources →" onAction={() => router.push("/sources")} />
+          <SectionHeader index="02" title={t("myComune.title")} action={t("myComune.sources")} onAction={() => router.push("/sources")} />
           <ComuneSection view={comuneView} pulse={pulse} />
         </Animated.View>
 
         <View style={{ gap: 16 }}>
-          <SectionHeader index="03" title="Impact" action="How we count →" onAction={() => router.push("/sources")} />
+          <SectionHeader index="03" title={t("me.impact")} action={t("me.howCount")} onAction={() => router.push("/sources")} />
           <View style={{ flexDirection: "row", flexWrap: "wrap", borderTopWidth: 1, borderTopColor: C.line }}>
-            <Imp value={imp.co2.toFixed(1)} label="kg CO₂e avoided" />
-            <Imp value={String(imp.items)} label="items kept from waste" right />
-            <Imp value={String(imp.litres)} label="litres saved" />
-            <Imp value={String(imp.records)} label="species records" right />
+            <Imp value={formatDecimal(imp.co2, language, 1)} label={t("me.co2")} />
+            <Imp value={formatNumber(imp.items, language)} label={t("me.items")} right />
+            <Imp value={formatNumber(imp.litres, language)} label={t("me.litres")} />
+            <Imp value={formatNumber(imp.records, language)} label={t("me.records")} right />
           </View>
-          <Text style={T.caption}>Estimates. Useful to compare and motivate, not to certify.</Text>
+          <Text style={T.caption}>{t("me.estimates")}</Text>
         </View>
 
         <View style={{ gap: 16 }}>
-          <SectionHeader index="04" title="Memories" action={new Date().toLocaleString("en", { month: "long" })} />
+          <SectionHeader index="04" title={t("me.memories")} action={monthName(new Date(), language)} />
           <Calendar posts={posts} />
         </View>
 
         <View style={{ gap: 16 }}>
-          <SectionHeader index="05" title="Badges" action={`${badges.filter((b) => b.on).length}/${badges.length}`} />
+          <SectionHeader index="05" title={t("me.badges")} action={`${badges.filter((b) => b.on).length}/${badges.length}`} />
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             {badges.map((b) => (
               <View
@@ -285,45 +293,44 @@ export default function Me() {
         </View>
 
         <View style={{ borderTopWidth: 1, borderTopColor: C.line }}>
-          <Row icon="location" label="Comune" value={comune?.name} onPress={() => router.push("/comune")} />
+          <Row icon="location" label={t("common.comune")} value={comune?.name} onPress={() => router.push("/comune")} />
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 14, minHeight: 56, borderBottomWidth: 1, borderBottomColor: C.line }}>
+            <Icon name="globe" size={16} color={C.ink} />
+            <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2 }}>{t("language.row")}</Text>
+            <LanguageSwitch />
+          </View>
           <Row
             icon="doc"
-            label="Explanations"
-            value={{ me: "Me", class: "My class", comune: "Comune" }[explain]}
+            label={t("me.explanations")}
+            value={{ me: t("common.me"), class: t("common.myClass"), comune: t("common.comune") }[explain]}
             onPress={() => setExplain(explain === "me" ? "class" : explain === "class" ? "comune" : "me")}
           />
-          <Row icon="book" label="How-to guide" onPress={() => router.push("/guide")} />
-          <Row icon="shield" label="Data sources & trust" onPress={() => router.push("/sources")} />
-          <Row icon="sparkle" label="Ask Leaf" onPress={() => router.push("/leaf")} />
+          <Row icon="book" label={t("me.guide")} onPress={() => router.push("/guide")} />
+          <Row icon="shield" label={t("me.sources")} onPress={() => router.push("/sources")} />
+          <Row icon="sparkle" label={t("common.askLeaf")} onPress={() => router.push("/leaf")} />
           <Row
             icon="refresh"
-            label="Sign out & reset"
+            label={t("me.signOut")}
             onPress={() =>
-              Alert.alert(
-                "Sign out of BeGreen?",
-                supabase
-                  ? "Your account is anonymous and tied to this phone: once you sign out, you can’t get it back. Your shared proofs stay on the feed."
-                  : "This clears your proofs from this phone and returns to onboarding.",
-                [
-                  { text: "Cancel", style: "cancel" },
-                  {
-                    text: "Sign out",
-                    style: "destructive",
-                    onPress: async () => {
-                      await supabase?.auth.signOut().catch(() => {});
-                      reset();
-                      router.replace("/onboarding");
-                    },
+              Alert.alert(t("me.signOutTitle"), supabase ? t("me.signOutBody") : t("me.signOutLocal"), [
+                { text: t("common.cancel"), style: "cancel" },
+                {
+                  text: t("me.signOutConfirm"),
+                  style: "destructive",
+                  onPress: async () => {
+                    await supabase?.auth.signOut().catch(() => {});
+                    reset();
+                    router.replace("/onboarding");
                   },
-                ],
-              )
+                },
+              ])
             }
           />
         </View>
 
         <View style={{ alignItems: "center", gap: 6, paddingTop: 8 }}>
           <Logo size={22} color={C.faint} />
-          <Mono color={C.faint}>Proof, not promises · v1.1</Mono>
+          <Mono color={C.faint}>{t("me.tagline")}</Mono>
         </View>
       </ScrollView>
       <TopCover />
@@ -360,8 +367,14 @@ function Row({ icon, label, value, onPress }: { icon: IconName; label: string; v
       style={{ flexDirection: "row", alignItems: "center", gap: 14, height: 56, borderBottomWidth: 1, borderBottomColor: C.line }}
     >
       <Icon name={icon} size={16} color={C.leaf} />
-      <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2 }}>{label}</Text>
-      {value && <Mono color={C.ink}>{value}</Mono>}
+      <Text numberOfLines={2} style={{ flex: 1, fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2 }}>
+        {label}
+      </Text>
+      {value && (
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ flexShrink: 1, fontFamily: F.monoMedium, fontSize: 11, letterSpacing: 0.4, color: C.ink }}>
+          {value}
+        </Text>
+      )}
       <Icon name="chevron" size={12} color={C.faint} />
     </Press>
   );
