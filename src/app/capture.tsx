@@ -575,7 +575,7 @@ export default function Capture() {
               {realCamera && perm && !perm.granted && <Button label="Allow camera" kind="inverse" onPress={requestPerm} />}
             </View>
           ) : (
-            // Mounted once the frame is measured: on Android the preview keeps the size it first gets.
+            // Mounted once the frame is measured, so the preview starts at its final size.
             frame && (
               <CameraView
                 ref={cam}
