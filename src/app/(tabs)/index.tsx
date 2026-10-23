@@ -74,7 +74,7 @@ function Mine({ post }: { post: Post }) {
       accessibilityLabel={t("feed.todayA11y")}
       style={{ flexDirection: "row", gap: 14, alignItems: "center" }}
     >
-      <Image source={post.photo} style={{ width: 62, height: 78, borderRadius: 12, backgroundColor: C.card }} contentFit="cover" />
+      <Image source={post.photo} style={{ width: 62, height: 78, borderRadius: 12, backgroundColor: C.card }} contentFit="cover" priority="low" />
       <View style={{ flex: 1, gap: 6 }}>
         <Mono color={C.leaf}>{t("feed.today")}</Mono>
         <Text style={{ fontFamily: F.medium, fontSize: 18, letterSpacing: -0.5, color: C.ink }}>{a.label}</Text>
@@ -224,6 +224,7 @@ export default function Feed() {
       <FlatList
         data={posts}
         keyExtractor={(p) => p.id}
+        windowSize={7}
         ListHeaderComponent={header}
         contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 6, paddingBottom: 140, gap: 34 }}
         renderItem={({ item, index }) => (

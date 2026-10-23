@@ -61,9 +61,10 @@ export default function Leaf() {
 
   return (
     <View ref={keyboardRoot} collapsable={false} style={{ flex: 1 }}>
-      {/* In a form sheet iOS adopts the first ScrollView as the sheet's own scroller, so the header lives inside it. */}
+      {/* In a form sheet iOS adopts the first ScrollView as the sheet's own scroller, so the header lives inside it. On Android the sheet is a bottom sheet and keeps the drag unless this list joins nested scrolling. */}
       <ScrollView
         ref={scroller}
+        nestedScrollEnabled={process.env.EXPO_OS === "android"}
         style={{ flex: 1 }}
         stickyHeaderIndices={[0]}
         contentContainerStyle={{ paddingBottom: 110 }}

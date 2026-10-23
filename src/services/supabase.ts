@@ -7,6 +7,9 @@ import { AppState } from "react-native";
 const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const key = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
+export const SUPABASE_URL = url ?? "";
+export const SUPABASE_KEY = key ?? "";
+
 // Without these the app runs on-device only: your posts stay local and the feed shows demo proofs.
 export const supabase: SupabaseClient | null =
   url && key

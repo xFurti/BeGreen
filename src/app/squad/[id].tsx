@@ -219,7 +219,7 @@ export default function SquadDetail() {
                 style={{ width: tile, height: tile * 1.25, borderRadius: 12, overflow: "hidden" }}
                 accessibilityLabel={actionCopy(t, p.action).label}
               >
-                <Image source={p.photo} style={{ flex: 1 }} contentFit="cover" />
+                <Image source={p.photo} style={{ flex: 1 }} contentFit="cover" priority="low" />
               </Press>
             ))}
           </View>

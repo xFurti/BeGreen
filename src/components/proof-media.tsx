@@ -34,10 +34,11 @@ function Proof({ src, playing, fit = "cover" }: { src: Media; playing: boolean; 
   return (
     <VideoView
       player={player}
-      style={{ width: "100%", height: "100%" }}
+      style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
       contentFit={fit}
       nativeControls={false}
       allowsPictureInPicture={false}
+      useExoShutter={false}
       pointerEvents="none"
     />
   );
@@ -68,6 +69,7 @@ export function ProofMedia({
   verified = false,
   radius = R.lg,
   aspect = 4 / 5,
+  priority = "normal",
   onPressMain,
   onDoubleTap,
   popEmoji = "💚",
@@ -80,19 +82,41 @@ export function ProofMedia({
   verified?: boolean;
   radius?: number;
   aspect?: number;
+  priority?: "low" | "normal" | "high";
   onPressMain?: () => void;
   onDoubleTap?: () => void;
   popEmoji?: string;
 }) {
   const { t } = useI18n();
   const [swapped, setSwapped] = useState(false);
+  const [loadedPhoto, setLoadedPhoto] = useState<Media | null>(() => (typeof photo === "number" ? photo : null));
   const [pop, setPop] = useState(0);
   const lastTap = useRef(0);
   const single = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => () => clearTimeout(single.current), []);
 
-  const photoEl = <Image source={photo} style={{ width: "100%", height: "100%" }} contentFit="cover" transition={200} />;
-  const videoEl = <Proof src={proof} playing={active && !locked} />;
+  const photoReady = typeof photo === "number" || loadedPhoto === photo;
+  const showClip = !locked && active && (swapped || photoReady);
+  const mainPhoto = (
+    <Image
+      source={photo}
+      style={{ width: "100%", height: "100%" }}
+      contentFit="cover"
+      priority={priority}
+      transition={200}
+      onLoad={() => setLoadedPhoto(photo)}
+      onError={() => setLoadedPhoto(photo)}
+    />
+  );
+  const insetPhoto = (
+    <Image
+      source={photo}
+      style={{ position: "absolute", inset: 0 } as never}
+      priority="low"
+      contentFit="cover"
+      blurRadius={swapped ? 0 : 14}
+    />
+  );
 
   const onTap = () => {
     const now = Date.now();
@@ -123,7 +147,14 @@ export function ProofMedia({
       }}
     >
       <Pressable style={{ flex: 1 }} onPress={onTap} disabled={locked || (!onPressMain && !onDoubleTap)}>
-        {swapped ? videoEl : photoEl}
+        {swapped ? (
+          <View style={{ flex: 1 }}>
+            {mainPhoto}
+            {showClip && <Proof src={proof} playing={active && !locked} />}
+          </View>
+        ) : (
+          mainPhoto
+        )}
       </Pressable>
 
       {!locked && (
@@ -149,7 +180,18 @@ export function ProofMedia({
               boxShadow: "0 6px 18px rgba(0,0,0,0.22)",
             }}
           >
-            {swapped ? photoEl : videoEl}
+            <View style={{ flex: 1 }}>
+              {insetPhoto}
+              {!showClip && !swapped && (
+                <View
+                  pointerEvents="none"
+                  style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(0,0,0,0.35)" }}
+                >
+                  <Icon name="play" size={18} color={C.white} />
+                </View>
+              )}
+              {showClip && !swapped && <Proof src={proof} playing={active && !locked} />}
+            </View>
           </Pressable>
         </Animated.View>
       )}
