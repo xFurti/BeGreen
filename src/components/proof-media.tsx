@@ -96,7 +96,7 @@ export function ProofMedia({
   useEffect(() => () => clearTimeout(single.current), []);
 
   const photoReady = typeof photo === "number" || loadedPhoto === photo;
-  const showClip = !locked && (swapped || (active && photoReady));
+  const showClip = !locked && active && (swapped || photoReady);
   const mainPhoto = (
     <Image
       source={photo}
