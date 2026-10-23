@@ -224,7 +224,7 @@ export default function Me() {
       <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ paddingTop: top + 10, paddingHorizontal: 20, paddingBottom: 140, gap: 40 }}>
         <View style={{ gap: 20 }}>
           <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" }}>
-            <Avatar name={profileName(profile.name, t)} size={76} ring={C.lime} />
+            <Avatar avatarId={profile.avatarId} name={profileName(profile.name, t)} size={76} ring={C.lime} />
             <IconButton
               icon="share"
               label={t("me.share")}

@@ -1,6 +1,7 @@
 import { File } from "expo-file-system";
 
 import type { ActionId } from "@/data/actions";
+import { isAvatarId, type AvatarId } from "@/data/avatars";
 import { isBadgeId, type BadgeId } from "@/data/badges";
 import { assetKey, resolveMedia } from "@/data/demo";
 import type { Audience, Comment, Comune, Media, Post, Role, Squad, SquadKind, User } from "@/data/types";
@@ -11,7 +12,7 @@ import { SUPABASE_KEY, SUPABASE_URL, supabase } from "@/services/supabase";
 
 const D = 864e5;
 
-type ProfileRow = { id: string; name: string; handle: string; role: Role; badge_id: string | null };
+type ProfileRow = { id: string; name: string; handle: string; role: Role; badge_id: string | null; avatar_id: string | null };
 type PostRow = {
   id: string;
   author_id: string;
@@ -44,7 +45,7 @@ type SquadRow = {
   squad_members: { user_id: string }[];
 };
 
-const PROFILE = "id, name, handle, role, badge_id";
+const PROFILE = "id, name, handle, role, badge_id, avatar_id";
 // posts and profiles are also linked through verifications, reactions and comments: name the FK for each embed.
 const POST =
   "id, author_id, comune_id, challenge_id, action, photo, proof, caption, place, audience, squad_id, created_at, " +
@@ -52,7 +53,14 @@ const POST =
   `reactions(user_id, emoji), comments(id, author_id, text, created_at, author:profiles!comments_author_id_fkey(${PROFILE}))`;
 const SQUAD = "id, name, kind, place, comune_id, code, points, quest, monthly, month, squad_members(user_id)";
 
-const toUser = (p: ProfileRow): User => ({ id: p.id, name: p.name, handle: p.handle, role: p.role, badgeId: isBadgeId(p.badge_id) ? p.badge_id : null });
+const toUser = (p: ProfileRow): User => ({
+  id: p.id,
+  name: p.name,
+  handle: p.handle,
+  role: p.role,
+  badgeId: isBadgeId(p.badge_id) ? p.badge_id : null,
+  avatarId: isAvatarId(p.avatar_id) ? p.avatar_id : null,
+});
 
 export type Feed = { posts: Post[]; profiles: Record<string, User>; myReactions: Record<string, string> };
 
@@ -186,12 +194,25 @@ export async function fetchProfiles(ids: string[]): Promise<Record<string, User>
   return Object.fromEntries((data as ProfileRow[]).map((p) => [p.id, toUser(p)]));
 }
 
+export async function countComuneMembers(comuneId: string): Promise<number> {
+  const { count, error } = await db().from("profiles").select("id", { count: "exact", head: true }).eq("comune_id", comuneId);
+  if (error) throw error;
+  return count ?? 0;
+}
+
 export class HandleTaken extends Error {}
 
-export async function saveProfile(me: string, p: { name: string; handle: string; role: Role; badgeId?: BadgeId | null }, comune: Comune | null) {
+export async function saveProfile(
+  me: string,
+  p: { name: string; handle: string; role: Role; badgeId?: BadgeId | null; avatarId?: AvatarId | null },
+  comune: Comune | null,
+) {
   const { error } = await db()
     .from("profiles")
-    .upsert({ id: me, name: p.name, handle: p.handle, role: p.role, badge_id: p.badgeId ?? null, comune_id: comune?.id ?? null }, { onConflict: "id" });
+    .upsert(
+      { id: me, name: p.name, handle: p.handle, role: p.role, badge_id: p.badgeId ?? null, avatar_id: p.avatarId ?? null, comune_id: comune?.id ?? null },
+      { onConflict: "id" },
+    );
   if (error?.code === "23505") throw new HandleTaken(p.handle);
   if (error) throw error;
 }

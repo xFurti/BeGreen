@@ -1,9 +1,12 @@
 import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useState, type ReactNode } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
 import Animated, {
   useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
+  withDelay,
   withRepeat,
   withSequence,
   withSpring,
@@ -12,7 +15,8 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Icon, type IconName } from "@/components/icon";
-import { LeafMark } from "@/components/nature";
+import { LeafMark, Sprout } from "@/components/nature";
+import { avatarById, type AvatarId } from "@/data/avatars";
 import { SOURCE_KINDS, SOURCES, type SourceId } from "@/data/sources";
 import type { Media } from "@/data/types";
 import { sourceCopy, sourceKindCopy } from "@/i18n/content";
@@ -93,6 +97,8 @@ export function Button({
   trailing,
   loading,
   disabled,
+  accessibilityLabel,
+  sheen,
   size = "lg",
   style,
 }: {
@@ -103,9 +109,25 @@ export function Button({
   trailing?: string;
   loading?: boolean;
   disabled?: boolean;
+  accessibilityLabel?: string;
+  sheen?: boolean;
   size?: "lg" | "md" | "sm";
   style?: StyleProp<ViewStyle>;
 }) {
+  const reducedMotion = useReducedMotion();
+  const sheenProgress = useSharedValue(-1);
+  useEffect(() => {
+    if (!sheen || reducedMotion) {
+      sheenProgress.value = -1;
+      return;
+    }
+    sheenProgress.value = withRepeat(
+      withSequence(withTiming(1, { duration: 650 }), withDelay(1950, withTiming(-1, { duration: 0 }))),
+      -1,
+      false,
+    );
+  }, [reducedMotion, sheen, sheenProgress]);
+  const sheenStyle = useAnimatedStyle(() => ({ transform: [{ translateX: sheenProgress.value * 260 }] }));
   const bg = { primary: C.ink, green: C.forest, secondary: C.mint, ghost: "transparent", inverse: C.white, glass: "rgba(255,255,255,0.12)" }[kind];
   const fg = { primary: C.white, green: C.white, secondary: C.forest, ghost: C.ink, inverse: C.ink, glass: C.white }[kind];
   const h = { lg: 56, md: 46, sm: 34 }[size];
@@ -113,7 +135,7 @@ export function Button({
     <Press
       onPress={onPress}
       disabled={disabled || loading}
-      accessibilityLabel={label}
+      accessibilityLabel={accessibilityLabel ?? label}
       style={[
         {
           height: h,
@@ -125,12 +147,18 @@ export function Button({
           alignItems: "center",
           justifyContent: "center",
           gap: 8,
+          overflow: sheen ? "hidden" : undefined,
           borderWidth: kind === "ghost" ? 1 : 0,
           borderColor: C.line,
         },
         style,
       ]}
     >
+      {sheen && !reducedMotion && (
+        <Animated.View pointerEvents="none" style={[{ position: "absolute", top: 0, bottom: 0, left: -80, width: 68, opacity: 0.18 }, sheenStyle]}>
+          <LinearGradient colors={["rgba(255,255,255,0)", "rgba(255,255,255,0.9)", "rgba(255,255,255,0)"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ flex: 1 }} />
+        </Animated.View>
+      )}
       {loading ? (
         <ActivityIndicator color={fg} />
       ) : (
@@ -177,9 +205,34 @@ export function IconButton({
 // ---------- Avatar ----------
 
 // `invert` for monograms sitting on black.
-export function Avatar({ src, name, size = 36, ring, invert }: { src?: Media; name: string; size?: number; ring?: string; invert?: boolean }) {
+export function Avatar({
+  src,
+  avatarId,
+  name,
+  size = 36,
+  ring,
+  invert,
+}: {
+  src?: Media;
+  avatarId?: AvatarId | null;
+  name: string;
+  size?: number;
+  ring?: string;
+  invert?: boolean;
+}) {
+  const avatar = avatarId ? avatarById(avatarId) : null;
   const inner = src ? (
     <Image source={src} style={{ width: size, height: size, borderRadius: size / 2 }} contentFit="cover" transition={150} />
+  ) : avatar ? (
+    <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: avatar.bg, alignItems: "center", justifyContent: "center" }}>
+      {avatar.art === "leafMark" ? (
+        <LeafMark size={size * 0.52} color={avatar.fg} vein="transparent" />
+      ) : avatar.art === "sprout" ? (
+        <Sprout size={size * 0.52} color={avatar.fg} stem={avatar.fg} />
+      ) : (
+        <Icon name={avatar.art} size={size * 0.52} color={avatar.fg} />
+      )}
+    </View>
   ) : (
     <View
       style={{
@@ -200,12 +253,12 @@ export function Avatar({ src, name, size = 36, ring, invert }: { src?: Media; na
   return <View style={{ padding: 2, borderRadius: size, backgroundColor: ring }}>{inner}</View>;
 }
 
-export function AvatarStack({ people, size = 24, ring = C.bg }: { people: { avatar?: Media; name: string }[]; size?: number; ring?: string }) {
+export function AvatarStack({ people, size = 24, ring = C.bg }: { people: { avatar?: Media; avatarId?: AvatarId | null; name: string }[]; size?: number; ring?: string }) {
   return (
     <View style={{ flexDirection: "row" }}>
       {people.map((p, i) => (
         <View key={i} style={{ marginLeft: i === 0 ? 0 : -size * 0.32 }}>
-          <Avatar src={p.avatar} name={p.name} size={size} ring={ring} />
+          <Avatar src={p.avatar} avatarId={p.avatarId} name={p.name} size={size} ring={ring} />
         </View>
       ))}
     </View>

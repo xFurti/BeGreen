@@ -33,7 +33,7 @@ function Podium({ top3 }: { top3: Racer[] }) {
         return (
           <Animated.View key={r.id} entering={FadeInDown.delay(100 + i * 90).springify().damping(16)} style={{ flex: 1, alignItems: "center", gap: 8 }}>
             {place === 1 && <Icon name="crown" size={16} color={C.leaf} />}
-            <Avatar src={r.avatar} name={r.name} size={place === 1 ? 56 : 46} ring={r.me ? C.leaf : undefined} />
+            <Avatar src={r.avatar} avatarId={r.avatarId} name={r.name} size={place === 1 ? 56 : 46} ring={r.me ? C.leaf : undefined} />
             <View style={{ alignItems: "center", gap: 1 }}>
               <TitledName name={r.name} badgeId={r.badgeId} align="center" style={{ fontFamily: F.medium, fontSize: 14, letterSpacing: -0.2, color: C.ink }} />
               <Mono>{r.points}</Mono>
@@ -83,7 +83,7 @@ function RacerRow({ r, rank, index }: { r: Racer; rank: number; index: number })
       <Mono color={r.me ? C.lime : C.mute} style={{ width: 22 }}>
         {String(rank).padStart(2, "0")}
       </Mono>
-      <Avatar src={r.avatar} name={r.name} size={36} invert={r.me} />
+      <Avatar src={r.avatar} avatarId={r.avatarId} name={r.name} size={36} invert={r.me} />
       <View style={{ flex: 1, gap: 2 }}>
         <TitledName
           name={r.me && r.name !== you ? `${r.name} (${t("common.youInline")})` : r.name}

@@ -45,6 +45,7 @@ export default function RootLayout() {
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false, animation: "fade" }} />
+        <Stack.Screen name="welcome" options={{ headerShown: false, gestureEnabled: false, animation: "fade" }} />
         <Stack.Screen
           name="capture"
           options={{ presentation: "fullScreenModal", headerShown: false, contentStyle: { backgroundColor: C.black } }}

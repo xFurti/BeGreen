@@ -1,36 +1,34 @@
-import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { KeyboardAvoidingView, Pressable, ScrollView, Text, TextInput, useWindowDimensions, View, type ScrollViewInstance } from "react-native";
-import Animated, { FadeIn, FadeInDown, LinearTransition, useAnimatedStyle, useSharedValue, withDelay, withSpring } from "react-native-reanimated";
+import Animated, { FadeIn, useAnimatedScrollHandler, useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Icon, type IconName } from "@/components/icon";
 import { LanguageSwitch } from "@/components/language-switch";
-import { Blobs, LeafScatter } from "@/components/nature";
-import { Avatar, Button, Chip, Logo, Mono, Press } from "@/components/ui";
-import { HERO_PHOTOS } from "@/data/demo";
-import { SDG_LIST } from "@/data/sdgs";
-import { SOURCE_KINDS } from "@/data/sources";
+import { Aurora } from "@/components/onboarding/aurora";
+import { CityFlip } from "@/components/onboarding/city-flip";
+import { GoalsGrid } from "@/components/onboarding/goals-grid";
+import { HoldToPlant } from "@/components/onboarding/hold-to-plant";
+import { OnboardingProgress } from "@/components/onboarding/progress";
+import { AvatarPicker, ProfileCard } from "@/components/onboarding/profile-card";
+import { ProofDeck } from "@/components/onboarding/proof-deck";
+import { RaceTap } from "@/components/onboarding/race-tap";
+import { RotatingWord } from "@/components/onboarding/rotating-word";
+import { WordsIn } from "@/components/onboarding/words-in";
+import { Button, Chip, Logo, Mono, Press } from "@/components/ui";
 import type { Role } from "@/data/types";
+import type { AvatarId } from "@/data/avatars";
 import type { MessageKey } from "@/i18n/catalog";
-import { sourceKindCopy } from "@/i18n/content";
+import { useHandleStatus } from "@/hooks/use-handle-status";
 import { useI18n } from "@/i18n/use-i18n";
-import { comuneLabel } from "@/services/comuni";
+import { comuneLabel, comuneNearMe } from "@/services/comuni";
+import { isHandle, toHandle } from "@/services/handles";
 import { HandleTaken } from "@/services/social";
 import { hasBackend } from "@/services/supabase";
 import { registerProfile, useApp } from "@/store/app-store";
-import { C, F, R, T } from "@/theme/tokens";
+import { C, F, T } from "@/theme/tokens";
 import { haptic } from "@/utils/format";
-
-const HANDLE = /^[a-z0-9._]{2,24}$/;
-const toHandle = (name: string) =>
-  name
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9._]/g, "")
-    .slice(0, 24);
 
 const ROLES: { value: Role; icon: IconName; label: MessageKey; hint: MessageKey }[] = [
   { value: "student", icon: "school", label: "roles.student", hint: "roles.studentHint" },
@@ -39,202 +37,25 @@ const ROLES: { value: Role; icon: IconName; label: MessageKey; hint: MessageKey 
   { value: "comune", icon: "building", label: "roles.comune", hint: "roles.comuneHint" },
 ];
 
-function Tile({ src, rotate, x, y, z, w }: { src: number; rotate: string; x: number; y: number; z: number; w: number }) {
+function ChecklistItem({ label, done }: { label: string; done: boolean }) {
+  const reducedMotion = useReducedMotion();
+  const progress = useSharedValue(done ? 1 : 0);
+  useEffect(() => {
+    progress.set(reducedMotion ? (done ? 1 : 0) : withSpring(done ? 1 : 0, { damping: 14, stiffness: 280 }));
+  }, [done, progress, reducedMotion]);
+  const style = useAnimatedStyle(() => ({ opacity: 0.55 + progress.value * 0.45, transform: [{ scale: 0.9 + progress.value * 0.1 }] }));
   return (
-    <View
-      style={{
-        position: "absolute",
-        left: x,
-        top: y,
-        zIndex: z,
-        width: w,
-        aspectRatio: 4 / 5,
-        borderRadius: 22,
-        borderCurve: "continuous",
-        overflow: "hidden",
-        transform: [{ rotate }],
-        boxShadow: "0 18px 40px rgba(0,0,0,0.16)",
-        borderWidth: 3,
-        borderColor: C.white,
-      }}
+    <Animated.View
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked: done }}
+      accessibilityLabel={label}
+      style={[{ flexDirection: "row", alignItems: "center", gap: 8 }, style]}
     >
-      <Image source={src} style={{ flex: 1 }} contentFit="cover" />
-    </View>
-  );
-}
-
-function HeroCollage({ width }: { width: number }) {
-  const { t } = useI18n();
-  const w = width * 0.5;
-  return (
-    <View style={{ height: w * 1.45, width: "100%" }}>
-      <View style={{ position: "absolute", inset: -20, borderRadius: 48, overflow: "hidden" } as never}>
-        <Blobs colors={[C.mint2, C.mint2]} opacity={0.7} size={width * 0.75} />
+      <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, borderColor: done ? C.leaf : C.line, backgroundColor: done ? C.leaf : C.bg, alignItems: "center", justifyContent: "center" }}>
+        {done && <Icon name="check" size={13} color={C.white} />}
       </View>
-      <LeafScatter style={{ position: "absolute", right: 4, bottom: 0, zIndex: 6 }} />
-      <Tile src={HERO_PHOTOS[2]} rotate="-8deg" x={width * 0.02} y={34} z={1} w={w * 0.84} />
-      <Tile src={HERO_PHOTOS[3]} rotate="7deg" x={width * 0.5} y={18} z={1} w={w * 0.84} />
-      <View style={{ position: "absolute", left: (width - w) / 2, top: 40, zIndex: 3, width: w, aspectRatio: 4 / 5 }}>
-        <Tile src={HERO_PHOTOS[1]} rotate="-1deg" x={0} y={0} z={3} w={w} />
-        <View
-          style={{
-            position: "absolute",
-            left: 12,
-            top: 12,
-            zIndex: 4,
-            width: w * 0.32,
-            aspectRatio: 4 / 5,
-            borderRadius: 12,
-            overflow: "hidden",
-            borderWidth: 2,
-            borderColor: C.white,
-          }}
-        >
-          <Image source={HERO_PHOTOS[0]} style={{ flex: 1 }} contentFit="cover" />
-        </View>
-        <View
-          style={{
-            position: "absolute",
-            zIndex: 5,
-            bottom: -14,
-            alignSelf: "center",
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 6,
-            backgroundColor: C.forest,
-            paddingHorizontal: 12,
-            height: 30,
-            borderRadius: R.pill,
-          }}
-        >
-          <Icon name="checkSeal" size={13} color={C.lime} />
-          <Text style={{ color: C.white, fontFamily: F.medium, fontSize: 13 }}>{t("onboarding.verifiedBy3")}</Text>
-        </View>
-      </View>
-    </View>
-  );
-}
-
-function DataPreview() {
-  const { t } = useI18n();
-  const rows = [
-    { label: t("onboarding.air"), value: "24", unit: t("onboarding.fair"), kind: "model" as const },
-    { label: t("onboarding.species"), value: "287", unit: t("onboarding.days30"), kind: "citizen" as const },
-    { label: t("onboarding.dryDays"), value: "6", unit: t("onboarding.inARow"), kind: "model" as const },
-    { label: "Parco Nord", value: "9", unit: "km", kind: "map" as const },
-  ];
-  return (
-    <View style={{ paddingTop: 10 }}>
-      {rows.map((r, i) => (
-        <Animated.View
-          key={r.label}
-          entering={FadeInDown.delay(120 + i * 90).springify().damping(18)}
-          style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 16, borderTopWidth: 1, borderTopColor: C.line }}
-        >
-          <Mono style={{ width: 20 }}>{String(i + 1).padStart(2, "0")}</Mono>
-          <View style={{ flex: 1, gap: 4 }}>
-            <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3 }}>{r.label}</Text>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: SOURCE_KINDS[r.kind].color }} />
-              <Mono>{sourceKindCopy(t, r.kind).short}</Mono>
-            </View>
-          </View>
-          <Text style={{ fontFamily: F.medium, fontSize: 40, letterSpacing: -2, fontVariant: ["tabular-nums"] }}>{r.value}</Text>
-          <Text style={{ fontFamily: F.regular, fontSize: 13, color: C.mute, width: 78 }}>{r.unit}</Text>
-        </Animated.View>
-      ))}
-    </View>
-  );
-}
-
-// You start last, then climb. Competition, explained in one animation.
-function RacePreview({ active }: { active: boolean }) {
-  const { t } = useI18n();
-  const base: { id: string; name: MessageKey; pts: number }[] = [
-    { id: "a", name: "onboarding.race.classmate", pts: 345 },
-    { id: "b", name: "onboarding.race.neighbour", pts: 270 },
-    { id: "c", name: "onboarding.race.teacher", pts: 205 },
-    { id: "d", name: "onboarding.race.squadMate", pts: 160 },
-  ];
-  const [mine, setMine] = useState(120);
-  useEffect(() => {
-    if (!active) return;
-    const a = setTimeout(() => {
-      haptic.soft();
-      setMine(230);
-    }, 900);
-    const b = setTimeout(() => {
-      haptic.success();
-      setMine(360);
-    }, 2000);
-    return () => {
-      clearTimeout(a);
-      clearTimeout(b);
-    };
-  }, [active]);
-  const rows = [...base.map((b) => ({ ...b, me: false })), { id: "me", name: "common.you" as MessageKey, pts: mine, me: true }].sort((x, y) => y.pts - x.pts);
-  return (
-    <View style={{ paddingTop: 10 }}>
-      {rows.map((r, i) => (
-        <Animated.View
-          key={r.id}
-          layout={LinearTransition.springify().damping(16)}
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 12,
-            height: 62,
-            paddingHorizontal: r.me ? 14 : 0,
-            marginHorizontal: r.me ? -14 : 0,
-            borderRadius: r.me ? R.md : 0,
-            backgroundColor: r.me ? C.forest : "transparent",
-            borderBottomWidth: r.me ? 0 : 1,
-            borderBottomColor: C.line,
-          }}
-        >
-          <Mono color={r.me ? C.lime : C.mute} style={{ width: 20 }}>
-            {String(i + 1).padStart(2, "0")}
-          </Mono>
-          <Avatar name={r.me ? t("common.you") : t(r.name)} size={34} invert={r.me} />
-          <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3, color: r.me ? C.white : C.ink }}>
-            {r.me ? t("common.you") : t(r.name)}
-          </Text>
-          {r.me && i === 0 && <Icon name="crown" size={14} color={C.lime} />}
-          <Text style={{ fontFamily: F.medium, fontSize: 17, color: r.me ? C.white : C.ink, fontVariant: ["tabular-nums"] }}>{r.pts}</Text>
-        </Animated.View>
-      ))}
-    </View>
-  );
-}
-
-function GoalCell({ g, on, delay, size }: { g: number; on: boolean; delay: number; size: number }) {
-  const t = useSharedValue(0);
-  useEffect(() => {
-    t.set(on ? withDelay(delay, withSpring(1, { damping: 14 })) : 0);
-  }, [on, delay, t]);
-  const fill = useAnimatedStyle(() => ({ opacity: t.value, transform: [{ scale: 0.6 + t.value * 0.4 }] }));
-  return (
-    <View style={{ width: size, height: size, borderRadius: 12, backgroundColor: C.mint, overflow: "hidden" }}>
-      <Text style={{ position: "absolute", top: 8, left: 9, fontFamily: F.medium, fontSize: 18, letterSpacing: -0.6, color: C.forestMute }}>{g}</Text>
-      <Animated.View style={[{ position: "absolute", inset: 0, backgroundColor: C.leaf, borderRadius: 12 } as never, fill]}>
-        <Text style={{ position: "absolute", top: 8, left: 9, fontFamily: F.medium, fontSize: 18, letterSpacing: -0.6, color: C.white }}>{g}</Text>
-      </Animated.View>
-    </View>
-  );
-}
-
-function GoalsPreview({ active, width }: { active: boolean; width: number }) {
-  const size = Math.floor((width - 5 * 6) / 6);
-  const lit = [3, 6, 11, 12, 13, 14, 15, 17];
-  return (
-    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, paddingTop: 10 }}>
-      {SDG_LIST.map((g) => (
-        <GoalCell key={g} g={g} size={size} on={active && lit.includes(g)} delay={lit.indexOf(g) * 140} />
-      ))}
-      <View style={{ width: size, height: size, borderRadius: 12, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-        <Text style={{ fontFamily: F.medium, fontSize: 13, letterSpacing: -0.4 }}>2030</Text>
-      </View>
-    </View>
+      <Text style={{ fontFamily: F.medium, fontSize: 14, color: done ? C.forest : C.mute }}>{label}</Text>
+    </Animated.View>
   );
 }
 
@@ -242,19 +63,46 @@ export default function Onboarding() {
   const { width } = useWindowDimensions();
   const { top, bottom } = useSafeAreaInsets();
   const pager = useRef<ScrollViewInstance>(null);
+  const pagerProgress = useSharedValue(0);
+  const reducedMotion = useReducedMotion();
   const [page, setPage] = useState(0);
   const [name, setName] = useState("");
   const [handle, setHandle] = useState("");
   const [handleEdited, setHandleEdited] = useState(false);
+  const [avatarId, setAvatarId] = useState<AvatarId | null>(null);
   const [role, setRole] = useState<Role>("student");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [locationMessage, setLocationMessage] = useState<string | null>(null);
   const finish = useApp((s) => s.finishOnboarding);
   const comune = useApp((s) => s.comune);
+  const setComune = useApp((s) => s.setComune);
   const { t } = useI18n();
   const inner = width - 40;
   const h = handleEdited ? handle : toHandle(name);
-  const canStart = name.trim().length > 0 && HANDLE.test(h) && !!comune && !busy;
+  const handleStatus = useHandleStatus(h, isHandle(h));
+  const handleOk = isHandle(h) && handleStatus.state !== "taken" && handleStatus.state !== "checking";
+  const invalid = h.length > 0 && !isHandle(h);
+  const canStart = name.trim().length > 0 && handleOk && !!comune && !busy;
+  const missing = [
+    name.trim().length ? null : t("onboarding.checklistName"),
+    handleOk ? null : t("onboarding.checklistHandle"),
+    comune ? null : t("onboarding.checklistComune"),
+  ].filter((item): item is string => !!item);
+
+  const locateComune = async () => {
+    setLocating(true);
+    setLocationMessage(null);
+    const found = await comuneNearMe().catch(() => null);
+    if (!found) {
+      setLocationMessage(t("comune.noLocation"));
+    } else {
+      setComune(found);
+      haptic.success();
+    }
+    setLocating(false);
+  };
 
   const go = (i: number) => {
     haptic.tap();
@@ -264,14 +112,14 @@ export default function Onboarding() {
 
   const start = async () => {
     if (!canStart) return;
-    const profile = { name: name.trim(), handle: h, role };
+    const profile = { name: name.trim(), handle: h, role, avatarId };
     setBusy(true);
     setError(null);
     try {
       await registerProfile(profile, comune);
       haptic.success();
       finish(profile);
-      router.replace("/");
+      router.replace("/welcome");
     } catch (e) {
       setError(e instanceof HandleTaken ? t("onboarding.handleTaken", { handle: h }) : t("onboarding.offline"));
     } finally {
@@ -284,31 +132,35 @@ export default function Onboarding() {
       kicker: t("onboarding.kicker1"),
       title: t("onboarding.title1"),
       body: t("onboarding.body1"),
-      visual: <HeroCollage width={inner} />,
+      visual: <ProofDeck width={inner} active={page === 0} />,
     },
     {
       kicker: t("onboarding.kicker2"),
       title: t("onboarding.title2"),
       body: t("onboarding.body2"),
-      visual: <DataPreview />,
+      visual: <CityFlip active={page === 1} />,
     },
     {
       kicker: t("onboarding.kicker3"),
       title: t("onboarding.title3"),
       body: t("onboarding.body3"),
-      visual: <RacePreview key={page === 2 ? "on" : "off"} active={page === 2} />,
+      visual: <RaceTap active={page === 2} />,
     },
     {
       kicker: t("onboarding.kicker4"),
       title: t("onboarding.title4"),
       body: t("onboarding.body4"),
-      visual: <GoalsPreview active={page === 3} width={inner} />,
+      visual: <GoalsGrid active={page === 3} width={inner} />,
     },
   ];
   const last = slides.length;
+  const onPagerScroll = useAnimatedScrollHandler((event) => {
+    pagerProgress.value = event.contentOffset.x / width;
+  });
 
   return (
     <KeyboardAvoidingView behavior={process.env.EXPO_OS === "ios" ? "padding" : undefined} style={{ flex: 1, backgroundColor: C.bg }}>
+      <Aurora progress={pagerProgress} />
       <View style={{ paddingTop: top + 10, paddingHorizontal: 20, gap: 14 }}>
         <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
           <Logo size={24} />
@@ -324,27 +176,40 @@ export default function Onboarding() {
             </Mono>
           )}
         </View>
-        <View style={{ flexDirection: "row", gap: 4 }}>
-          {Array.from({ length: last + 1 }).map((_, i) => (
-            <View key={i} style={{ flex: 1, height: 3, borderRadius: 2, backgroundColor: i <= page ? C.leaf : C.mint2 }} />
-          ))}
-        </View>
+        <OnboardingProgress
+          count={last + 1}
+          page={page}
+          progress={pagerProgress}
+          onPress={go}
+          stepLabel={(index) => t("onboarding.progressA11y", { n: index + 1, total: last + 1 })}
+          segmentLabel={(index) => t("onboarding.progressGo", { n: index + 1 })}
+        />
       </View>
 
-      <ScrollView
+      <Animated.ScrollView
         ref={pager}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
+        onScroll={onPagerScroll}
+        scrollEventThrottle={16}
         onMomentumScrollEnd={(e) => setPage(Math.round(e.nativeEvent.contentOffset.x / width))}
         keyboardShouldPersistTaps="handled"
       >
         {slides.map((s, i) => (
           <ScrollView key={i} style={{ width }} contentContainerStyle={{ padding: 20, paddingTop: 24, gap: 26 }} showsVerticalScrollIndicator={false}>
-            <Animated.View entering={FadeIn.delay(80)}>{s.visual}</Animated.View>
+            <Animated.View entering={reducedMotion ? undefined : FadeIn.delay(80)}>{s.visual}</Animated.View>
             <View style={{ gap: 12, paddingTop: 6 }}>
-              <Mono color={C.leaf}>{s.kicker}</Mono>
-              <Text style={[T.hero, { fontSize: 42, lineHeight: 43 }]}>{s.title}</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+                <Mono color={C.leaf}>{s.kicker}</Mono>
+                {i === 0 && (
+                  <RotatingWord
+                    active={page === 0}
+                    words={[t("onboarding.rotate.bike"), t("onboarding.rotate.recycle"), t("onboarding.rotate.plant"), t("onboarding.rotate.refill")]}
+                  />
+                )}
+              </View>
+              <WordsIn text={s.title} />
               <Text style={[T.body, { fontSize: 17, lineHeight: 25, color: C.ink2 }]}>{s.body}</Text>
             </View>
           </ScrollView>
@@ -355,6 +220,16 @@ export default function Onboarding() {
             <Mono color={C.leaf}>{t("onboarding.last")}</Mono>
             <Text style={[T.hero, { fontSize: 42, lineHeight: 43 }]}>{t("onboarding.who")}</Text>
           </View>
+
+          <ProfileCard
+            name={name.trim()}
+            handle={h}
+            role={role}
+            roleLabel={t(ROLES.find((r) => r.value === role)?.label ?? "roles.student")}
+            avatarId={avatarId}
+            comune={comune}
+          />
+          <AvatarPicker value={avatarId} onChange={setAvatarId} />
 
           <TextInput
             value={name}
@@ -381,7 +256,7 @@ export default function Onboarding() {
                 alignItems: "center",
                 gap: 4,
                 borderBottomWidth: 1,
-                borderBottomColor: HANDLE.test(h) ? C.line : C.red,
+                borderBottomColor: invalid ? C.red : h ? C.leaf : C.line,
               }}
             >
               <Text style={{ fontFamily: F.monoMedium, fontSize: 17, color: C.mute }}>@</Text>
@@ -389,12 +264,7 @@ export default function Onboarding() {
                 value={h}
                 onChangeText={(v) => {
                   setHandleEdited(true);
-                  setHandle(
-                    v
-                      .toLowerCase()
-                      .replace(/[^a-z0-9._]/g, "")
-                      .slice(0, 24),
-                  );
+                  setHandle(toHandle(v));
                 }}
                 placeholder={t("onboarding.handle")}
                 placeholderTextColor={C.faint}
@@ -404,6 +274,33 @@ export default function Onboarding() {
                 style={{ flex: 1, height: 46, fontSize: 17, fontFamily: F.monoMedium, color: C.ink }}
               />
             </View>
+            {handleStatus.state === "checking" && <Text style={T.caption}>{t("onboarding.handleChecking")}</Text>}
+            {handleStatus.state === "free" && (
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+                <Icon name="checkSeal" size={15} color={C.leaf} />
+                <Text style={[T.caption, { color: C.leaf }]}>{t("onboarding.handleFree", { handle: h })}</Text>
+              </View>
+            )}
+            {handleStatus.state === "taken" && (
+              <View style={{ gap: 8 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+                  <Icon name="close" size={15} color={C.red} />
+                  <Text style={[T.caption, { color: C.red }]}>{t("onboarding.handleTakenInline", { handle: h })}</Text>
+                </View>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                  {handleStatus.suggestions.map((suggestion) => (
+                    <Chip
+                      key={suggestion}
+                      label={`@${suggestion}`}
+                      onPress={() => {
+                        setHandle(suggestion);
+                        setHandleEdited(true);
+                      }}
+                    />
+                  ))}
+                </View>
+              </View>
+            )}
             <Text style={T.caption}>{t("onboarding.handleHint")}</Text>
           </View>
 
@@ -418,6 +315,8 @@ export default function Onboarding() {
           </View>
 
           <View style={{ borderTopWidth: 1, borderTopColor: C.line }}>
+            <Button label={locating ? t("comune.locating") : t("onboarding.useLocation")} kind="ghost" icon="location" disabled={locating} onPress={locateComune} style={{ alignSelf: "flex-start", marginTop: 12 }} />
+            {locationMessage && <Text style={[T.caption, { paddingBottom: 8 }]}>{locationMessage}</Text>}
             <Press
               scale={0.99}
               onPress={() => router.push("/comune")}
@@ -441,14 +340,28 @@ export default function Onboarding() {
           </View>
           {!hasBackend && <Text style={T.caption}>{t("onboarding.offlineProto")}</Text>}
         </ScrollView>
-      </ScrollView>
+      </Animated.ScrollView>
 
       <View style={{ paddingHorizontal: 20, paddingBottom: bottom + 12, paddingTop: 8, gap: 10 }}>
         {page === last && error && <Text style={[T.caption, { color: C.red, textAlign: "center" }]}>{error}</Text>}
         {page < last ? (
-          <Button label={page === 0 ? t("onboarding.letsGo") : t("common.next")} onPress={() => go(page + 1)} />
+          <Button sheen label={page === 0 ? t("onboarding.letsGo") : t("common.next")} onPress={() => go(page + 1)} />
         ) : (
-          <Button label={busy ? t("onboarding.joiningNow") : t("onboarding.start")} kind="green" icon="leaf" disabled={!canStart} onPress={start} />
+          <>
+            <View style={{ gap: 8 }}>
+              <ChecklistItem label={t("onboarding.checklistName")} done={name.trim().length > 0} />
+              <ChecklistItem label={t("onboarding.checklistHandle")} done={handleOk} />
+              <ChecklistItem label={t("onboarding.checklistComune")} done={!!comune} />
+            </View>
+            <HoldToPlant
+              canStart={canStart}
+              busy={busy}
+              accessibilityLabel={missing.length ? t("onboarding.checklistMissing", { items: missing.join(", ") }) : t("onboarding.holdToPlant")}
+              holdLabel={t("onboarding.holdToPlant")}
+              busyLabel={t("onboarding.joiningNow")}
+              onComplete={start}
+            />
+          </>
         )}
       </View>
     </KeyboardAvoidingView>

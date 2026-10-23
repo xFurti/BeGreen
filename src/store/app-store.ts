@@ -5,6 +5,7 @@ import { createJSONStorage, persist } from "zustand/middleware";
 
 import { toast } from "@/components/toast";
 import { ACTIONS, type ActionId } from "@/data/actions";
+import { isAvatarId, type AvatarId } from "@/data/avatars";
 import { badgeById, isBadgeId, type BadgeId, type BadgeStats } from "@/data/badges";
 import { DEMO_AUTHOR } from "@/data/demo";
 import type { Audience, Comune, Explain, Post, Role, Squad, User } from "@/data/types";
@@ -32,7 +33,7 @@ import {
 } from "@/services/social";
 import { ensureSession, hasBackend } from "@/services/supabase";
 
-export type Profile = { name: string; handle: string; role: Role; badgeId: BadgeId | null };
+export type Profile = { name: string; handle: string; role: Role; badgeId: BadgeId | null; avatarId: AvatarId | null };
 
 type State = {
   language: Language;
@@ -92,7 +93,7 @@ const initial: State = {
   language: deviceLanguage(),
   onboarded: false,
   userId: "",
-  profile: { name: "", handle: "", role: "student", badgeId: null },
+  profile: { name: "", handle: "", role: "student", badgeId: null, avatarId: null },
   explain: "me",
   comune: null,
   place: DEFAULT_PLACE,
@@ -125,7 +126,7 @@ export const useApp = create<State & Actions>()(
     (set, get) => ({
       ...initial,
       finishOnboarding: (p) => {
-        const profile = { ...p, badgeId: p.badgeId ?? null };
+        const profile = { ...p, badgeId: p.badgeId ?? null, avatarId: p.avatarId ?? null };
         set({
           onboarded: true,
           profile,
@@ -299,6 +300,7 @@ export const useApp = create<State & Actions>()(
             ...current.profile,
             ...merged.profile,
             badgeId: isBadgeId(merged.profile?.badgeId) ? merged.profile.badgeId : null,
+            avatarId: isAvatarId(merged.profile?.avatarId) ? merged.profile.avatarId : null,
           },
         };
       },
@@ -487,8 +489,17 @@ export function useAuthor() {
   const language = useApp((s) => s.language);
   return (id: string): User => {
     const t = (key: MessageKey) => translate(language, key);
-    if (id === DEMO_AUTHOR.id) return { ...DEMO_AUTHOR, name: t("demo.author"), tag: t("demo.tag") };
-    if (id === me) return { id, name: profile.name || t("common.you"), handle: profile.handle || t("common.youInline"), role: profile.role, badgeId: profile.badgeId, tag: t("common.you") };
+    if (id === DEMO_AUTHOR.id) return { ...DEMO_AUTHOR, name: t("demo.author"), tag: t("demo.tag"), avatarId: null };
+    if (id === me)
+      return {
+        id,
+        name: profile.name || t("common.you"),
+        handle: profile.handle || t("common.youInline"),
+        role: profile.role,
+        badgeId: profile.badgeId,
+        avatarId: profile.avatarId,
+        tag: t("common.you"),
+      };
     return profiles[id] ?? { id, name: t("shared.someone"), handle: "someone" };
   };
 }
@@ -502,10 +513,10 @@ export function weeklyOf(posts: Post[]) {
   return posts.filter((p) => p.createdAt > since).reduce((a, p) => a + seedsFor(p), 0);
 }
 
-export type Racer = { id: string; name: string; badgeId?: BadgeId | null; avatar?: number | string; points: number; me: boolean; postedToday: boolean };
+export type Racer = { id: string; name: string; badgeId?: BadgeId | null; avatarId?: AvatarId | null; avatar?: number | string; points: number; me: boolean; postedToday: boolean };
 
 // This week's race between everyone posting in your Comune, from real proofs.
-export function leagueOf(posts: Post[], me: string, comuneId: string | undefined, who: (id: string) => Pick<User, "name" | "badgeId">): Racer[] {
+export function leagueOf(posts: Post[], me: string, comuneId: string | undefined, who: (id: string) => Pick<User, "name" | "badgeId" | "avatarId">): Racer[] {
   const since = Date.now() - WEEK;
   const byAuthor = new Map<string, Post[]>();
   byAuthor.set(me, []);
@@ -518,6 +529,7 @@ export function leagueOf(posts: Post[], me: string, comuneId: string | undefined
     id,
     name: who(id).name,
     badgeId: who(id).badgeId,
+    avatarId: who(id).avatarId,
     points: ps.reduce((a, p) => a + seedsFor(p), 0),
     me: id === me,
     postedToday: postedToday(ps),

@@ -1,4 +1,5 @@
 import type { ActionId } from "@/data/actions";
+import type { AvatarId } from "@/data/avatars";
 import type { BadgeId } from "@/data/badges";
 
 // A bundled asset (require()) or a file / remote URI.
@@ -13,6 +14,7 @@ export type User = {
   handle: string;
   role?: Role;
   badgeId?: BadgeId | null;
+  avatarId?: AvatarId | null;
   avatar?: Media;
   tag?: string;
 };

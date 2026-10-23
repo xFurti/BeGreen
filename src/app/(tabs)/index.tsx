@@ -117,7 +117,7 @@ function Race({ place }: { place: string }) {
                 : t("feed.ahead", { gap: me.points - (league[1]?.points ?? 0), name: league[1]?.name ?? t("feed.everyone") })}
           </Text>
         </View>
-        {ahead && <Avatar src={ahead.avatar} name={ahead.name} size={36} />}
+        {ahead && <Avatar src={ahead.avatar} avatarId={ahead.avatarId} name={ahead.name} size={36} />}
       </View>
       {ahead && <Bar value={me.points / Math.max(1, ahead.points)} />}
     </Press>
@@ -217,7 +217,7 @@ export default function Feed() {
         </Press>
         <Logo size={24} />
         <Press onPress={() => router.navigate("/me")} accessibilityLabel={t("feed.profile")} style={{ width: 40, alignItems: "flex-end" }}>
-          <Avatar name={profileName(profile.name, t)} size={32} />
+          <Avatar avatarId={profile.avatarId} name={profileName(profile.name, t)} size={32} />
         </Press>
       </View>
 
