@@ -8,10 +8,10 @@ Sezione **02 · My Comune** nella schermata *Me*: il comune dell'utente (posizio
 | --- | --- | --- |
 | Open-Meteo (meteo + Air Quality CAMS) | API senza chiave, CORS aperto | Già nel Pulse; riga «Air today» (EAQI) |
 | sensor.community | `data.sensor.community/airrohr/v1/filter/area=lat,lon,km`, senza chiave, CORS aperto, chiede user agent identificabile | Riga «Citizen sensors · PM2.5»: ultima lettura per sensore entro 10 km, valori anomali scartati (0, >300 µg/m³, indoor), mediana |
-| GBIF | `api.gbif.org/v1/occurrence/search` con `geoDistance` e `facet=speciesKey`, `limit=0`: conta le specie senza scaricare record | Riga «Species recorded nearby» (5 km, ultimi 5 anni) |
+| GBIF | `api.gbif.org/v1/occurrence/search` con `geoDistance`, `taxonKey=6` (Plantae) e `facet=speciesKey`, `limit=0`: conta le specie di piante senza scaricare record | Riga «Plant species recorded nearby» (5 km, ultimi 5 anni) |
 | Rete Natura 2000 / IDT2 Regione Veneto | PDF e WMS/shapefile: niente API JSON leggera | Non integrati; le aree protette restano da OpenStreetMap (Overpass) come nel Pulse |
 | ARPAV via Regione Veneto | **Open data scaricabili (CSV, CC BY 4.0)** su arpa.veneto.it/dati-ambientali/open-data/atmosfera. Nessuna API live trovata | PM10 annuale per stazione e emissioni comunali INEMAR (sotto) |
-| iNaturalist | API pubblica | Già nel Pulse (specie con foto) |
+| iNaturalist | API pubblica, `iconic_taxa=Plantae` | Già nel Pulse (specie di piante con foto) |
 | ISPRA, consumo di suolo | xlsx comunale, CC BY 4.0 | Riga «Land sealed» |
 
 ## Altre fonti aggiunte
