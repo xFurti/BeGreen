@@ -1,3 +1,4 @@
+import { useEventListener } from "expo";
 import { BlurView } from "expo-blur";
 import { Image } from "expo-image";
 import { useVideoPlayer, VideoView } from "expo-video";
@@ -22,15 +23,22 @@ import { haptic } from "@/utils/format";
 
 // The BeGreen frame: the "thing" (photo) + the "proof" (5-second clip) in one tile.
 // Inspired by the dual-camera tile, but the inset is a video that proves the act happened.
+// Remote media: one photo Image at a time (never main+inset together), disk-cached, clip plays once.
 
 function Proof({ src, playing, fit = "cover" }: { src: Media; playing: boolean; fit?: "cover" | "contain" }) {
   const player = useVideoPlayer(src as never, (p) => {
-    p.loop = true;
+    p.loop = false;
     p.muted = true;
   });
+  useEventListener(player, "playToEnd", () => {
+    player.pause();
+  });
   useEffect(() => {
-    if (playing) player.play();
-    else player.pause();
+    if (playing) {
+      player.replay();
+    } else {
+      player.pause();
+    }
   }, [playing, player]);
   return (
     <VideoView
@@ -58,6 +66,31 @@ function Pop({ emoji, id }: { emoji: string; id: number }) {
     <Animated.View pointerEvents="none" style={[{ position: "absolute", inset: 0, alignItems: "center", justifyContent: "center" } as never, a]}>
       <Text style={{ fontSize: 110 }}>{emoji}</Text>
     </Animated.View>
+  );
+}
+
+function Photo({
+  src,
+  priority,
+  onReady,
+  fill,
+}: {
+  src: Media;
+  priority: "low" | "normal" | "high";
+  onReady?: () => void;
+  fill?: boolean;
+}) {
+  return (
+    <Image
+      source={src}
+      style={fill ? ({ position: "absolute", inset: 0 } as never) : { width: "100%", height: "100%" }}
+      contentFit="cover"
+      priority={priority}
+      cachePolicy="disk"
+      transition={200}
+      onLoad={onReady}
+      onError={onReady}
+    />
   );
 }
 
@@ -97,28 +130,13 @@ export function ProofMedia({
   const single = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => () => clearTimeout(single.current), []);
 
+  // When `photo` changes, loadedPhoto no longer matches until onLoad — no reset effect needed.
   const photoReady = typeof photo === "number" || loadedPhoto === photo;
+  // Swap only while active: inactive tiles never mount main+inset photos together.
+  const layoutSwapped = !locked && active && swapped;
+  // Mount the clip only while this tile is active, so scroll unloads the player.
   const showClip = !locked && active && (swapped || photoReady);
-  const mainPhoto = (
-    <Image
-      source={photo}
-      style={{ width: "100%", height: "100%" }}
-      contentFit="cover"
-      priority={priority}
-      transition={200}
-      onLoad={() => setLoadedPhoto(photo)}
-      onError={() => setLoadedPhoto(photo)}
-    />
-  );
-  const insetPhoto = (
-    <Image
-      source={photo}
-      style={{ position: "absolute", inset: 0 } as never}
-      priority="low"
-      contentFit="cover"
-      blurRadius={swapped ? 0 : 14}
-    />
-  );
+  const markReady = () => setLoadedPhoto(photo);
 
   const onTap = () => {
     const now = Date.now();
@@ -149,13 +167,13 @@ export function ProofMedia({
       }}
     >
       <Pressable style={{ flex: 1 }} onPress={onTap} disabled={locked || (!onPressMain && !onDoubleTap)}>
-        {swapped ? (
+        {/* Locked feed: no remote photo/clip fetch — placeholder only under the lock blur. */}
+        {!locked && (
           <View style={{ flex: 1 }}>
-            {mainPhoto}
-            {showClip && <Proof src={proof} playing={active && !locked} />}
+            {/* One photo Image at a time: full frame when not swapped; video full-frame when swapped+active. */}
+            {!layoutSwapped && <Photo src={photo} priority={priority} onReady={markReady} />}
+            {layoutSwapped && showClip && <Proof src={proof} playing />}
           </View>
-        ) : (
-          mainPhoto
         )}
       </Pressable>
 
@@ -166,7 +184,7 @@ export function ProofMedia({
         >
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={swapped ? t("proof.showPhoto") : t("proof.showClip")}
+            accessibilityLabel={layoutSwapped ? t("proof.showPhoto") : t("proof.showClip")}
             onPress={() => {
               haptic.soft();
               setSwapped((s) => !s);
@@ -183,16 +201,27 @@ export function ProofMedia({
             }}
           >
             <View style={{ flex: 1 }}>
-              {insetPhoto}
-              {!showClip && !swapped && (
+              {layoutSwapped ? (
+                <Photo src={photo} priority="low" onReady={markReady} fill />
+              ) : showClip ? (
+                <Proof src={proof} playing />
+              ) : (
                 <View
                   pointerEvents="none"
-                  style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, alignItems: "center", justifyContent: "center", backgroundColor: C.scrim }}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backgroundColor: C.scrim,
+                  }}
                 >
                   <Icon name="play" size={18} color={C.white} />
                 </View>
               )}
-              {showClip && !swapped && <Proof src={proof} playing={active && !locked} />}
             </View>
           </Pressable>
         </Animated.View>

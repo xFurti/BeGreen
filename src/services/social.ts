@@ -244,17 +244,19 @@ async function putObject(file: File, type: string, path: string): Promise<void> 
   const token = (await s.auth.getSession()).data.session?.access_token;
   if (!token) throw new Error("No session");
   const url = `${SUPABASE_URL}/storage/v1/object/proofs/${path}`;
-  const publicUrl = s.storage.from("proofs").getPublicUrl(path).data.publicUrl;
   const headers = (upsert: boolean) => ({
     Authorization: `Bearer ${token}`,
     apikey: SUPABASE_KEY,
     "Content-Type": type,
     "x-upsert": String(upsert),
-    "Cache-Control": "max-age=3600",
+    // Paths are unique timestamps: long CDN cache cuts origin hits without hurting updates.
+    "Cache-Control": "public, max-age=31536000, immutable",
   });
+  // Authenticated HEAD on the object API — not the public CDN URL — and require a real byte length.
   const stored = async () => {
-    const head = await fetch(publicUrl, { method: "HEAD" });
-    return head.ok && head.headers.get("content-length") !== "0";
+    const head = await fetch(url, { method: "HEAD", headers: { Authorization: `Bearer ${token}`, apikey: SUPABASE_KEY } });
+    const len = Number(head.headers.get("content-length"));
+    return head.ok && Number.isFinite(len) && len > 0;
   };
   const errors: string[] = [];
   try {

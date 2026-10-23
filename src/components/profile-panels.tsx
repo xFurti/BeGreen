@@ -205,7 +205,9 @@ export function MemoriesPanel({ posts }: { posts: Post[] }) {
                       selectedDay === d && { borderColor: C.ink, borderWidth: 3 },
                     ]}
                   >
-                    {dayPosts[0] && <Image source={dayPosts[0].photo} style={StyleSheet.absoluteFill} contentFit="cover" />}
+                    {dayPosts[0] && (
+                      <Image source={dayPosts[0].photo} style={StyleSheet.absoluteFill} contentFit="cover" cachePolicy="disk" />
+                    )}
                     <Text style={[s.dayNumber, dayPosts.length > 0 && s.photoDayNumber]}>{d}</Text>
                   </Pressable>
                 )}
@@ -237,7 +239,7 @@ export function MemoriesPanel({ posts }: { posts: Post[] }) {
                 style={s.memory}
               >
                 <View style={s.memoryMedia}>
-                  <Image source={post.photo} style={StyleSheet.absoluteFill} contentFit="cover" />
+                  <Image source={post.photo} style={StyleSheet.absoluteFill} contentFit="cover" cachePolicy="disk" />
                   <View pointerEvents="none" style={s.memoryDate}>
                     <Text style={s.memoryDateText}>
                       {new Date(post.createdAt).toLocaleDateString(locale, { day: "numeric", month: "short" })}
