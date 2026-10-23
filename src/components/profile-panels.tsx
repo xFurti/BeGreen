@@ -1,16 +1,17 @@
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useState, type ReactNode } from "react";
-import { Linking, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Icon, type IconName } from "@/components/icon";
 import { IconButton, Press } from "@/components/ui";
+import { ProfileMap } from "@/components/profile-map";
 import { ACTIONS } from "@/data/actions";
 import type { Post } from "@/data/types";
 import { sdgsOf, streakOf } from "@/store/app-store";
 import { C, F } from "@/theme/tokens";
 import { haptic } from "@/utils/format";
-import { calendarMonth, hasLocation, mapPreview } from "@/utils/profile";
+import { calendarMonth } from "@/utils/profile";
 
 export const PROFILE_MUTED = "#626863";
 const caption = { fontFamily: F.regular, fontSize: 13, lineHeight: 19, color: PROFILE_MUTED, fontVariant: ["tabular-nums" as const] };
@@ -169,67 +170,7 @@ export function MemoriesPanel({ posts }: { posts: Post[] }) {
 }
 
 export function MapPanel({ posts }: { posts: Post[] }) {
-  const located = posts.filter(hasLocation);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const selected = located.find((p) => p.id === selectedId) ?? located[0];
-  const [width, setWidth] = useState(0);
-  const [failed, setFailed] = useState(false);
-  const [retry, setRetry] = useState(0);
-  const tiles = selected && width ? mapPreview(selected.location.lat, selected.location.lon, width) : [];
-  const hidden = posts.length - located.length;
-  const openMap = (lat: number, lon: number) => Linking.openURL(`https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=13/${lat}/${lon}`).catch(() => {});
-  return (
-    <View style={s.stack}>
-      <View style={{ gap: 14 }}>
-        <PanelTitle title="Where you made a difference" />
-        <Text style={caption}>Your proofs, around your world. Locations show an approximate area, never an exact spot.</Text>
-        {selected ? (
-          <View>
-            <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)} style={s.map}>
-              {!failed && tiles.map((tile) => <Image
-                key={`${retry}-${tile.key}`}
-                source={{ uri: tile.url, ...(Platform.OS !== "web" ? { headers: { "User-Agent": "BeGreen/1.0 (hackathon prototype)" } } : {}) }}
-                cachePolicy="disk"
-                style={{ position: "absolute", left: tile.left, top: tile.top, width: 256, height: 256 }}
-                onError={() => setFailed(true)}
-              />)}
-              {failed ? <View style={s.mapError}>
-                <Text style={[caption, { textAlign: "center" }]}>The map couldn’t load. Your saved places are still below.</Text>
-                <Press onPress={() => { setRetry(retry + 1); setFailed(false); }} accessibilityLabel="Retry map" style={{ padding: 12 }}><Text style={s.textLink}>Try again</Text></Press>
-              </View> : <Pressable accessibilityRole="link" accessibilityLabel={`Open map of ${selected.place}`} onPress={() => openMap(selected.location.lat, selected.location.lon)} style={s.mapPin}>
-                <Icon name="location" size={26} color={C.white} />
-              </Pressable>}
-              <Pressable accessibilityRole="link" accessibilityLabel="OpenStreetMap attribution" onPress={() => Linking.openURL("https://www.openstreetmap.org/copyright").catch(() => {})} style={s.attribution}>
-                <Text style={{ fontFamily: F.regular, fontSize: 11, color: C.ink }}>© OpenStreetMap contributors</Text>
-              </Pressable>
-            </View>
-            <View style={[s.titleRow, { paddingTop: 12 }]}>
-              <View style={{ flex: 1, gap: 3 }}>
-                <Text style={s.memoryLabel}>{selected.place}</Text>
-                <Text style={caption}>{ACTIONS[selected.action].label} · Approximate area</Text>
-              </View>
-              <IconButton icon="link" label="Open this area in OpenStreetMap" size={44} bg={C.card} onPress={() => openMap(selected.location.lat, selected.location.lon)} />
-            </View>
-          </View>
-        ) : <Empty icon="map" title="Leave a greener footprint" text="Share your area with your next proof to start your personal map." />}
-      </View>
-      {located.length > 0 && <View style={{ gap: 12 }}>
-        <PanelTitle title="Your places" detail={`${located.length} proofs`} />
-        {located.map((post) => <View key={post.id} style={s.placeRow}>
-          <Pressable accessibilityRole="button" accessibilityLabel={`Show ${ACTIONS[post.action].label} in ${post.place} on map`} accessibilityState={{ selected: selected?.id === post.id }} onPress={() => { setSelectedId(post.id); setFailed(false); haptic.tap(); }} style={[s.placeSelect, selected?.id === post.id && { backgroundColor: C.mint }]}>
-            <Image source={post.photo} style={s.placePhoto} contentFit="cover" />
-            <View style={{ flex: 1, gap: 3 }}>
-              <Text style={s.memoryLabel}>{post.place}</Text>
-              <Text style={caption}>{ACTIONS[post.action].label} · {new Date(post.createdAt).toLocaleDateString("en", { month: "short", day: "numeric" })}</Text>
-            </View>
-            <Icon name="location" size={17} color={selected?.id === post.id ? C.leaf : PROFILE_MUTED} />
-          </Pressable>
-          <IconButton icon="chevron" label={`Open proof: ${ACTIONS[post.action].label}`} onPress={() => openPost(post)} size={44} bg={C.card} color={C.ink} />
-        </View>)}
-      </View>}
-      {hidden > 0 && <Text style={caption}>{hidden} {hidden === 1 ? "proof has" : "proofs have"} no saved coordinates, including older posts and proofs shared without an area.</Text>}
-    </View>
-  );
+  return <ProfileMap posts={posts} />;
 }
 
 const s = StyleSheet.create({
@@ -259,12 +200,4 @@ const s = StyleSheet.create({
   empty: { padding: 24, gap: 12, alignItems: "center", backgroundColor: C.card, borderRadius: 20 },
   action: { minHeight: 46, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, paddingHorizontal: 20, backgroundColor: C.forest, borderRadius: 24, marginTop: 8 },
   actionText: { fontFamily: F.medium, fontSize: 14, color: C.white },
-  textLink: { fontFamily: F.medium, fontSize: 14, color: C.leaf },
-  map: { height: 260, borderRadius: 20, overflow: "hidden", backgroundColor: C.card, alignItems: "center", justifyContent: "center" },
-  mapPin: { backgroundColor: C.forest, height: 52, width: 52, borderRadius: 26, borderWidth: 4, borderColor: C.white, alignItems: "center", justifyContent: "center" },
-  mapError: { padding: 24, alignItems: "center", gap: 8 },
-  attribution: { position: "absolute", bottom: 0, right: 0, backgroundColor: C.white, padding: 8, minHeight: 32, justifyContent: "center" },
-  placeRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  placeSelect: { flex: 1, flexDirection: "row", alignItems: "center", gap: 12, padding: 10, borderRadius: 16 },
-  placePhoto: { width: 46, height: 46, borderRadius: 10 },
 });

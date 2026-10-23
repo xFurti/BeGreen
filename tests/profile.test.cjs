@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { cleanProfile, validProfile, calendarMonth, hasLocation, mapPreview } = require('../src/utils/profile.ts');
+const { cleanProfile, validProfile, calendarMonth, hasLocation, mapPreview, profileMapPins, profileMapCamera } = require('../src/utils/profile.ts');
 
 test('profile trims names and handles while rejecting empty or invalid usernames', () => {
   const p = cleanProfile('  Alex Green  ', ' @Alex_Green ', 'student');
@@ -31,6 +31,29 @@ test('map omits private, legacy and invalid locations instead of fabricating pin
   assert.equal(hasLocation({ location: { lat: 90, lon: 9 } }), false);
   assert.equal(hasLocation({ location: { lat: 45, lon: 181 } }), false);
   assert.equal(hasLocation({ location: { lat: 0, lon: 0 } }), true);
+});
+
+test('profile map uses distinct demo posts until a saved shared area is available', () => {
+  const demos = Array.from({ length: 5 }, (_, i) => ({ id: `p${i + 1}`, photo: i }));
+  const privatePosts = [{ id: 'private', photo: 5 }, { id: 'invalid', photo: 6, location: { lat: NaN, lon: 9 } }];
+  const pins = profileMapPins(privatePosts, demos);
+  assert.deepEqual(pins.map(p => p.id), ['p1', 'p2', 'p3', 'p4']);
+  assert.equal(new Set(pins.map(p => `${p.latitude}/${p.longitude}`)).size, 4);
+  const shared = { id: 'shared', photo: 7, location: { lat: 45.46, lon: 9.19 } };
+  assert.deepEqual(profileMapPins([...privatePosts, shared], demos), [{ id: 'shared', photo: 7, latitude: 45.46, longitude: 9.19 }]);
+  assert.deepEqual(profileMapPins([{ ...shared, id: 'me-demo-1' }], demos), pins);
+  assert.deepEqual(profileMapPins([], []), []);
+});
+
+test('profile map camera frames the markers with a finite zoom even for one or no posts', () => {
+  const pins = [{ latitude: 45.45, longitude: 9.17 }, { latitude: 45.47, longitude: 9.21 }];
+  const camera = profileMapCamera(pins);
+  assert.equal(camera.latitude, 45.46);
+  assert.ok(Math.abs(camera.longitude - 9.19) < 1e-10);
+  for (const points of [pins, [pins[0]], []]) {
+    const view = profileMapCamera(points);
+    assert.ok(Number.isFinite(view.zoom) && view.zoom >= 2 && view.zoom <= 13);
+  }
 });
 
 test('map requests only viewport tiles, covers its centre and wraps at the date line', () => {
