@@ -2,8 +2,10 @@ import * as Location from "expo-location";
 import { useEffect, useMemo } from "react";
 import { create } from "zustand";
 
+import { translate } from "@/i18n/catalog";
+import type { Language } from "@/i18n/schema";
 import { buildDrop } from "@/services/drop";
-import { fetchAreas, fetchPulse, SAMPLE_PULSE, type Place } from "@/services/env";
+import { fetchAreas, fetchNature, fetchPulse, SAMPLE_PULSE, type Place, type Pulse } from "@/services/env";
 import { buildInsights } from "@/services/interpret";
 import { useApp } from "@/store/app-store";
 
@@ -25,7 +27,7 @@ export function refreshPulse(relocate = false): Promise<void> {
         setPlace(here);
       }
     }
-    setPulse(await fetchPulse(p, useApp.getState().pulse));
+    setPulse(await fetchPulse(p, useApp.getState().pulse, useApp.getState().language));
     const place = p;
     fetchAreas(place)
       .then((areas) => ({ areas, areasStatus: undefined }))
@@ -51,7 +53,7 @@ export async function locate(): Promise<Place | null> {
     // Coarsen to ~1 km: enough for local data, kinder to privacy.
     const lat = Math.round(pos.coords.latitude * 100) / 100;
     const lon = Math.round(pos.coords.longitude * 100) / 100;
-    let name = "Your area";
+    let name = "";
     if (process.env.EXPO_OS !== "web") {
       const [g] = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lon });
       name = g?.city ?? g?.subregion ?? g?.region ?? name;
@@ -62,11 +64,38 @@ export async function locate(): Promise<Place | null> {
   }
 }
 
+const SAMPLE_SPECIES = {
+  "Sciurus carolinensis": "ref.sampleSpecies.squirrel",
+  "Columba palumbus": "ref.sampleSpecies.pigeon",
+  "Hedera helix": "ref.sampleSpecies.ivy",
+} as const;
+
+function presentPulse(pulse: Pulse, lang: Language): Pulse {
+  if (!pulse.nature) return pulse;
+  if (pulse.sample) {
+    return {
+      ...pulse,
+      nature: {
+        ...pulse.nature,
+        top: pulse.nature.top.map((species) => {
+          const key = SAMPLE_SPECIES[species.name as keyof typeof SAMPLE_SPECIES];
+          return key ? { ...species, common: translate(lang, key) } : species;
+        }),
+      },
+    };
+  }
+  if ((pulse.nature.locale ?? "en") !== lang) {
+    return { ...pulse, nature: { ...pulse.nature, top: pulse.nature.top.map((species) => ({ ...species, common: undefined })) } };
+  }
+  return pulse;
+}
+
 export function usePulse() {
   const pulse = useApp((s) => s.pulse);
   const place = useApp((s) => s.place);
   const explain = useApp((s) => s.explain);
   const squads = useApp((s) => s.squads);
+  const language = useApp((s) => s.language);
   const loading = useLoading((s) => s.loading);
 
   useEffect(() => {
@@ -74,16 +103,33 @@ export function usePulse() {
     if (stale) refreshPulse(!pulse);
   }, [pulse, place]);
 
-  const data = useMemo(() => pulse ?? { ...SAMPLE_PULSE, place }, [pulse, place]);
+  useEffect(() => {
+    if (!pulse || pulse.sample || !pulse.nature || (pulse.nature.locale ?? "en") === language) return;
+    let cancel = false;
+    const here = pulse.place;
+    fetchNature(here, language)
+      .then((nature) => {
+        if (cancel) return;
+        const cur = useApp.getState().pulse;
+        if (!cur || cur.place.lat !== here.lat || cur.place.lon !== here.lon) return;
+        useApp.getState().setPulse({ ...cur, nature });
+      })
+      .catch(() => undefined);
+    return () => {
+      cancel = true;
+    };
+  }, [language, pulse]);
+
+  const data = useMemo(() => presentPulse(pulse ?? { ...SAMPLE_PULSE, place }, language), [pulse, place, language]);
 
   const derived = useMemo(() => {
     const comune = squads.find((s) => s.kind === "comune");
     const insights = buildInsights(data, {
       carFree: comune?.monthly.move ?? 0,
       areaName: comune?.name.split("·").pop()?.trim() ?? data.place.name,
-    });
-    return { insights, drop: buildDrop(data) };
-  }, [data, squads]);
+    }, language);
+    return { insights, drop: buildDrop(data, language) };
+  }, [data, squads, language]);
 
   return { pulse: data, ready: !!pulse, loading: loading || !pulse, refresh: refreshPulse, explain, ...derived };
 }

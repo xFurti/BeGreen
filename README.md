@@ -66,7 +66,7 @@ Each source loads separately, so one outage never empties the Pulse. If everythi
 `src/services/leaf.ts` has two modes:
 
 - **Grounded local engine (default):** answers by recognising the question's intent, using only the live Pulse numbers. It never invents a value and always cites sources. It works offline.
-- **AI backend:** set `EXPO_PUBLIC_LEAF_ENDPOINT`. The app sends `POST { question, audience, pulse, insights }` and expects `{ text, cites: SourceId[] }`. That server is where a language model reads documents, interprets proof images, identifies species and rewrites answers for the audience. **Model keys stay on the server, never in the app.** If the backend fails, the app falls back to the local engine.
+- **AI backend:** set `EXPO_PUBLIC_LEAF_ENDPOINT`. The app sends `POST { question, audience, language, pulse, insights }` (`language` is `it` or `en`) and expects `{ text, cites: SourceId[] }`. That server is where a language model reads documents, interprets proof images, identifies species and rewrites answers for the audience. **Model keys stay on the server, never in the app.** If the backend fails or ignores `language`, the app falls back to the local engine, which answers in the active language.
 
 ## Run it
 
@@ -76,6 +76,10 @@ npx expo start          # press i for the iOS simulator, or scan the QR code wit
 ```
 
 The app runs in **Expo Go**: it uses no custom native code. On a simulator (which has no camera), the capture screen offers **library** and **demo** capture so you can try the whole flow.
+
+## Language
+
+The interface is Italian or English. On first launch, and when an older save has no language yet, BeGreen uses Italian if the device language is Italian and English otherwise. A switch on onboarding (beside Skip) and on Me changes it immediately, keeps the current screen, and survives a restart. Reset demo keeps the chosen language and returns to onboarding. Captions, comments and names people typed stay as they wrote them. Drop, Pulse explanations and Leaf’s local answers follow the active language and keep the same measured numbers.
 
 ```bash
 npm run typecheck

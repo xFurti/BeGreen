@@ -1,5 +1,8 @@
 import type { ActionId } from "@/data/actions";
 import type { SourceId } from "@/data/sources";
+import { formatNumber } from "@/i18n/format";
+import { translate } from "@/i18n/catalog";
+import type { Language } from "@/i18n/schema";
 import type { Pulse } from "@/services/env";
 import { aqiBand, dominant, soilState } from "@/services/interpret";
 
@@ -20,18 +23,21 @@ function dayKey(d = new Date()) {
   return d.toISOString().slice(0, 10);
 }
 
-export function buildDrop(p: Pulse): Drop {
+export function buildDrop(p: Pulse, lang: Language): Drop {
+  const t = (key: Parameters<typeof translate>[1], params?: Record<string, string | number>) => translate(lang, key, params);
   const id = `${dayKey()}:${p.place.name}`;
   const city = p.place.name;
+  const n = (value: number) => formatNumber(value, lang);
 
-  if (p.air && aqiBand(p.air.aqi).level === "bad") {
-    const d = dominant(p.air);
+  if (p.air && aqiBand(p.air.aqi, lang).level === "bad") {
+    const band = aqiBand(p.air.aqi, lang);
+    const d = dominant(p.air, lang);
     return {
       id,
       action: "move",
-      title: "Leave the car. Own the street.",
-      why: `Air in ${city} is “${aqiBand(p.air.aqi).label}” today, driven by ${d.plain}. Every trip on foot, bike or bus takes a car off the road where you breathe.`,
-      metric: `EAQI ${p.air.aqi} · ${d.name} ${d.value} µg/m³`,
+      title: t("drop.badAir.title"),
+      why: t("drop.badAir.why", { city, band: band.label, driver: d.plain }),
+      metric: t("drop.badAir.metric", { aqi: p.air.aqi, name: d.name, value: n(d.value) }),
       sources: ["cams"],
     };
   }
@@ -40,22 +46,23 @@ export function buildDrop(p: Pulse): Drop {
     return {
       id,
       action: "save",
-      title: "Dry week. Make every drop count.",
-      why: `${p.water.dryDays} days in a row with almost no rain in ${city}. Cut 2 minutes off your shower or switch off what you're not using — then prove it.`,
-      metric: `${p.water.rain7} mm rain in 7 days`,
+      title: t("drop.dry.title"),
+      why: t("drop.dry.why", { days: p.water.dryDays, city }),
+      metric: t("drop.dry.metric", { rain: n(p.water.rain7) }),
       sources: ["openmeteo"],
     };
   }
 
   // Rotate the remaining Drops by day so the feed stays fresh.
   const options: Drop[] = [];
-  if (p.soil && soilState(p.soil.moisture).level === "good" && p.weather && p.weather.temp > 6) {
+  if (p.soil && soilState(p.soil.moisture, lang).level === "good" && p.weather && p.weather.temp > 6) {
+    const moisture = Math.round(p.soil.moisture * 100);
     options.push({
       id,
       action: "plant",
-      title: "Soil’s ready. Plant something.",
-      why: `Top soil moisture is ${Math.round(p.soil.moisture * 100)}% and it's ${p.weather.temp}° — ideal for roots. A pot, a balcony box, a school flowerbed: it all counts.`,
-      metric: `Soil moisture ${Math.round(p.soil.moisture * 100)}%`,
+      title: t("drop.plant.title"),
+      why: t("drop.plant.why", { moisture, temp: p.weather.temp }),
+      metric: t("drop.plant.metric", { moisture }),
       sources: ["openmeteo"],
     });
   }
@@ -63,9 +70,9 @@ export function buildDrop(p: Pulse): Drop {
     options.push({
       id,
       action: "spot",
-      title: `${p.nature.speciesCount} species live near you. Find one.`,
-      why: `People around ${city} logged ${p.nature.speciesCount} species this month. Spot a plant, bird or bug, film it in its habitat, and add a record to the map.`,
-      metric: `${p.nature.speciesCount} species · 10 km · 30 days`,
+      title: t("drop.spot.title", { count: n(p.nature.speciesCount) }),
+      why: t("drop.spot.why", { city, count: n(p.nature.speciesCount) }),
+      metric: t("drop.spot.metric", { count: n(p.nature.speciesCount) }),
       sources: ["inat"],
     });
   }
@@ -73,18 +80,18 @@ export function buildDrop(p: Pulse): Drop {
     options.push({
       id,
       action: "pickup",
-      title: `Show ${p.areas[0].name} some love.`,
-      why: `${p.areas[0].name} is ${p.areas[0].km} km from you. Grab a bag and a friend — litter there ends up in soil, water and animals.`,
-      metric: `${p.areas[0].km} km away`,
+      title: t("drop.pickup.title", { name: p.areas[0].name }),
+      why: t("drop.pickup.why", { name: p.areas[0].name, km: n(p.areas[0].km) }),
+      metric: t("drop.pickup.metric", { km: n(p.areas[0].km) }),
       sources: ["osm"],
     });
   }
   options.push({
     id,
     action: "refill",
-    title: "Refill, don’t landfill.",
-    why: `Skip the plastic bottle today. Fill up at a tap or a public fountain and show it.`,
-    metric: "1 bottle = 1 Drop",
+    title: t("drop.refill.title"),
+    why: t("drop.refill.why"),
+    metric: t("drop.refill.metric"),
     sources: ["begreen"],
   });
 

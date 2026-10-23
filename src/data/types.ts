@@ -11,7 +11,7 @@ export type User = {
   tag?: string; // school or association
 };
 
-export type Comment = { id: string; authorId: string; text: string; createdAt: number };
+export type Comment = { id: string; authorId: string; text: string; createdAt: number; textKey?: string };
 
 export type Audience = "friends" | "squad" | "public";
 
@@ -22,6 +22,7 @@ export type Post = {
   photo: Media;
   proof: Media; // 5-second proof video
   caption: string;
+  captionKey?: string;
   place: string;
   createdAt: number;
   verifiedBy: string[];

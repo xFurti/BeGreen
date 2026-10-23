@@ -60,7 +60,8 @@
         {
           "photosPermission": "Pick a photo or clip from your library when the camera is not available."
         }
-      ]
+      ],
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": true

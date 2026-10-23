@@ -6,11 +6,16 @@ import { createJSONStorage, persist } from "zustand/middleware";
 import { ACTIONS, type ActionId } from "@/data/actions";
 import { DEMO_CLIP, FRIENDS, HERO_PHOTOS, ME_ID, SEED_POSTS, SEED_SQUADS, USERS, WEEKLY } from "@/data/seed";
 import type { Audience, Comment, Explain, Post, Role, Squad } from "@/data/types";
+import { deviceLanguage } from "@/i18n/device";
+import { applyPersisted } from "@/i18n/persist";
+import { translate } from "@/i18n/catalog";
+import type { Language } from "@/i18n/schema";
 import { DEFAULT_PLACE, type Place, type Pulse } from "@/services/env";
 
 export type Profile = { name: string; handle: string; role: Role };
 
 type State = {
+  language: Language;
   onboarded: boolean;
   profile: Profile;
   explain: Explain;
@@ -46,10 +51,12 @@ type Actions = {
   createSquad: (s: Pick<Squad, "name" | "kind" | "place">) => Squad;
   joinSquad: (code: string) => Squad | null;
   nudge: (userId: string) => void;
+  setLanguage: (language: Language) => void;
   reset: () => void;
 };
 
 const initial: State = {
+  language: deviceLanguage(),
   onboarded: false,
   profile: { name: "", handle: "", role: "student" },
   explain: "me",
@@ -155,7 +162,7 @@ export const useApp = create<State & Actions>()(
               .slice(0, 6)
               .toUpperCase() + Math.floor(Math.random() * 90 + 10),
           points: 0,
-          quest: { title: "First 10 proofs", action: "sort", goal: 10, progress: 0, endsInDays: 7 },
+          quest: { title: "firstProofs", action: "sort", goal: 10, progress: 0, endsInDays: 7 },
           monthly: {},
         };
         set({ squads: [s, ...get().squads] });
@@ -166,13 +173,15 @@ export const useApp = create<State & Actions>()(
         return get().squads.find((s) => s.code === c) ?? null;
       },
       nudge: (userId) => set({ nudged: { ...get().nudged, [userId]: Date.now() } }),
-      reset: () => set({ ...initial }),
+      setLanguage: (language) => set({ language }),
+      reset: () => set({ ...initial, language: get().language }),
     }),
     {
       name: "begreen-v1",
       storage: createJSONStorage(() => localStorage),
       // Bundled assets (numbers) are stable across reloads in the same build.
       partialize: (s) => ({
+        language: s.language,
         onboarded: s.onboarded,
         profile: s.profile,
         explain: s.explain,
@@ -186,6 +195,10 @@ export const useApp = create<State & Actions>()(
         bonusSeeds: s.bonusSeeds,
         nudged: s.nudged,
       }),
+      merge: (persisted, current) => {
+        const raw = (persisted ?? {}) as Record<string, unknown>;
+        return { ...current, ...applyPersisted(raw, deviceLanguage()) };
+      },
     },
   ),
 );
@@ -263,7 +276,8 @@ export function leagueOf(myPosts: Post[], meName: string): Racer[] {
 export function useLeague() {
   const myPosts = useApp((s) => s.myPosts);
   const name = useApp((s) => s.profile.name);
-  return leagueOf(myPosts, name);
+  const language = useApp((s) => s.language);
+  return leagueOf(myPosts, name.trim() || translate(language, "common.you"));
 }
 
 export function sdgsOf(posts: Post[]) {

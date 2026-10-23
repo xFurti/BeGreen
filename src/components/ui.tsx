@@ -17,6 +17,8 @@ import { create } from "zustand";
 import { Icon, type IconName } from "@/components/icon";
 import { SOURCE_KINDS, SOURCES, type SourceId } from "@/data/sources";
 import type { Media } from "@/data/types";
+import { sourceCopy, sourceKindCopy } from "@/i18n/content";
+import { useI18n } from "@/i18n/use-i18n";
 import { C, F, R, shadow, T } from "@/theme/tokens";
 import { haptic } from "@/utils/format";
 
@@ -146,7 +148,9 @@ export function Button({
       ) : (
         <>
           {icon && <Icon name={icon} size={size === "sm" ? 14 : 17} color={fg} />}
-          <Text style={{ color: fg, fontFamily: F.medium, fontSize: size === "sm" ? 14 : 16, letterSpacing: -0.2 }}>{label}</Text>
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72} style={{ color: fg, fontFamily: F.medium, fontSize: size === "sm" ? 14 : 16, letterSpacing: -0.2 }}>
+            {label}
+          </Text>
           {trailing && (
             <Text style={{ color: fg, opacity: 0.55, fontFamily: F.monoMedium, fontSize: size === "sm" ? 12 : 13 }}>{trailing}</Text>
           )}
@@ -250,7 +254,9 @@ export function Chip({
       }}
     >
       {icon && <Icon name={icon} size={14} color={fg} />}
-      <Text style={{ color: fg, fontFamily: F.medium, fontSize: 14, letterSpacing: -0.15 }}>{label}</Text>
+      <Text numberOfLines={1} style={{ color: fg, fontFamily: F.medium, fontSize: 14, letterSpacing: -0.15 }}>
+        {label}
+      </Text>
     </View>
   );
   return onPress ? (
@@ -293,18 +299,20 @@ export function SdgTags({ goals, dark }: { goals: number[]; dark?: boolean }) {
 }
 
 export function SourceBadge({ id, onPress, dark }: { id: SourceId; onPress?: () => void; dark?: boolean }) {
+  const { t } = useI18n();
   const src = SOURCES[id];
-  const k = SOURCE_KINDS[src.kind];
+  const kind = sourceKindCopy(t, src.kind);
+  const card = sourceCopy(t, id);
   const body = (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 6, height: 22 }}>
-      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: k.color }} />
-      <Text style={{ fontFamily: F.monoMedium, fontSize: 10.5, letterSpacing: 0.4, color: dark ? C.nightMute : C.mute }}>
-        {k.short.toUpperCase()} · {src.provider.split(" ")[0].replace(/[()]/g, "").toUpperCase()}
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 6, height: 22, flexShrink: 1 }}>
+      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: SOURCE_KINDS[src.kind].color }} />
+      <Text numberOfLines={1} style={{ fontFamily: F.monoMedium, fontSize: 10.5, letterSpacing: 0.4, color: dark ? C.nightMute : C.mute, flexShrink: 1 }}>
+        {kind.short.toUpperCase()} · {src.mark}
       </Text>
     </View>
   );
   return onPress ? (
-    <Press onPress={onPress} accessibilityLabel={`Source: ${src.name}`}>
+    <Press onPress={onPress} accessibilityLabel={t("common.source", { name: card.name })}>
       {body}
     </Press>
   ) : (
@@ -349,7 +357,12 @@ export function Segmented<V extends string>({
               boxShadow: on && !dark ? "0 1px 3px rgba(0,0,0,0.08), 0 1px 1px rgba(0,0,0,0.04)" : undefined,
             }}
           >
-            <Text style={{ fontFamily: F.medium, fontSize: 14, letterSpacing: -0.15, color: on ? C.ink : dark ? C.nightMute : C.mute }}>
+            <Text
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.78}
+              style={{ fontFamily: F.medium, fontSize: 14, letterSpacing: -0.15, color: on ? C.ink : dark ? C.nightMute : C.mute }}
+            >
               {o.label}
             </Text>
           </Pressable>
@@ -386,7 +399,9 @@ export function TextTabs<V extends string>({
             }}
             style={{ flexDirection: "row", alignItems: "flex-start", gap: 3 }}
           >
-            <Text style={{ fontFamily: F.medium, fontSize: 22, letterSpacing: -0.8, color: on ? C.ink : C.faint }}>{o.label}</Text>
+            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ fontFamily: F.medium, fontSize: 22, letterSpacing: -0.8, color: on ? C.ink : C.faint }}>
+              {o.label}
+            </Text>
             {o.count !== undefined && (
               <Text style={{ fontFamily: F.monoMedium, fontSize: 10, color: on ? C.ink : C.faint, marginTop: 2 }}>{o.count}</Text>
             )}

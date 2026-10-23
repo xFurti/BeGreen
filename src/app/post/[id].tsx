@@ -8,11 +8,12 @@ import { Icon } from "@/components/icon";
 import { author, VERIFY_GOAL, VerifyBar } from "@/components/post-card";
 import { ProofMedia } from "@/components/proof-media";
 import { Avatar, Mono, SdgTags, Tag } from "@/components/ui";
-import { ACTIONS } from "@/data/actions";
-import { SDGS } from "@/data/sdgs";
+import { actionCopy, placeLabel, sdgTitle, textOf } from "@/i18n/content";
+import { formatNumber, timeAgo } from "@/i18n/format";
+import { useI18n } from "@/i18n/use-i18n";
 import { useAllPosts, useApp } from "@/store/app-store";
 import { C, F, R, T } from "@/theme/tokens";
-import { haptic, timeAgo } from "@/utils/format";
+import { haptic } from "@/utils/format";
 
 export default function PostDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -23,17 +24,20 @@ export default function PostDetail() {
   const react = useApp((s) => s.react);
   const mine = useApp((s) => s.reacted[id]);
   const [text, setText] = useState("");
+  const { t, language } = useI18n();
+  const you = t("common.you");
 
   if (!post) {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-        <Text style={T.body}>This BeGreen is gone.</Text>
+        <Text style={T.body}>{t("post.gone")}</Text>
       </View>
     );
   }
 
-  const a = author(post.authorId, meName);
-  const action = ACTIONS[post.action];
+  const a = author(post.authorId, meName, you);
+  const action = actionCopy(t, post.action);
+  const caption = textOf(post.caption, post.captionKey, language);
   const send = () => {
     if (!text.trim()) return;
     comment(post.id, text.trim());
@@ -50,10 +54,10 @@ export default function PostDetail() {
           <View style={{ flex: 1, gap: 3 }}>
             <Text style={{ fontFamily: F.semibold, fontSize: 16, letterSpacing: -0.2 }}>{a.name}</Text>
             <Mono>
-              {a.tag} · {post.place} · {timeAgo(post.createdAt)}
+              {a.tag} · {placeLabel(post.place, t)} · {timeAgo(post.createdAt, language)}
             </Mono>
           </View>
-          {post.isDrop && <Tag label="DROP" solid />}
+          {post.isDrop && <Tag label={t("common.drop")} solid />}
         </View>
 
         <ProofMedia
@@ -71,9 +75,9 @@ export default function PostDetail() {
             <Icon name={action.icon} size={16} color={C.ink} />
             <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 18, letterSpacing: -0.4 }}>{action.label}</Text>
           </View>
-          {!!post.caption && (
+          {!!caption && (
             <Text selectable style={[T.body, { fontSize: 17, lineHeight: 25 }]}>
-              {post.caption}
+              {caption}
             </Text>
           )}
           <VerifyBar post={post} />
@@ -82,23 +86,23 @@ export default function PostDetail() {
         <View style={{ borderTopWidth: 1, borderBottomWidth: 1, borderColor: C.line, paddingVertical: 16, gap: 12 }}>
           <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
             <Text style={{ fontFamily: F.medium, fontSize: 28, letterSpacing: -1.2 }}>
-              ≈ {action.impact.value} <Text style={{ fontSize: 16, letterSpacing: -0.3 }}>{action.impact.unit}</Text>
+              ≈ {formatNumber(action.impact.value, language)} <Text style={{ fontSize: 16, letterSpacing: -0.3 }}>{action.impact.unitLabel}</Text>
             </Text>
-            <Mono>estimate</Mono>
+            <Mono>{t("common.estimate")}</Mono>
           </View>
           <Text style={[T.callout, { fontSize: 14, lineHeight: 20 }]}>{action.impact.note}</Text>
           <View style={{ gap: 6 }}>
             <SdgTags goals={action.sdgs} />
-            <Text style={T.caption}>Moves {action.sdgs.map((g) => SDGS[g]).join(", ").toLowerCase()}.</Text>
+            <Text style={T.caption}>{t("post.moves", { goals: action.sdgs.map((g) => sdgTitle(t, g)).join(", ").toLowerCase() })}</Text>
           </View>
         </View>
 
         {post.verifiedBy.length > 0 && (
           <View style={{ gap: 12 }}>
-            <Mono color={C.ink}>Verified by</Mono>
+            <Mono color={C.ink}>{t("post.verifiedByLabel")}</Mono>
             <View style={{ flexDirection: "row", gap: 16, flexWrap: "wrap" }}>
               {post.verifiedBy.map((v) => {
-                const u = author(v, meName);
+                const u = author(v, meName, you);
                 return (
                   <View key={v} style={{ alignItems: "center", gap: 6 }}>
                     <Avatar src={u?.avatar} name={u?.name ?? "?"} size={42} />
@@ -111,18 +115,18 @@ export default function PostDetail() {
         )}
 
         <View style={{ gap: 16, paddingTop: 4 }}>
-          <Mono color={C.ink}>Comments · {post.comments.length}</Mono>
-          {post.comments.length === 0 && <Text style={T.callout}>Be the first to hype this up.</Text>}
+          <Mono color={C.ink}>{t("post.commentsCount", { count: post.comments.length })}</Mono>
+          {post.comments.length === 0 && <Text style={T.callout}>{t("post.firstComment")}</Text>}
           {post.comments.map((c, i) => {
-            const u = author(c.authorId, meName);
+            const u = author(c.authorId, meName, you);
             return (
               <Animated.View key={c.id} entering={FadeInDown.delay(i * 40)} style={{ flexDirection: "row", gap: 10 }}>
                 <Avatar src={u?.avatar} name={u?.name ?? "?"} size={30} />
                 <View style={{ flex: 1, gap: 2 }}>
                   <Text style={{ fontFamily: F.semibold, fontSize: 14 }}>
-                    {u?.name} <Text style={{ fontFamily: F.regular, color: C.mute }}>{timeAgo(c.createdAt)}</Text>
+                    {u?.name} <Text style={{ fontFamily: F.regular, color: C.mute }}>{timeAgo(c.createdAt, language)}</Text>
                   </Text>
-                  <Text style={[T.body, { fontSize: 15, lineHeight: 21 }]}>{c.text}</Text>
+                  <Text style={[T.body, { fontSize: 15, lineHeight: 21 }]}>{textOf(c.text, c.textKey, language)}</Text>
                 </View>
               </Animated.View>
             );
@@ -131,15 +135,15 @@ export default function PostDetail() {
 
         <Pressable
           onPress={() =>
-            Alert.alert("Flag this proof?", "Squad moderators will review it. Fake proofs lose their Seeds.", [
-              { text: "Cancel", style: "cancel" },
-              { text: "Flag", style: "destructive" },
+            Alert.alert(t("post.flagTitle"), t("post.flagBody"), [
+              { text: t("common.cancel"), style: "cancel" },
+              { text: t("post.flagConfirm"), style: "destructive" },
             ])
           }
           style={{ alignSelf: "center", paddingTop: 8 }}
           accessibilityRole="button"
         >
-          <Mono>Doesn’t look real? Flag proof</Mono>
+          <Mono>{t("post.flag")}</Mono>
         </Pressable>
       </ScrollView>
 
@@ -159,14 +163,14 @@ export default function PostDetail() {
         <TextInput
           value={text}
           onChangeText={setText}
-          placeholder="Add a comment…"
+          placeholder={t("post.commentPlaceholder")}
           placeholderTextColor={C.mute}
           style={{ flex: 1, height: 44, borderRadius: R.pill, backgroundColor: C.card, paddingHorizontal: 16, fontSize: 15, fontFamily: F.regular, color: C.ink }}
           returnKeyType="send"
           onSubmitEditing={send}
         />
         <Pressable
-          accessibilityLabel="Send comment"
+          accessibilityLabel={t("post.sendComment")}
           disabled={!text.trim()}
           onPress={send}
           style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: text.trim() ? C.ink : C.card, alignItems: "center", justifyContent: "center" }}

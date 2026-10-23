@@ -5,13 +5,15 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { useCountdown } from "@/components/drop-card";
 import { Icon } from "@/components/icon";
 import { Button, LiveDot, Mono, SdgTags, SourceBadge } from "@/components/ui";
-import { ACTIONS } from "@/data/actions";
+import { actionCopy } from "@/i18n/content";
+import { useI18n } from "@/i18n/use-i18n";
 import { usePulse } from "@/hooks/use-pulse";
 import { C, F, T } from "@/theme/tokens";
 
 export default function DropSheet() {
   const { drop, pulse } = usePulse();
-  const a = ACTIONS[drop.action];
+  const { t } = useI18n();
+  const a = actionCopy(t, drop.action);
   const left = useCountdown();
 
   const go = (path: "/capture" | "/guide") => {
@@ -24,7 +26,7 @@ export default function DropSheet() {
       <View style={{ gap: 14 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
           <LiveDot color={C.red} />
-          <Mono color={C.ink}>Today’s Drop</Mono>
+          <Mono color={C.ink}>{t("dropSheet.title")}</Mono>
           <Mono>· {pulse.place.name}</Mono>
           <View style={{ flex: 1 }} />
           <Mono color={C.ink} style={{ fontVariant: ["tabular-nums"] }}>
@@ -36,7 +38,7 @@ export default function DropSheet() {
       </View>
 
       <Animated.View entering={FadeInDown.delay(80)} style={{ gap: 10, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 18 }}>
-        <Mono>Why this, why today</Mono>
+        <Mono>{t("dropSheet.why")}</Mono>
         <Text style={[T.body, { fontSize: 17, lineHeight: 25 }]}>{drop.why}</Text>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap", paddingTop: 4 }}>
           <Text style={{ fontFamily: F.medium, fontSize: 14 }}>{drop.metric}</Text>
@@ -47,18 +49,18 @@ export default function DropSheet() {
       </Animated.View>
 
       <Animated.View entering={FadeInDown.delay(160)} style={{ gap: 4, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 18 }}>
-        <Mono style={{ marginBottom: 10 }}>How it works</Mono>
+        <Mono style={{ marginBottom: 10 }}>{t("dropSheet.how")}</Mono>
         {[
-          { icon: "camera" as const, t: "Snap the thing", d: "The bike, the bin, the bottle, the plant." },
-          { icon: "video" as const, t: "Prove it in 5 seconds", d: a.proofHint },
-          { icon: "checkSeal" as const, t: "3 friends verify", d: "Then it counts for your streak, squad and city." },
+          { icon: "camera" as const, title: t("dropSheet.snap"), d: t("dropSheet.snapBody") },
+          { icon: "video" as const, title: t("dropSheet.prove"), d: a.proofHint },
+          { icon: "checkSeal" as const, title: t("dropSheet.friends"), d: t("dropSheet.friendsBody") },
         ].map((s, i) => (
           <View key={i} style={{ flexDirection: "row", gap: 14, alignItems: "flex-start", paddingVertical: 10 }}>
             <Mono color={C.ink} style={{ width: 20, paddingTop: 3 }}>
               {String(i + 1).padStart(2, "0")}
             </Mono>
             <View style={{ flex: 1, gap: 2 }}>
-              <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3 }}>{s.t}</Text>
+              <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3 }}>{s.title}</Text>
               <Text style={[T.callout, { fontSize: 14, lineHeight: 20 }]}>{s.d}</Text>
             </View>
             <Icon name={s.icon} size={16} color={C.mute} />
@@ -67,12 +69,12 @@ export default function DropSheet() {
       </Animated.View>
 
       <Text style={T.caption}>
-        No alarm, no panic. Everyone in {pulse.place.name} gets the same Drop today. Post it whenever you actually do it, before midnight.
+        {t("dropSheet.note", { place: pulse.place.name })}
       </Text>
 
       <View style={{ gap: 8 }}>
-        <Button label={`Do it: ${a.label}`} trailing={`+${a.seeds + 10}`} icon={a.icon} onPress={() => go("/capture")} />
-        <Button label="Show me how" kind="ghost" icon="book" onPress={() => go("/guide")} />
+        <Button label={t("dropSheet.doIt", { act: a.label })} trailing={`+${a.seeds + 10}`} icon={a.icon} onPress={() => go("/capture")} />
+        <Button label={t("dropSheet.show")} kind="ghost" icon="book" onPress={() => go("/guide")} />
       </View>
     </ScrollView>
   );

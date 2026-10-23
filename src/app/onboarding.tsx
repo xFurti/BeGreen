@@ -7,21 +7,25 @@ import Animated, { FadeIn, FadeInDown, LinearTransition, useAnimatedStyle, useSh
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Icon, type IconName } from "@/components/icon";
+import { LanguageSwitch } from "@/components/language-switch";
 import { Avatar, Button, Chip, Logo, Mono } from "@/components/ui";
 import { SDG_LIST } from "@/data/sdgs";
 import { HERO_PHOTOS, USERS } from "@/data/seed";
 import { SOURCE_KINDS } from "@/data/sources";
 import type { Role } from "@/data/types";
+import { sourceKindCopy } from "@/i18n/content";
+import type { MessageKey } from "@/i18n/catalog";
+import { useI18n } from "@/i18n/use-i18n";
 import { locate } from "@/hooks/use-pulse";
 import { useApp } from "@/store/app-store";
 import { C, F, R, T } from "@/theme/tokens";
 import { haptic } from "@/utils/format";
 
-const ROLES: { value: Role; label: string; icon: IconName; hint: string }[] = [
-  { value: "student", label: "Student", icon: "school", hint: "Short, direct, with something to do." },
-  { value: "teacher", label: "Teacher", icon: "doc", hint: "Lesson ideas and class activities." },
-  { value: "association", label: "Association", icon: "people", hint: "Ready for group actions." },
-  { value: "comune", label: "Comune", icon: "building", hint: "Units, caveats and community numbers." },
+const ROLES: { value: Role; icon: IconName; label: MessageKey; hint: MessageKey }[] = [
+  { value: "student", icon: "school", label: "roles.student", hint: "roles.studentHint" },
+  { value: "teacher", icon: "doc", label: "roles.teacher", hint: "roles.teacherHint" },
+  { value: "association", icon: "people", label: "roles.association", hint: "roles.associationHint" },
+  { value: "comune", icon: "building", label: "roles.comune", hint: "roles.comuneHint" },
 ];
 
 function Tile({ src, rotate, x, y, z, w }: { src: number; rotate: string; x: number; y: number; z: number; w: number }) {
@@ -49,6 +53,7 @@ function Tile({ src, rotate, x, y, z, w }: { src: number; rotate: string; x: num
 }
 
 function HeroCollage({ width }: { width: number }) {
+  const { t } = useI18n();
   const w = width * 0.5;
   return (
     <View style={{ height: w * 1.45, width: "100%" }}>
@@ -88,7 +93,7 @@ function HeroCollage({ width }: { width: number }) {
           }}
         >
           <Icon name="checkSeal" size={13} color={C.white} />
-          <Text style={{ color: C.white, fontFamily: F.medium, fontSize: 13 }}>Verified by 3</Text>
+          <Text style={{ color: C.white, fontFamily: F.medium, fontSize: 13 }}>{t("onboarding.verifiedBy3")}</Text>
         </View>
       </View>
     </View>
@@ -96,10 +101,11 @@ function HeroCollage({ width }: { width: number }) {
 }
 
 function DataPreview() {
+  const { t } = useI18n();
   const rows = [
-    { label: "Air", value: "24", unit: "Fair", kind: "model" as const },
-    { label: "Species nearby", value: "287", unit: "30 days", kind: "citizen" as const },
-    { label: "Dry days", value: "6", unit: "in a row", kind: "model" as const },
+    { label: t("onboarding.air"), value: "24", unit: t("onboarding.fair"), kind: "model" as const },
+    { label: t("onboarding.species"), value: "287", unit: t("onboarding.days30"), kind: "citizen" as const },
+    { label: t("onboarding.dryDays"), value: "6", unit: t("onboarding.inARow"), kind: "model" as const },
     { label: "Parco Nord", value: "9", unit: "km", kind: "map" as const },
   ];
   return (
@@ -115,11 +121,11 @@ function DataPreview() {
             <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3 }}>{r.label}</Text>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
               <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: SOURCE_KINDS[r.kind].color }} />
-              <Mono>{SOURCE_KINDS[r.kind].short}</Mono>
+              <Mono>{sourceKindCopy(t, r.kind).short}</Mono>
             </View>
           </View>
           <Text style={{ fontFamily: F.medium, fontSize: 40, letterSpacing: -2, fontVariant: ["tabular-nums"] }}>{r.value}</Text>
-          <Text style={{ fontFamily: F.regular, fontSize: 13, color: C.mute, width: 58 }}>{r.unit}</Text>
+          <Text style={{ fontFamily: F.regular, fontSize: 13, color: C.mute, width: 78 }}>{r.unit}</Text>
         </Animated.View>
       ))}
     </View>
@@ -128,6 +134,7 @@ function DataPreview() {
 
 // You start last, then climb. Competition, explained in one animation.
 function RacePreview({ active }: { active: boolean }) {
+  const { t } = useI18n();
   const base = [
     { id: "giulia", pts: 345 },
     { id: "aisha", pts: 270 },
@@ -173,9 +180,9 @@ function RacePreview({ active }: { active: boolean }) {
           <Mono color={r.me ? C.white : C.mute} style={{ width: 20 }}>
             {String(i + 1).padStart(2, "0")}
           </Mono>
-          {r.me ? <Avatar name="You" size={34} invert /> : <Avatar src={USERS[r.id].avatar} name={USERS[r.id].name} size={34} />}
+          {r.me ? <Avatar name={t("common.you")} size={34} invert /> : <Avatar src={USERS[r.id].avatar} name={USERS[r.id].name} size={34} />}
           <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3, color: r.me ? C.white : C.ink }}>
-            {r.me ? "You" : USERS[r.id].name}
+            {r.me ? t("common.you") : USERS[r.id].name}
           </Text>
           {r.me && i === 0 && <Icon name="crown" size={14} color={C.white} />}
           <Text style={{ fontFamily: F.medium, fontSize: 17, color: r.me ? C.white : C.ink, fontVariant: ["tabular-nums"] }}>{r.pts}</Text>
@@ -227,6 +234,7 @@ export default function Onboarding() {
   const [loc, setLoc] = useState<"idle" | "asking" | "on" | "off">("idle");
   const finish = useApp((s) => s.finishOnboarding);
   const setPlace = useApp((s) => s.setPlace);
+  const { t } = useI18n();
   const inner = width - 40;
 
   const go = (i: number) => {
@@ -247,34 +255,34 @@ export default function Onboarding() {
 
   const start = () => {
     haptic.success();
-    const n = name.trim() || "You";
+    const n = name.trim();
     finish({ name: n, handle: n.toLowerCase().replace(/[^a-z0-9]/g, "") || "you", role }, demo);
     router.replace("/");
   };
 
   const slides = [
     {
-      kicker: "The app for doing, not posting about doing",
-      title: "Proof,\nnot promises.",
-      body: "Snap the thing. Film 5 seconds of you doing it. Friends verify. That’s a BeGreen.",
+      kicker: t("onboarding.kicker1"),
+      title: t("onboarding.title1"),
+      body: t("onboarding.body1"),
       visual: <HeroCollage width={inner} />,
     },
     {
-      kicker: "Local data, human words",
-      title: "Your city,\ndecoded.",
-      body: "Live air, water, soil and nature around you. Explained for you, your class or your Comune, always with the source.",
+      kicker: t("onboarding.kicker2"),
+      title: t("onboarding.title2"),
+      body: t("onboarding.body2"),
       visual: <DataPreview />,
     },
     {
-      kicker: "Friends · squads · schools",
-      title: "Beat your friends.\nSave the planet.",
-      body: "(In that order.) Weekly races, streaks, nudges for slackers, and a league between schools.",
+      kicker: t("onboarding.kicker3"),
+      title: t("onboarding.title3"),
+      body: t("onboarding.body3"),
       visual: <RacePreview key={page === 2 ? "on" : "off"} active={page === 2} />,
     },
     {
-      kicker: "UN Agenda 2030",
-      title: "17 goals.\nOne tiny act\nat a time.",
-      body: "Every proof is tagged with the Sustainable Development Goals it moves. Collect all 17.",
+      kicker: t("onboarding.kicker4"),
+      title: t("onboarding.title4"),
+      body: t("onboarding.body4"),
       visual: <GoalsPreview active={page === 3} width={inner} />,
     },
   ];
@@ -283,11 +291,13 @@ export default function Onboarding() {
   return (
     <KeyboardAvoidingView behavior={process.env.EXPO_OS === "ios" ? "padding" : undefined} style={{ flex: 1, backgroundColor: C.bg }}>
       <View style={{ paddingTop: top + 10, paddingHorizontal: 20, gap: 14 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+        <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
           <Logo size={24} />
+          <View style={{ flexGrow: 1 }} />
+          <LanguageSwitch compact />
           {page < last ? (
-            <Pressable onPress={() => go(last)} hitSlop={10} accessibilityRole="button">
-              <Mono color={C.ink}>Skip</Mono>
+            <Pressable onPress={() => go(last)} hitSlop={10} accessibilityRole="button" accessibilityLabel={t("common.skip")}>
+              <Mono color={C.ink}>{t("common.skip")}</Mono>
             </Pressable>
           ) : (
             <Mono>
@@ -323,14 +333,14 @@ export default function Onboarding() {
 
         <ScrollView style={{ width }} contentContainerStyle={{ padding: 20, paddingTop: 28, gap: 30 }} keyboardShouldPersistTaps="handled">
           <View style={{ gap: 10 }}>
-            <Mono>Last step</Mono>
-            <Text style={[T.hero, { fontSize: 42, lineHeight: 43 }]}>Who’s going green?</Text>
+            <Mono>{t("onboarding.last")}</Mono>
+            <Text style={[T.hero, { fontSize: 42, lineHeight: 43 }]}>{t("onboarding.who")}</Text>
           </View>
 
           <TextInput
             value={name}
             onChangeText={setName}
-            placeholder="Your name"
+            placeholder={t("onboarding.name")}
             placeholderTextColor={C.faint}
             autoCorrect={false}
             returnKeyType="done"
@@ -346,35 +356,35 @@ export default function Onboarding() {
           />
 
           <View style={{ gap: 12 }}>
-            <Mono color={C.ink}>I’m joining as</Mono>
+            <Mono color={C.ink}>{t("onboarding.joining")}</Mono>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
               {ROLES.map((r) => (
-                <Chip key={r.value} label={r.label} icon={r.icon} active={role === r.value} onPress={() => setRole(r.value)} />
+                <Chip key={r.value} label={t(r.label)} icon={r.icon} active={role === r.value} onPress={() => setRole(r.value)} />
               ))}
             </View>
-            <Text style={T.caption}>Explanations: {ROLES.find((r) => r.value === role)?.hint}</Text>
+            <Text style={T.caption}>{t("onboarding.explanations", { hint: t(ROLES.find((r) => r.value === role)?.hint ?? "roles.studentHint") })}</Text>
           </View>
 
           <View style={{ borderTopWidth: 1, borderTopColor: C.line }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: C.line }}>
               <Icon name="location" size={17} />
               <View style={{ flex: 1, gap: 2 }}>
-                <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2 }}>Local data</Text>
+                <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2 }}>{t("onboarding.local")}</Text>
                 <Text style={{ fontFamily: F.regular, color: C.mute, fontSize: 13 }}>
-                  {loc === "on" ? "Using your approximate location (~1 km)." : loc === "off" ? "No problem. We’ll use Milano." : "Approximate only. Never on posts unless you choose."}
+                  {loc === "on" ? t("onboarding.localOn") : loc === "off" ? t("onboarding.localOff") : t("onboarding.localIdle")}
                 </Text>
               </View>
               {loc === "on" ? (
                 <Icon name="checkSeal" size={20} color={C.ink} />
               ) : (
-                <Button size="sm" label={loc === "asking" ? "…" : "Allow"} onPress={askLocation} />
+                <Button size="sm" label={loc === "asking" ? "…" : t("onboarding.allow")} onPress={askLocation} />
               )}
             </View>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: C.line }}>
               <Icon name="sparkle" size={17} />
               <View style={{ flex: 1, gap: 2 }}>
-                <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2 }}>Demo history</Text>
-                <Text style={{ fontFamily: F.regular, color: C.mute, fontSize: 13 }}>Pre-fill a streak and Memories to explore.</Text>
+                <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2 }}>{t("onboarding.demo")}</Text>
+                <Text style={{ fontFamily: F.regular, color: C.mute, fontSize: 13 }}>{t("onboarding.demoHint")}</Text>
               </View>
               <Switch value={demo} onValueChange={setDemo} trackColor={{ true: C.ink }} />
             </View>
@@ -384,9 +394,9 @@ export default function Onboarding() {
 
       <View style={{ paddingHorizontal: 20, paddingBottom: bottom + 12, paddingTop: 8 }}>
         {page < last ? (
-          <Button label={page === 0 ? "Let’s go" : "Next"} onPress={() => go(page + 1)} />
+          <Button label={page === 0 ? t("onboarding.letsGo") : t("common.next")} onPress={() => go(page + 1)} />
         ) : (
-          <Button label="Start BeGreen" onPress={start} />
+          <Button label={t("onboarding.start")} onPress={start} />
         )}
       </View>
     </KeyboardAvoidingView>
