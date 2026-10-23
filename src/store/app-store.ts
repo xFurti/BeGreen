@@ -50,6 +50,7 @@ type State = {
   posts: Post[];
   profiles: Record<string, User>;
   reacted: Record<string, string>;
+  flagged: Record<string, true>;
   squads: Squad[];
   localSquads: Squad[];
   localMedia: Record<string, { photo?: string; proof?: string }>;
@@ -79,6 +80,7 @@ type Actions = {
   verify: (postId: string) => void;
   react: (postId: string, emoji: string) => void;
   comment: (postId: string, text: string) => void;
+  flag: (postId: string) => void;
   createSquad: (s: Pick<Squad, "name" | "kind" | "place" | "quest">) => Promise<Squad>;
   joinSquad: (code: string) => Promise<Squad | null>;
   nudge: (userId: string) => void;
@@ -102,6 +104,7 @@ const initial: State = {
   posts: [],
   profiles: {},
   reacted: {},
+  flagged: {},
   squads: [],
   localSquads: [],
   localMedia: {},
@@ -221,6 +224,12 @@ export const useApp = create<State & Actions>()(
         set({ posts: patchPost(s.posts, postId, (p) => ({ ...p, comments: [...p.comments, c] })) });
         if (hasBackend && !post.pending) addComment(postId, text).catch(fail);
       },
+      flag: (postId) => {
+        const s = get();
+        const post = s.posts.find((p) => p.id === postId);
+        if (!post || post.isDemo || post.authorId === s.userId || s.flagged[postId]) return;
+        set({ flagged: { ...s.flagged, [postId]: true } });
+      },
       createSquad: async ({ name, kind, place, quest }) => {
         const s = get();
         const code =
@@ -285,6 +294,7 @@ export const useApp = create<State & Actions>()(
         posts: s.posts,
         profiles: s.profiles,
         reacted: s.reacted,
+        flagged: s.flagged,
         squads: s.squads,
         localSquads: s.localSquads,
         localMedia: s.localMedia,

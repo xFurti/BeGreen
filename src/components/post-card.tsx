@@ -202,6 +202,7 @@ export const PostCard = memo(function PostCard({
 }) {
   const react = useApp((s) => s.react);
   const mine = useApp((s) => s.reacted[post.id]);
+  const flagged = useApp((s) => !!s.flagged[post.id]);
   const { t, language } = useI18n();
   const a = useAuthor()(post.authorId);
   const action = actionCopy(t, post.action);
@@ -220,6 +221,7 @@ export const PostCard = memo(function PostCard({
         </View>
         {post.isDemo && <Tag label={t("common.demo")} />}
         {post.isDrop && <DropTag post={post} />}
+        {flagged && <Tag label={t("post.flaggedTag")} />}
       </View>
 
       <ProofMedia

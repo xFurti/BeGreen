@@ -69,6 +69,7 @@ export function Press({
       style={outer}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
+      accessibilityState={{ disabled: !!disabled }}
       hitSlop={hitSlop}
       disabled={disabled}
       onPressIn={() => s.set(withSpring(scale, { damping: 22, stiffness: 420 }))}

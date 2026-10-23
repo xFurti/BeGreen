@@ -154,7 +154,7 @@ assets/                   Icon, splash, demo photos (Unsplash), 5 s proof clips
 
 - Accounts are anonymous and tied to the phone: signing out or reinstalling loses the account (your proofs stay on the feed). There are no friends or follows yet; the social unit is your Comune and your squads.
 - The daily Drop is built by the first phone that opens the app in a Comune that day. The database checks its shape and date, not its numbers; a server-side job would make it tamper-proof.
-- Moderation is still missing: “Flag proof” only asks for confirmation. Verifications are one per person but not yet checked against proximity or fraud patterns.
+- Moderation is still missing: “Flag proof” saves one local flag per proof on this device, with no moderator queue or Seeds penalties. Verifications are one per person but not yet checked against proximity or fraud patterns.
 - The league and the Comune counts are computed from the proofs the app downloads (last 8 days in your Comune), not from a server-side aggregate.
 - Impact figures are conservative estimates per act and are labelled that way everywhere.
 - ARPA / ISPRA official data isn't wired in yet, because access and terms vary by region. It's listed as “to verify”.
