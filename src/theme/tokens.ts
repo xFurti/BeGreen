@@ -30,6 +30,9 @@ export const fixed = {
   glassLine: "rgba(255,255,255,0.28)",
   ring: "rgba(255,255,255,0.22)",
   scrim: "rgba(0,0,0,0.5)",
+  // Brand Kit — logo, app icon and splash. Never Proof Lime on white (1.4:1).
+  canopy: "#152315",
+  proofLime: "#C8E61A",
 } as const;
 
 const lightRoles = {

@@ -5,8 +5,10 @@ import { Text, View } from "react-native";
 import { Icon } from "@/components/icon";
 import { Blobs, LeafMark } from "@/components/nature";
 import { AvatarStack, LiveDot, Mono, Press, SdgTags } from "@/components/ui";
-import { ACTIONS } from "@/data/actions";
 import type { User } from "@/data/types";
+import { actionCopy } from "@/i18n/content";
+import { formatNumber } from "@/i18n/format";
+import { useI18n } from "@/i18n/use-i18n";
 import type { Drop } from "@/services/drop";
 import { F, R } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
@@ -44,14 +46,15 @@ export function DropCard({
   ready?: boolean;
 }) {
   const { C } = useTheme();
-  const action = ACTIONS[drop.action];
+  const { t, language } = useI18n();
+  const action = actionCopy(t, drop.action);
   const left = useCountdown();
 
   return (
     <Press
       scale={0.985}
       disabled={!ready}
-      accessibilityLabel={`Today's Drop: ${drop.title}`}
+      accessibilityLabel={t("dropCard.a11y", { title: drop.title })}
       onPress={() => router.push("/drop")}
       // Leaf-shaped: two round corners, two tight ones.
       style={{
@@ -71,7 +74,7 @@ export function DropCard({
       </View>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
         <LiveDot color={done ? C.forestMute : C.lime} />
-        <Mono color={C.white}>{done ? "Drop done" : "Today’s Drop"}</Mono>
+        <Mono color={C.white}>{done ? t("dropCard.done") : t("dropCard.today")}</Mono>
         <Mono color={C.forestMute}>· {place}</Mono>
         <View style={{ flex: 1 }} />
         <Mono color={C.forestMute} style={{ fontVariant: ["tabular-nums"] }}>
@@ -80,7 +83,7 @@ export function DropCard({
       </View>
 
       <Text style={{ fontFamily: F.medium, fontSize: 32, lineHeight: 34, letterSpacing: -1.4, color: C.white }}>
-        {ready ? drop.title : `Reading ${place}…`}
+        {ready ? drop.title : t("dropCard.reading", { place })}
       </Text>
 
       {ready ? (
@@ -88,7 +91,7 @@ export function DropCard({
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <Icon name={action.icon} size={14} color={C.lime} />
             <Text style={{ fontFamily: F.medium, fontSize: 14, color: C.white }}>{action.label}</Text>
-            <Text style={{ flex: 1, fontFamily: F.regular, fontSize: 14, color: C.forestMute }} numberOfLines={1}>
+            <Text style={{ flex: 1, flexShrink: 1, fontFamily: F.regular, fontSize: 13, lineHeight: 18, color: C.forestMute }}>
               · {drop.metric}
             </Text>
             <SdgTags goals={action.sdgs.slice(0, 1)} dark />
@@ -99,14 +102,12 @@ export function DropCard({
             <Text style={{ flex: 1, fontFamily: F.regular, fontSize: 13, color: C.forestMute }} numberOfLines={1}>
               {done ? (
                 <Text style={{ color: C.lime, fontFamily: F.medium }}>
-                  You’re in. +10 bonus{crowd.length > 1 ? ` · ${crowd.length - 1} more in ${place}` : ""}
+                  {crowd.length > 1 ? t("dropCard.inWith", { count: formatNumber(crowd.length - 1, language), place }) : t("dropCard.in")}
                 </Text>
               ) : crowd.length ? (
-                <>
-                  <Text style={{ color: C.white, fontFamily: F.medium }}>{crowd.length.toLocaleString("en")}</Text> in {place} did it today
-                </>
+                crowd.length === 1 ? t("dropCard.didInOne", { place }) : t("dropCard.didIn", { count: formatNumber(crowd.length, language), place })
               ) : (
-                `Nobody in ${place} yet. Be the first.`
+                t("dropCard.first", { place })
               )}
             </Text>
             <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: C.lime, alignItems: "center", justifyContent: "center" }}>
@@ -116,7 +117,7 @@ export function DropCard({
         </View>
       ) : (
         <Text style={{ fontFamily: F.regular, fontSize: 14, lineHeight: 20, color: C.forestMute }}>
-          Air, water, soil and nature data are loading. Your mission drops in a second.
+          {t("dropCard.loading")}
         </Text>
       )}
     </Press>

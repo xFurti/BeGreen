@@ -11,12 +11,14 @@ import { Button, IconButton, Mono, Press, SdgTags, Segmented, SourceBadge, TopCo
 import { ACTIONS } from "@/data/actions";
 import type { Explain } from "@/data/types";
 import { usePulse } from "@/hooks/use-pulse";
+import { actionCopy } from "@/i18n/content";
+import { formatNumber, timeAgo } from "@/i18n/format";
+import { useI18n } from "@/i18n/use-i18n";
 import type { Pulse } from "@/services/env";
 import { aqiBand, type Insight, type Level } from "@/services/interpret";
 import { useApp } from "@/store/app-store";
 import { F, R, type Palette } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
-import { timeAgo } from "@/utils/format";
 
 const dot = (C: Palette): Record<Level, string> => ({ good: C.green, ok: C.amber, bad: C.red, info: C.faint });
 
@@ -31,6 +33,7 @@ const GOALS: Record<Insight["key"], number[]> = {
 
 function AirChart({ data }: { data: { hour: string; aqi: number }[] }) {
   const { C } = useTheme();
+  const { t } = useI18n();
   const max = Math.max(60, ...data.map((d) => d.aqi));
   return (
     <View style={{ gap: 8 }}>
@@ -48,9 +51,9 @@ function AirChart({ data }: { data: { hour: string; aqi: number }[] }) {
         ))}
       </View>
       <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-        <Mono>Now</Mono>
+        <Mono>{t("pulse.now")}</Mono>
         <Mono>{data[12]?.hour ?? ""}:00</Mono>
-        <Mono>+24h</Mono>
+        <Mono>{t("pulse.plus24")}</Mono>
       </View>
     </View>
   );
@@ -58,6 +61,7 @@ function AirChart({ data }: { data: { hour: string; aqi: number }[] }) {
 
 function RainChart({ data }: { data: { day: string; mm: number }[] }) {
   const { C } = useTheme();
+  const { t } = useI18n();
   const max = Math.max(5, ...data.map((d) => d.mm));
   const todayIdx = data.length - 3;
   return (
@@ -76,8 +80,8 @@ function RainChart({ data }: { data: { day: string; mm: number }[] }) {
         ))}
       </View>
       <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-        <Mono>−7 days</Mono>
-        <Mono>Today → forecast</Mono>
+        <Mono>{t("pulse.minus7")}</Mono>
+        <Mono>{t("pulse.forecast")}</Mono>
       </View>
     </View>
   );
@@ -138,6 +142,7 @@ function Extra({ k, pulse }: { k: Insight["key"]; pulse: Pulse }) {
 
 function InsightCard({ i, explain, pulse, index }: { i: Insight; explain: Explain; pulse: Pulse; index: number }) {
   const { C, T } = useTheme();
+  const { t } = useI18n();
   return (
     <Animated.View
       entering={FadeInDown.delay(index * 60).springify().damping(20)}
@@ -182,7 +187,7 @@ function InsightCard({ i, explain, pulse, index }: { i: Insight; explain: Explai
           <View style={{ flex: 1, gap: 2 }}>
             <Text style={{ fontFamily: F.medium, fontSize: 15, letterSpacing: -0.2, color: C.ink }}>{i.act.label}</Text>
             <Mono>
-              {ACTIONS[i.act.action].label} · +{ACTIONS[i.act.action].seeds}
+              {actionCopy(t, i.act.action).label} · +{ACTIONS[i.act.action].seeds}
             </Mono>
           </View>
           <Icon name="arrowRight" size={14} color={C.ink} />
@@ -215,12 +220,13 @@ export default function PulseScreen() {
   const { pulse, insights, drop, loading, refresh, ready } = usePulse();
   const explain = useApp((s) => s.explain);
   const setExplain = useApp((s) => s.setExplain);
+  const { t, language } = useI18n();
   const [refreshing, setRefreshing] = useState(false);
 
   const bad = insights.filter((i) => i.level === "bad");
   const lever = bad[0];
-  const air = pulse.air ? aqiBand(pulse.air.aqi) : null;
-  const da = ACTIONS[drop.action];
+  const air = pulse.air ? aqiBand(pulse.air.aqi, language) : null;
+  const da = actionCopy(t, drop.action);
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
@@ -241,30 +247,30 @@ export default function PulseScreen() {
       >
         <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" }}>
           <View style={{ gap: 6 }}>
-            <Text style={T.display}>Pulse</Text>
+            <Text style={T.display}>{t("pulse.title")}</Text>
             <Press
               scale={0.98}
               onPress={() => router.push("/comune")}
-              accessibilityLabel={`Comune: ${pulse.place.name}. Change`}
+              accessibilityLabel={t("comune.change", { name: pulse.place.name })}
               style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
             >
               <Icon name="location" size={11} color={C.mute} />
               <Mono>
-                {pulse.place.name} · {loading ? "updating" : `${timeAgo(pulse.fetchedAt)} ago`}
+                {pulse.place.name} · {loading ? t("pulse.updating") : t("pulse.ago", { time: timeAgo(pulse.fetchedAt, language) })}
               </Mono>
               {loading && <ActivityIndicator size="small" color={C.mute} />}
             </Press>
           </View>
           <View style={{ flexDirection: "row", gap: 8 }}>
-            <IconButton icon="info" label="How we know" onPress={() => router.push("/sources")} />
-            <IconButton icon="sparkle" label="Ask Leaf" bg={C.forest} color={C.lime} onPress={() => router.push("/leaf")} />
+            <IconButton icon="info" label={t("pulse.how")} onPress={() => router.push("/sources")} />
+            <IconButton icon="sparkle" label={t("common.askLeaf")} bg={C.forest} color={C.lime} onPress={() => router.push("/leaf")} />
           </View>
         </View>
 
         {ready && pulse.sample && (
           <View style={{ flexDirection: "row", gap: 10, alignItems: "center", backgroundColor: C.card, borderRadius: R.md, padding: 12 }}>
             <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: C.amber }} />
-            <Text style={{ flex: 1, fontFamily: F.regular, color: C.ink2, fontSize: 13 }}>Offline. Showing sample data. Pull to refresh.</Text>
+            <Text style={{ flex: 1, fontFamily: F.regular, color: C.ink2, fontSize: 13 }}>{t("pulse.offline")}</Text>
           </View>
         )}
 
@@ -275,7 +281,7 @@ export default function PulseScreen() {
                 {i === 0 && (
                   <>
                     <ActivityIndicator color={C.leaf} />
-                    <Mono>Reading {pulse.place.name}</Mono>
+                    <Mono>{t("pulse.reading", { place: pulse.place.name })}</Mono>
                   </>
                 )}
               </View>
@@ -284,10 +290,12 @@ export default function PulseScreen() {
         ) : (
           <>
             <Animated.View entering={FadeIn} style={{ flexDirection: "row", marginHorizontal: -10, paddingVertical: 4 }}>
-              {air && <Cell label="Air" value={air.label} sub={`EAQI ${pulse.air!.aqi}`} />}
-              {pulse.weather && <Cell label="Temp" value={`${pulse.weather.temp}°`} sub={`${pulse.weather.tmin}° / ${pulse.weather.tmax}°`} />}
-              {pulse.water && <Cell label="Dry days" value={String(pulse.water.dryDays)} sub={`${Math.round(pulse.water.rain7)} mm/7d`} />}
-              {pulse.nature && <Cell label="Species" value={String(pulse.nature.speciesCount)} sub="10 km" last />}
+              {air && <Cell label={t("insights.labels.air")} value={air.label} sub={`EAQI ${pulse.air!.aqi}`} />}
+              {pulse.weather && <Cell label={t("pulse.temp")} value={`${pulse.weather.temp}°`} sub={`${pulse.weather.tmin}° / ${pulse.weather.tmax}°`} />}
+              {pulse.water && (
+                <Cell label={t("pulse.dryDays")} value={String(pulse.water.dryDays)} sub={t("pulse.rainSub", { mm: formatNumber(Math.round(pulse.water.rain7), language) })} />
+              )}
+              {pulse.nature && <Cell label={t("pulse.species")} value={formatNumber(pulse.nature.speciesCount, language)} sub="10 km" last />}
             </Animated.View>
 
             <Animated.View
@@ -304,36 +312,28 @@ export default function PulseScreen() {
               }}
             >
               <Blobs colors={[C.leaf, C.lime]} opacity={0.18} />
-              <Mono color={C.forestMute}>Today in {pulse.place.name}</Mono>
+              <Mono color={C.forestMute}>{t("pulse.todayIn", { place: pulse.place.name })}</Mono>
               <Text style={{ fontFamily: F.medium, fontSize: 30, lineHeight: 33, letterSpacing: -1.3, color: C.white }}>
-                {lever ? (
-                  <>
-                    Biggest lever today: <Text style={{ color: C.lime }}>{lever.label.toLowerCase()}.</Text>
-                  </>
-                ) : (
-                  <>
-                    All clear. <Text style={{ color: C.lime }}>Make it count anyway.</Text>
-                  </>
-                )}
+                {lever ? t("pulse.lever", { label: lever.label.toLowerCase() }) : t("pulse.clear")}
               </Text>
               <Button
                 kind="inverse"
                 icon={da.icon}
-                label={`Do today’s Drop`}
+                label={t("pulse.doDrop")}
                 trailing={`+${da.seeds + 10}`}
                 onPress={() => router.push({ pathname: "/capture", params: { action: drop.action } })}
               />
             </Animated.View>
 
             <View style={{ gap: 12, paddingTop: 8 }}>
-              <Mono color={C.ink}>Explain it for</Mono>
+              <Mono color={C.ink}>{t("common.explainFor")}</Mono>
               <Segmented<Explain>
                 value={explain}
                 onChange={setExplain}
                 options={[
-                  { value: "me", label: "Me" },
-                  { value: "class", label: "My class" },
-                  { value: "comune", label: "Comune" },
+                  { value: "me", label: t("common.me") },
+                  { value: "class", label: t("common.myClass") },
+                  { value: "comune", label: t("common.comune") },
                 ]}
               />
             </View>
@@ -349,15 +349,14 @@ export default function PulseScreen() {
         <Press
           onPress={() => router.push("/sources")}
           style={{ padding: 20, borderRadius: R.lg, backgroundColor: C.card, gap: 8 }}
-          accessibilityLabel="About the data"
+          accessibilityLabel={t("pulse.about")}
         >
           <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Text style={{ fontFamily: F.medium, fontSize: 17, letterSpacing: -0.3, flex: 1, color: C.ink }}>Not all data is equal</Text>
+            <Text style={{ fontFamily: F.medium, fontSize: 17, letterSpacing: -0.3, flex: 1, color: C.ink }}>{t("pulse.unequal")}</Text>
             <Icon name="arrowRight" size={14} color={C.ink} />
           </View>
           <Text style={[T.callout, { fontSize: 14, lineHeight: 20 }]}>
-            Stations, models, citizen observations and maps measure different things in different ways. Tap any source to see what it’s good
-            for and where to be careful.
+            {t("pulse.unequalBody")}
           </Text>
         </Press>
       </ScrollView>

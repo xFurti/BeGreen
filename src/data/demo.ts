@@ -1,4 +1,4 @@
-import { ACTIONS, type ActionId } from "@/data/actions";
+import type { ActionId } from "@/data/actions";
 import type { Media, Post, User } from "@/data/types";
 import type { Drop } from "@/services/drop";
 
@@ -84,12 +84,14 @@ export function resolveMedia(m: string): Media {
   return m.startsWith("asset:") ? (REGISTRY[m.slice(6)] ?? m) : m;
 }
 
+// Name and tag are shown in the active language (see useAuthor).
 export const DEMO_AUTHOR: User = { id: "demo", name: "BeGreen example", handle: "example", tag: "Demo" };
+
+const CAPTIONS = ["a", "b", "c"] as const;
 
 // Example proofs for today's challenge, so a quiet Comune still shows what the Drop looks like.
 export function demoPostsFor(drop: Drop, place: string): Post[] {
   const set = SETS[drop.action];
-  const captions = ACTIONS[drop.action].captions;
   const midnight = new Date().setHours(0, 0, 0, 0);
   return [0, 1, 2].map((i) => ({
     id: `demo-${drop.id}-${i}`,
@@ -97,7 +99,8 @@ export function demoPostsFor(drop: Drop, place: string): Post[] {
     action: drop.action,
     photo: set.photos[i % set.photos.length],
     proof: set.clip,
-    caption: captions[i % captions.length],
+    caption: "",
+    captionKey: `actions.${drop.action}.captions.${CAPTIONS[i]}`,
     place,
     createdAt: Math.max(midnight + 60e3 * (i + 1), Date.now() - (i + 1) * 47 * 60e3),
     verifiedBy: [],

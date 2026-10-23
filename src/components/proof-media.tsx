@@ -15,6 +15,7 @@ import Animated, {
 
 import { Icon } from "@/components/icon";
 import type { Media } from "@/data/types";
+import { useI18n } from "@/i18n/use-i18n";
 import { F, light, R } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
@@ -85,6 +86,7 @@ export function ProofMedia({
   popEmoji?: string;
 }) {
   const { C, scheme } = useTheme();
+  const { t } = useI18n();
   const [swapped, setSwapped] = useState(false);
   const [pop, setPop] = useState(0);
   const lastTap = useRef(0);
@@ -133,7 +135,7 @@ export function ProofMedia({
         >
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={swapped ? "Show photo large" : "Show proof clip large"}
+            accessibilityLabel={swapped ? t("proof.showPhoto") : t("proof.showClip")}
             onPress={() => {
               haptic.soft();
               setSwapped((s) => !s);
@@ -171,7 +173,7 @@ export function ProofMedia({
           }}
         >
           <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: C.red }} />
-          <Text style={{ color: C.white, fontFamily: F.monoMedium, fontSize: 10.5, letterSpacing: 0.5 }}>PROOF 0:05</Text>
+          <Text style={{ color: C.white, fontFamily: F.monoMedium, fontSize: 10.5, letterSpacing: 0.5 }}>{t("common.proof")}</Text>
         </View>
       )}
 
@@ -195,7 +197,7 @@ export function ProofMedia({
         >
           {/* A white pill on the photo in both themes, so it keeps the light green. */}
           <Icon name="checkSeal" size={14} color={light.leaf} />
-          <Text style={{ color: C.forest, fontFamily: F.monoMedium, fontSize: 10.5, letterSpacing: 0.5 }}>VERIFIED</Text>
+          <Text style={{ color: C.forest, fontFamily: F.monoMedium, fontSize: 10.5, letterSpacing: 0.5 }}>{t("common.verified")}</Text>
         </Animated.View>
       )}
 
@@ -209,10 +211,8 @@ export function ProofMedia({
             </View>
             {lockHint && (
               <View style={{ alignItems: "center", gap: 6, paddingHorizontal: 40 }}>
-                <Text style={{ fontFamily: F.medium, fontSize: 20, letterSpacing: -0.6, color: C.ink }}>Post yours to see theirs.</Text>
-                <Text style={{ fontFamily: F.regular, fontSize: 14, lineHeight: 20, color: C.ink2, textAlign: "center" }}>
-                  Do one green thing, prove it, and today’s feed unlocks.
-                </Text>
+                <Text style={{ fontFamily: F.medium, fontSize: 20, letterSpacing: -0.6, color: C.ink, textAlign: "center" }}>{t("proof.lockTitle")}</Text>
+                <Text style={{ fontFamily: F.regular, fontSize: 14, lineHeight: 20, color: C.ink2, textAlign: "center" }}>{t("proof.lockBody")}</Text>
               </View>
             )}
           </BlurView>

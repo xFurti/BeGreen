@@ -10,10 +10,11 @@ import { Icon } from "@/components/icon";
 import { Sprout } from "@/components/nature";
 import { PostCard, VerifyBar } from "@/components/post-card";
 import { Avatar, Bar, Button, Logo, Mono, Press, TextTabs } from "@/components/ui";
-import { ACTIONS } from "@/data/actions";
 import { demoPostsFor } from "@/data/demo";
 import type { Post, User } from "@/data/types";
 import { usePulse } from "@/hooks/use-pulse";
+import { actionCopy, profileName } from "@/i18n/content";
+import { useI18n } from "@/i18n/use-i18n";
 import { postedToday, streakOf, syncSocial, useApp, useAuthor, useLeague, useMyPosts } from "@/store/app-store";
 import { F, R } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
@@ -26,6 +27,7 @@ const DEMO_UNDER = 3;
 function NotYet({ streak }: { streak: number }) {
   const { C } = useTheme();
   const left = useCountdown();
+  const { t } = useI18n();
   return (
     <View
       style={{
@@ -43,29 +45,22 @@ function NotYet({ streak }: { streak: number }) {
         <Sprout size={64} />
       </View>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-        <Mono color={C.forestInk}>Your BeGreen</Mono>
+        <Mono color={C.forestInk}>{t("feed.yours")}</Mono>
         <View style={{ flex: 1 }} />
         <Icon name="flame" size={13} color={streak > 0 ? C.forestInk : C.faint} />
         <Mono color={streak > 0 ? C.forestInk : C.mute}>{streak}</Mono>
       </View>
       <View style={{ gap: 8 }}>
         <Text style={{ fontFamily: F.medium, fontSize: 28, lineHeight: 30, letterSpacing: -1.2, color: C.ink, paddingRight: 64 }}>
-          You haven’t BeGreen’d today.
+          {t("feed.notYet")}
         </Text>
         <Text style={{ fontFamily: F.regular, fontSize: 15, lineHeight: 21, color: C.ink2, paddingRight: 64 }}>
-          {streak > 0 ? (
-            <>
-              Your <Text style={{ color: C.ink, fontFamily: F.medium }}>{streak}-day streak</Text> dies in{" "}
-              <Text style={{ color: C.ink, fontFamily: F.monoMedium }}>{left.slice(0, 5)}</Text>. No pressure.
-            </>
-          ) : (
-            "One green thing. Five seconds of proof. That’s it."
-          )}
+          {streak > 0 ? t("feed.streak", { count: streak, time: left.slice(0, 5) }) : t("feed.first")}
         </Text>
       </View>
       <View style={{ flexDirection: "row", gap: 8 }}>
-        <Button label="BeGreen now" kind="green" icon="camera" onPress={() => router.push("/capture")} style={{ flex: 1 }} />
-        <Button label="Ideas" kind="inverse" icon="book" onPress={() => router.push("/guide")} />
+        <Button label={t("feed.now")} kind="green" icon="camera" onPress={() => router.push("/capture")} style={{ flex: 1 }} />
+        <Button label={t("feed.ideas")} kind="inverse" icon="book" onPress={() => router.push("/guide")} />
       </View>
     </View>
   );
@@ -73,17 +68,18 @@ function NotYet({ streak }: { streak: number }) {
 
 function Mine({ post }: { post: Post }) {
   const { C } = useTheme();
-  const a = ACTIONS[post.action];
+  const { t } = useI18n();
+  const a = actionCopy(t, post.action);
   return (
     <Press
       scale={0.985}
       onPress={() => router.push({ pathname: "/post/[id]", params: { id: post.id } })}
-      accessibilityLabel="Your BeGreen today"
+      accessibilityLabel={t("feed.todayA11y")}
       style={{ flexDirection: "row", gap: 14, alignItems: "center" }}
     >
       <Image source={post.photo} style={{ width: 62, height: 78, borderRadius: 12, backgroundColor: C.card }} contentFit="cover" />
       <View style={{ flex: 1, gap: 6 }}>
-        <Mono color={C.leaf}>Your BeGreen · today</Mono>
+        <Mono color={C.leaf}>{t("feed.today")}</Mono>
         <Text style={{ fontFamily: F.medium, fontSize: 18, letterSpacing: -0.5, color: C.ink }}>{a.label}</Text>
         <VerifyBar post={post} />
       </View>
@@ -94,6 +90,7 @@ function Mine({ post }: { post: Post }) {
 function Race({ place }: { place: string }) {
   const { C } = useTheme();
   const league = useLeague();
+  const { t } = useI18n();
   const i = league.findIndex((r) => r.me);
   const me = league[i];
   const ahead = league[i - 1];
@@ -103,25 +100,25 @@ function Race({ place }: { place: string }) {
     <Press
       scale={0.985}
       onPress={() => router.navigate("/league")}
-      accessibilityLabel="This week's league"
+      accessibilityLabel={t("feed.leagueA11y")}
       style={{ backgroundColor: C.card, borderRadius: R.xl, borderCurve: "continuous", padding: 18, gap: 14 }}
     >
       <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <Mono style={{ flex: 1 }}>This week · {place}</Mono>
-        <Mono color={C.forestInk}>League →</Mono>
+        <Mono style={{ flex: 1 }}>{t("feed.weekIn", { place })}</Mono>
+        <Mono color={C.forestInk}>{t("feed.league")}</Mono>
       </View>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
         <Text style={{ fontFamily: F.medium, fontSize: 44, lineHeight: 46, letterSpacing: -2, color: C.forestInk }}>#{i + 1}</Text>
         <View style={{ flex: 1, gap: 4 }}>
           <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3, color: C.ink }} numberOfLines={1}>
-            {alone ? "First on the board." : ahead ? `${gap} seeds behind ${ahead.name}` : "You’re on top. Stay there."}
+            {alone ? t("feed.firstOnBoard") : ahead ? t("feed.behind", { gap, name: ahead.name }) : t("feed.top")}
           </Text>
           <Text style={{ fontFamily: F.regular, fontSize: 13, color: C.mute }} numberOfLines={1}>
             {alone
-              ? `Nobody else in ${place} has posted this week.`
+              ? t("feed.alone", { place })
               : ahead
-                ? `One proof could do it.`
-                : `${me.points - (league[1]?.points ?? 0)} seeds ahead of ${league[1]?.name}`}
+                ? t("feed.oneProof")
+                : t("feed.ahead", { gap: me.points - (league[1]?.points ?? 0), name: league[1]?.name ?? t("feed.everyone") })}
           </Text>
         </View>
         {ahead && <Avatar src={ahead.avatar} name={ahead.name} size={36} />}
@@ -142,6 +139,7 @@ export default function Feed() {
   const comune = useApp((s) => s.comune);
   const author = useAuthor();
   const { drop, pulse, refresh, ready } = usePulse();
+  const { t } = useI18n();
   const [lens, setLens] = useState<Lens>("comune");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -198,8 +196,8 @@ export default function Feed() {
           onChange={setLens}
           options={[
             { value: "comune", label: place },
-            { value: "squads", label: "Squads" },
-            { value: "everyone", label: "Everyone" },
+            { value: "squads", label: t("common.squads") },
+            { value: "everyone", label: t("common.everyone") },
           ]}
         />
       </View>
@@ -219,12 +217,12 @@ export default function Feed() {
           backgroundColor: C.bg,
         }}
       >
-        <Press onPress={() => router.push("/leaf")} accessibilityLabel="Ask Leaf" style={{ width: 40, height: 40, justifyContent: "center" }}>
+        <Press onPress={() => router.push("/leaf")} accessibilityLabel={t("common.askLeaf")} style={{ width: 40, height: 40, justifyContent: "center" }}>
           <Icon name="sparkle" size={21} color={C.leaf} />
         </Press>
-        <Logo size={26} sway />
-        <Press onPress={() => router.navigate("/me")} accessibilityLabel="Your profile" style={{ width: 40, alignItems: "flex-end" }}>
-          <Avatar name={profile.name || "You"} size={32} />
+        <Logo size={24} />
+        <Press onPress={() => router.navigate("/me")} accessibilityLabel={t("feed.profile")} style={{ width: 40, alignItems: "flex-end" }}>
+          <Avatar name={profileName(profile.name, t)} size={32} />
         </Press>
       </View>
 
@@ -248,17 +246,11 @@ export default function Feed() {
         ListEmptyComponent={
           <Animated.View entering={FadeIn} style={{ alignItems: "center", gap: 10, paddingVertical: 40 }}>
             <Sprout size={56} />
-            <Text style={{ fontFamily: F.medium, fontSize: 20, letterSpacing: -0.6, color: C.ink }}>Quiet here.</Text>
+            <Text style={{ fontFamily: F.medium, fontSize: 20, letterSpacing: -0.6, color: C.ink }}>{t("feed.quiet")}</Text>
             <Text style={{ fontFamily: F.regular, color: C.mute, textAlign: "center" }}>
-              {lens === "squads"
-                ? "Join a squad to see what your class or crew is doing."
-                : lens === "everyone"
-                  ? "No public proofs in the last few days. Post one with “Everyone”."
-                  : `Nobody in ${place} has posted yet. Invite someone, or be the first.`}
+              {lens === "squads" ? t("feed.quietBody") : lens === "everyone" ? t("feed.quietEveryone") : t("feed.quietComune", { place })}
             </Text>
-            {lens === "squads" && (
-              <Button label="Find a squad" size="md" onPress={() => router.navigate("/league")} style={{ marginTop: 6 }} />
-            )}
+            {lens === "squads" && <Button label={t("feed.findSquad")} size="md" onPress={() => router.navigate("/league")} style={{ marginTop: 6 }} />}
           </Animated.View>
         }
         showsVerticalScrollIndicator={false}

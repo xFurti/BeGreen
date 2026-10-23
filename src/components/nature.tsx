@@ -99,29 +99,6 @@ export function LeafScatter({ color, style }: { color?: string; style?: StylePro
   );
 }
 
-// A leaf moving in a light breeze, pivoting on its stem.
-export function SwayingLeaf({ size = 18, color, vein, rotate = 0 }: { size?: number; color?: string; vein?: string; rotate?: number }) {
-  const t = useSharedValue(0);
-  useEffect(() => {
-    t.set(withRepeat(withTiming(1, { duration: 2600, easing: Easing.inOut(Easing.sin) }), -1, true));
-  }, [t]);
-  // Rotate around the bottom-left stem rather than the centre.
-  const a = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: -size / 2 },
-      { translateY: size / 2 },
-      { rotate: `${rotate - 8 + t.value * 16}deg` },
-      { translateX: size / 2 },
-      { translateY: -size / 2 },
-    ],
-  }));
-  return (
-    <Animated.View style={a}>
-      <LeafMark size={size} color={color} vein={vein} />
-    </Animated.View>
-  );
-}
-
 // A switch whose knob turns green and sprouts a leaf when on.
 // Inspired by Creatlydev's leaf toggle on uiverse.io (white-vampirebat-27).
 export function LeafSwitch({ value, onValueChange, label }: { value: boolean; onValueChange: (v: boolean) => void; label: string }) {

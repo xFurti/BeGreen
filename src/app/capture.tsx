@@ -5,7 +5,7 @@ import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef, useState } from "react";
-import { KeyboardAvoidingView, Pressable, ScrollView, Share, Text, TextInput, View } from "react-native";
+import { Pressable, ScrollView, Share, Text, TextInput, View } from "react-native";
 import Animated, {
   Easing,
   FadeIn,
@@ -31,6 +31,10 @@ import { Button, Chip, IconButton, Mono, Press, SdgTags, Segmented, useCountUp }
 import { ACTION_LIST, ACTIONS, type ActionId } from "@/data/actions";
 import { DEMO_BY_ACTION } from "@/data/demo";
 import type { Audience, Media } from "@/data/types";
+import { useKeyboardCover } from "@/hooks/use-keyboard-cover";
+import { actionCopy } from "@/i18n/content";
+import { useI18n } from "@/i18n/use-i18n";
+import { HIDDEN_PLACE } from "@/i18n/persist";
 import { usePulse } from "@/hooks/use-pulse";
 import { persistMedia } from "@/services/media";
 import { hasBackend } from "@/services/supabase";
@@ -42,6 +46,18 @@ import { haptic } from "@/utils/format";
 type Step = "snap" | "proof" | "review" | "done";
 const PROOF_SECONDS = 5;
 const MIN_PROOF = 2;
+// The camera runs at 4:3; held upright that's 3 wide by 4 tall.
+const CAMERA_RATIO = 3 / 4;
+
+type Size = { width: number; height: number };
+
+// The largest 3:4 box that covers the frame, centred. The frame clips the overflow,
+// so the preview is cropped like `cover` instead of being stretched to fit.
+function coverBox({ width, height }: Size) {
+  const w = Math.max(width, height * CAMERA_RATIO);
+  const h = w / CAMERA_RATIO;
+  return { position: "absolute", width: w, height: h, left: (width - w) / 2, top: (height - h) / 2 } as const;
+}
 
 const ACircle = Animated.createAnimatedComponent(Circle);
 
@@ -70,9 +86,10 @@ function RecordRing({ progress, size = 88 }: { progress: SharedValue<number>; si
 
 function Steps({ step }: { step: Step }) {
   const { C } = useTheme();
+  const { t } = useI18n();
   const items = [
-    { k: "snap", n: "01", label: "Snap" },
-    { k: "proof", n: "02", label: "Prove" },
+    { k: "snap", n: "01", label: t("capture.snap") },
+    { k: "proof", n: "02", label: t("capture.prove") },
   ];
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
@@ -168,7 +185,8 @@ function Done(r: Result) {
   const { C, T } = useTheme();
   const { top, bottom } = useSafeAreaInsets();
   const n = useCountUp(r.seeds, 900);
-  const a = ACTIONS[r.action];
+  const { t } = useI18n();
+  const a = actionCopy(t, r.action);
   const scale = useSharedValue(0.6);
   useEffect(() => {
     haptic.success();
@@ -186,7 +204,7 @@ function Done(r: Result) {
       <Burst />
       <View style={{ flexDirection: "row", alignItems: "center" }}>
         <Mono color={C.white} style={{ flex: 1 }}>
-          {r.isDrop ? "Drop complete" : "You BeGreen’d"}
+          {r.isDrop ? t("capture.dropComplete") : t("capture.youDid")}
         </Mono>
         <SdgTags goals={a.sdgs} dark />
       </View>
@@ -196,39 +214,39 @@ function Done(r: Result) {
           +{n}
         </Animated.Text>
         <Animated.Text entering={FadeIn.delay(300)} style={{ fontFamily: F.medium, fontSize: 22, letterSpacing: -0.6, color: C.white }}>
-          seeds{r.isDrop ? ", Drop bonus included." : "."}
+          {r.isDrop ? t("capture.seedsDrop") : t("capture.seedsPlain")}
         </Animated.Text>
       </View>
 
       <View>
-        <Row icon="flame" title={`${r.streak}-day streak`} sub={r.streak > 1 ? "Don’t break the chain." : "Day one. Everyone starts here."} right="+1" delay={250} />
+        <Row icon="flame" title={t("capture.streak", { count: r.streak })} sub={r.streak > 1 ? t("capture.streakKeep") : t("capture.streakOne")} right="+1" delay={250} />
         <Row
           icon="league"
-          title={`#${r.rankAfter} this week`}
+          title={t("capture.rank", { rank: r.rankAfter })}
           sub={
             r.passed.length
-              ? `You passed ${r.passed.slice(0, 2).join(" & ")}${r.passed.length > 2 ? ` +${r.passed.length - 2}` : ""}.`
+              ? t("capture.passed", { names: `${r.passed.slice(0, 2).join(" & ")}${r.passed.length > 2 ? ` +${r.passed.length - 2}` : ""}` })
               : r.next
-                ? `${r.next.gap} more to pass ${r.next.name}.`
-                : "Top of the week. Defend it."
+                ? t("capture.moreToPass", { gap: r.next.gap, name: r.next.name })
+                : t("capture.defend")
           }
           right={climbed > 0 ? `↑${climbed}` : "—"}
           delay={380}
         />
         {r.newGoals.length > 0 && (
-          <Row icon="globe" title={`New on your Agenda 2030`} sub={r.newGoals.map((g) => `SDG ${g}`).join(" · ")} delay={510} />
+          <Row icon="globe" title={t("capture.newGoals")} sub={r.newGoals.map((g) => `SDG ${g}`).join(" · ")} delay={510} />
         )}
-        {r.unlocked && <Row icon="lock" title="Today’s feed unlocked" sub="Go see what your Comune did." delay={640} />}
+        {r.unlocked && <Row icon="lock" title={t("capture.unlocked")} sub={t("capture.unlockedSub")} delay={640} />}
       </View>
 
       <View style={{ flexDirection: "row", gap: 10, paddingTop: 16 }}>
         <Button
-          label="Share"
+          label={t("common.share")}
           icon="share"
           kind="glass"
-          onPress={() => Share.share({ message: `I just BeGreen’d: ${a.verb}. Proof or it didn’t happen. 🌱 #BeGreen` })}
+          onPress={() => Share.share({ message: t("capture.shareText", { verb: a.verb }) })}
         />
-        <Button label="See the feed" kind="inverse" onPress={() => router.back()} style={{ flex: 1 }} />
+        <Button label={t("capture.seeFeed")} kind="inverse" onPress={() => router.back()} style={{ flex: 1 }} />
       </View>
     </Animated.View>
   );
@@ -241,6 +259,7 @@ export default function Capture() {
   const { C, T, scheme } = useTheme();
   const params = useLocalSearchParams<{ action?: ActionId }>();
   const { top, bottom } = useSafeAreaInsets();
+  const { ref: keyboardRoot, cover } = useKeyboardCover();
   const { drop, pulse } = usePulse();
   const [perm, requestPerm] = useCameraPermissions();
   const cam = useRef<CameraView>(null);
@@ -254,6 +273,7 @@ export default function Capture() {
   const [recording, setRecording] = useState(false);
   const [secs, setSecs] = useState(0);
   const [ready, setReady] = useState(false);
+  const [frame, setFrame] = useState<Size | null>(null);
   const recStart = useRef(0);
   const progress = useSharedValue(0);
   const shutter = useSharedValue(1);
@@ -271,6 +291,7 @@ export default function Capture() {
   const addPost = useApp((s) => s.addPost);
   const author = useAuthor();
   const [result, setResult] = useState<Result | null>(null);
+  const { t } = useI18n();
   const place = comune?.name ?? pulse.place.name;
   // Only a challenge the backend knows about can be claimed (or any, when running on-device only).
   const dropDone = useApp((s) => s.posts.some((p) => p.authorId === s.userId && p.challengeId === drop.id));
@@ -371,7 +392,7 @@ export default function Capture() {
       proof: typeof proof === "string" ? persistMedia(proof) : proof,
       caption: caption.trim(),
       audience: audience === "squad" && !toSquad ? "comune" : audience,
-      place: shareSpot ? place : "Somewhere green",
+      place: shareSpot ? place : HIDDEN_PLACE,
       challengeId: isDrop ? drop.id : undefined,
       squadId: toSquad,
     });
@@ -406,10 +427,10 @@ export default function Capture() {
     );
 
   if (step === "review" && photo && proof) {
-    const a = ACTIONS[action];
+    const a = actionCopy(t, action);
     const isDropAct = action === drop.action && dropOpen;
     return (
-      <KeyboardAvoidingView behavior={process.env.EXPO_OS === "ios" ? "padding" : undefined} style={{ flex: 1, backgroundColor: C.bg }}>
+      <View ref={keyboardRoot} collapsable={false} style={{ flex: 1, backgroundColor: C.bg, paddingBottom: cover }}>
         <StatusBar style={scheme === "dark" ? "light" : "dark"} />
         <View
           style={{
@@ -423,14 +444,14 @@ export default function Capture() {
         >
           <IconButton
             icon="back"
-            label="Retake"
+            label={t("capture.retake")}
             onPress={() => {
               setProof(null);
               setStep("proof");
             }}
           />
-          <Text style={{ fontFamily: F.medium, fontSize: 17, letterSpacing: -0.3, color: C.ink }}>Your BeGreen</Text>
-          <IconButton icon="close" label="Discard" onPress={() => router.back()} />
+          <Text style={{ fontFamily: F.medium, fontSize: 17, letterSpacing: -0.3, color: C.ink }}>{t("capture.your")}</Text>
+          <IconButton icon="close" label={t("capture.discard")} onPress={() => router.back()} />
         </View>
         <ScrollView contentContainerStyle={{ padding: 16, gap: 26, paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
           <Animated.View entering={ZoomIn.springify().damping(15)} style={{ paddingHorizontal: 44, paddingTop: 6, transform: [{ rotate: "-1.5deg" }] }}>
@@ -442,16 +463,16 @@ export default function Capture() {
           <View style={{ gap: 12 }}>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <Mono color={C.ink} style={{ flex: 1 }}>
-                What did you do?
+                {t("capture.what")}
               </Mono>
-              <Press onPress={() => router.push({ pathname: "/guide", params: { action, from: "capture" } })} accessibilityLabel="How to">
-                <Mono color={C.mute}>How to →</Mono>
+              <Press onPress={() => router.push({ pathname: "/guide", params: { action, from: "capture" } })} accessibilityLabel={t("common.howTo")}>
+                <Mono color={C.mute}>{t("capture.howTo")}</Mono>
               </Press>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }} style={{ marginHorizontal: -16 }}>
               <View style={{ width: 10 }} />
               {order.map((x) => (
-                <Chip key={x.id} label={x.label} icon={x.icon} active={x.id === action} onPress={() => setPicked(x.id)} />
+                <Chip key={x.id} label={actionCopy(t, x.id).label} icon={x.icon} active={x.id === action} onPress={() => setPicked(x.id)} />
               ))}
               <View style={{ width: 10 }} />
             </ScrollView>
@@ -460,7 +481,7 @@ export default function Capture() {
               {isDropAct && (
                 <Animated.View entering={FadeIn} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
                   <Icon name="bolt" size={11} color={C.ink} />
-                  <Mono color={C.ink}>Today’s Drop +10</Mono>
+                  <Mono color={C.ink}>{t("capture.dropBonus")}</Mono>
                 </Animated.View>
               )}
             </View>
@@ -469,14 +490,14 @@ export default function Capture() {
           <View style={{ gap: 12 }}>
             <View style={{ flexDirection: "row" }}>
               <Mono color={C.ink} style={{ flex: 1 }}>
-                Caption
+                {t("capture.caption")}
               </Mono>
               <Mono>{caption.length}/180</Mono>
             </View>
             <TextInput
               value={caption}
               onChangeText={setCaption}
-              placeholder={`Today I ${a.verb}…`}
+              placeholder={t("capture.captionPh", { verb: a.verb })}
               placeholderTextColor={C.faint}
               multiline
               maxLength={180}
@@ -511,14 +532,14 @@ export default function Capture() {
           </View>
 
           <View style={{ gap: 12 }}>
-            <Mono color={C.ink}>Who sees it</Mono>
+            <Mono color={C.ink}>{t("capture.who")}</Mono>
             <Segmented<Audience>
               value={audience}
               onChange={setAudience}
               options={[
                 { value: "comune", label: place },
-                { value: "squad", label: "Squad" },
-                { value: "public", label: "Everyone" },
+                { value: "squad", label: t("common.squad") },
+                { value: "public", label: t("common.everyone") },
               ]}
             />
             {audience === "squad" &&
@@ -529,40 +550,40 @@ export default function Capture() {
                   ))}
                 </ScrollView>
               ) : (
-                <Text style={T.caption}>You’re not in a squad yet, so this goes to {place}. Join or start one from the League.</Text>
+                <Text style={T.caption}>{t("capture.noSquad", { place })}</Text>
               ))}
           </View>
 
           <View style={{ flexDirection: "row", alignItems: "center", gap: 12, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 16 }}>
             <Icon name="location" size={16} />
             <View style={{ flex: 1, gap: 2 }}>
-              <Text style={{ fontFamily: F.medium, fontSize: 15, color: C.ink }}>Show area · {place}</Text>
-              <Text style={{ fontFamily: F.regular, fontSize: 13, color: C.mute }}>Neighbourhood only. Never your exact spot.</Text>
+              <Text style={{ fontFamily: F.medium, fontSize: 15, color: C.ink }}>{t("capture.showArea", { place: place || t("common.yourArea") })}</Text>
+              <Text style={{ fontFamily: F.regular, fontSize: 13, color: C.mute }}>{t("capture.neighbourhood")}</Text>
             </View>
-            <LeafSwitch value={shareSpot} onValueChange={setShareSpot} label="Show my area" />
+            <LeafSwitch value={shareSpot} onValueChange={setShareSpot} label={t("capture.showMine")} />
           </View>
         </ScrollView>
-        <View style={{ paddingHorizontal: 16, paddingBottom: bottom + 10, paddingTop: 8 }}>
-          <Button label="Post BeGreen" kind="green" trailing={`+${a.seeds + (isDropAct ? 10 : 0)}`} onPress={post} />
+        <View style={{ paddingHorizontal: 16, paddingBottom: cover > 0 ? 10 : bottom + 10, paddingTop: 8 }}>
+          <Button label={t("capture.post")} kind="green" trailing={`+${a.seeds + (isDropAct ? 10 : 0)}`} onPress={post} />
         </View>
-      </KeyboardAvoidingView>
+      </View>
     );
   }
 
   // Camera steps
   const isProof = step === "proof";
-  const hint = isProof ? ACTIONS[action].proofHint : "Snap the thing. The bike, the bin, the bottle, the plant.";
+  const hint = isProof ? actionCopy(t, action).proofHint : t("capture.snapHint");
   const noCamera = !realCamera || (perm && !perm.granted);
 
   return (
     <View style={{ flex: 1, backgroundColor: C.black }}>
       <StatusBar style="light" />
       <View style={{ paddingTop: top + 6, paddingHorizontal: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-        <IconButton icon="close" label="Close camera" bg={C.night2} color={C.white} onPress={() => router.back()} />
+        <IconButton icon="close" label={t("capture.close")} bg={C.night2} color={C.white} onPress={() => router.back()} />
         <Steps step={step} />
         <IconButton
           icon="help"
-          label="How to"
+          label={t("common.howTo")}
           bg={C.night2}
           color={C.white}
           onPress={() => router.push({ pathname: "/guide", params: { action, from: "capture" } })}
@@ -570,32 +591,39 @@ export default function Capture() {
       </View>
 
       <View style={{ flex: 1, padding: 10, paddingTop: 14 }}>
-        <View style={{ flex: 1, borderRadius: 32, borderCurve: "continuous", overflow: "hidden", backgroundColor: C.night2 }}>
+        <View
+          style={{ flex: 1, borderRadius: 32, borderCurve: "continuous", overflow: "hidden", backgroundColor: C.night2 }}
+          onLayout={({ nativeEvent: { layout: l } }) =>
+            setFrame((f) => (f?.width === l.width && f.height === l.height ? f : { width: l.width, height: l.height }))
+          }
+        >
           {noCamera ? (
             <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 12, padding: 36 }}>
               <Icon name={isProof ? "video" : "camera"} size={28} color={C.white} />
               <Text style={{ color: C.white, fontFamily: F.medium, fontSize: 22, letterSpacing: -0.7, textAlign: "center" }}>
-                {realCamera ? "Camera access needed" : "No camera here"}
+                {realCamera ? t("capture.needCamera") : t("capture.noCamera")}
               </Text>
               <Text style={{ color: C.nightMute, fontFamily: F.regular, textAlign: "center", lineHeight: 21 }}>
-                {realCamera
-                  ? "BeGreen needs the camera to capture your proof."
-                  : "You’re on a simulator or the web. Use your library, or tap the shutter for a demo capture."}
+                {realCamera ? t("capture.needBody") : t("capture.noBody")}
               </Text>
-              {realCamera && perm && !perm.granted && <Button label="Allow camera" kind="inverse" onPress={requestPerm} />}
+              {realCamera && perm && !perm.granted && <Button label={t("capture.allow")} kind="inverse" onPress={requestPerm} />}
             </View>
           ) : (
-            <CameraView
-              ref={cam}
-              style={{ flex: 1 }}
-              facing={facing}
-              mode={isProof ? "video" : "picture"}
-              mute
-              flash={flash ? "on" : "off"}
-              enableTorch={isProof && flash}
-              mirror={facing === "front"}
-              onCameraReady={() => setReady(true)}
-            />
+            // Mounted once the frame is measured, so the preview starts at its final size.
+            frame && (
+              <CameraView
+                ref={cam}
+                style={coverBox(frame)}
+                ratio="4:3"
+                facing={facing}
+                mode={isProof ? "video" : "picture"}
+                mute
+                flash={flash ? "on" : "off"}
+                enableTorch={isProof && flash}
+                mirror={facing === "front"}
+                onCameraReady={() => setReady(true)}
+              />
+            )
           )}
 
           {isProof && photo && (
@@ -628,7 +656,7 @@ export default function Capture() {
               </Animated.View>
             ) : (
               <View style={{ backgroundColor: C.scrim, paddingHorizontal: 10, height: 26, borderRadius: R.pill, justifyContent: "center" }}>
-                <Mono color={C.white}>{ACTIONS[action].label}</Mono>
+                <Mono color={C.white}>{actionCopy(t, action).label}</Mono>
               </View>
             )}
           </View>
@@ -641,7 +669,7 @@ export default function Capture() {
               style={{ backgroundColor: C.scrim, paddingHorizontal: 14, paddingVertical: 10, borderRadius: R.md, maxWidth: 320 }}
             >
               <Text style={{ color: C.white, fontFamily: F.medium, fontSize: 14, textAlign: "center", lineHeight: 19 }}>
-                {recording ? "Recording. Keep it in frame." : hint}
+                {recording ? t("capture.recording") : hint}
               </Text>
             </Animated.View>
           </View>
@@ -650,11 +678,11 @@ export default function Capture() {
 
       <View style={{ paddingBottom: bottom + (noCamera ? 24 : 12), paddingTop: 6, paddingHorizontal: 30, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
         {noCamera ? (
-          <IconButton icon="photo" label="Pick from library" bg={C.night2} color={C.white} size={50} onPress={() => pick(isProof ? "videos" : "images")} />
+          <IconButton icon="photo" label={t("capture.library")} bg={C.night2} color={C.white} size={50} onPress={() => pick(isProof ? "videos" : "images")} />
         ) : (
           <IconButton
             icon={flash ? "bolt" : "boltOff"}
-            label="Toggle flash"
+            label={t("capture.flash")}
             bg={C.night2}
             color={C.white}
             size={50}
@@ -664,7 +692,7 @@ export default function Capture() {
 
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={noCamera ? "Use demo capture" : isProof ? (recording ? "Stop recording" : "Record proof") : "Take photo"}
+          accessibilityLabel={noCamera ? t("capture.demoShutter") : isProof ? (recording ? t("capture.stop") : t("capture.record")) : t("capture.take")}
           disabled={!noCamera && !ready}
           onPress={noCamera ? applyDemo : isProof ? (recording ? stopProof : startProof) : takePhoto}
           style={{ width: 88, height: 88, alignItems: "center", justifyContent: "center" }}
@@ -686,14 +714,14 @@ export default function Capture() {
           </Animated.View>
           {noCamera && (
             <Text style={{ position: "absolute", bottom: -18, fontFamily: F.monoMedium, fontSize: 10, color: C.nightMute, letterSpacing: 0.4 }}>
-              {isProof ? "DEMO PROOF" : "DEMO SNAP"}
+              {isProof ? t("capture.demoProof") : t("capture.demoSnap")}
             </Text>
           )}
         </Pressable>
 
         <IconButton
           icon="flip"
-          label="Flip camera"
+          label={t("capture.flip")}
           bg={C.night2}
           color={C.white}
           size={50}

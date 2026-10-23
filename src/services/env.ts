@@ -40,7 +40,7 @@ export type Species = {
   group?: string;
 };
 
-export type NatureData = { speciesCount: number; top: Species[] };
+export type NatureData = { speciesCount: number; top: Species[]; locale?: "it" | "en" };
 
 export type Area = { id: number; name: string; title?: string; km: number };
 
@@ -158,18 +158,19 @@ export async function fetchWeatherWaterSoil(p: Place): Promise<{ weather: Weathe
   };
 }
 
-export async function fetchNature(p: Place): Promise<NatureData> {
+export async function fetchNature(p: Place, locale: "it" | "en" = "en"): Promise<NatureData> {
   const d1 = new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10);
   const j = await getJSON<any>(
     `https://api.inaturalist.org/v1/observations/species_counts?lat=${p.lat}&lng=${p.lon}&radius=10` +
-      `&d1=${d1}&quality_grade=research&per_page=12&locale=en`,
+      `&d1=${d1}&quality_grade=research&per_page=12&locale=${locale}`,
   );
   return {
     speciesCount: j.total_results ?? 0,
+    locale,
     top: (j.results ?? []).map((r: any) => ({
       id: r.taxon.id,
       name: r.taxon.name,
-      common: r.taxon.preferred_common_name,
+      common: r.taxon.preferred_common_name || undefined,
       photo: r.taxon.default_photo?.medium_url ?? r.taxon.default_photo?.square_url,
       attribution: r.taxon.default_photo?.attribution,
       count: r.count,
@@ -225,9 +226,9 @@ export async function fetchAreas(p: Place): Promise<Area[]> {
     .slice(0, 6);
 }
 
-export async function fetchPulse(place: Place, prev?: Pulse | null): Promise<Pulse> {
+export async function fetchPulse(place: Place, prev?: Pulse | null, locale: "it" | "en" = "en"): Promise<Pulse> {
   // Protected areas load separately (see refreshPulse): the map servers can be slow.
-  const [air, wws, nature] = await Promise.allSettled([fetchAir(place), fetchWeatherWaterSoil(place), fetchNature(place)]);
+  const [air, wws, nature] = await Promise.allSettled([fetchAir(place), fetchWeatherWaterSoil(place), fetchNature(place, locale)]);
   const ok = <T>(r: PromiseSettledResult<T>) => (r.status === "fulfilled" ? r.value : undefined);
   const pulse: Pulse = {
     place,
