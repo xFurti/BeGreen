@@ -162,7 +162,7 @@ See **[MARKETING.md](MARKETING.md)** for the go-to-market plan.
 1. Read [AGENTS.md](AGENTS.md); it applies to AI assistants too.
 2. Track tasks and owners in [docs/team.md](docs/team.md); park new ideas in [docs/ideas.md](docs/ideas.md).
 3. Branch from an up-to-date `main` and open a PR to `main`. `npm run verify` (typecheck, lint, workflow and database tests) must pass: it's the `Verify` CI check.
-4. Comment `/PI review` on the PR for an AI review, fix what it finds, then get approval from a teammate.
+4. Pi reviews ready PRs when opened and after new commits. Comment `/PI review` to repeat it without a push, fix what it finds, then get approval from a teammate.
 
 Shared agent skills live in [`skills/`](skills/) (linked from `.agents/skills` for Codex and `.pi/skills` for Pi):
 
