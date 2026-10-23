@@ -188,7 +188,18 @@ export function km(a: Place, lat: number, lon: number) {
   return 2 * R * Math.asin(Math.sqrt(x));
 }
 
-export async function fetchAreas(p: Place): Promise<Area[]> {
+const AREAS_WAIT_MS = 30_000;
+
+// One slow or never-settling map request must not leave the card loading
+// forever: the whole lookup across mirrors is bounded.
+export function fetchAreas(p: Place, waitMs = AREAS_WAIT_MS): Promise<Area[]> {
+  return Promise.race([
+    queryAreas(p),
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error("overpass timed out")), waitMs)),
+  ]);
+}
+
+async function queryAreas(p: Place): Promise<Area[]> {
   const q =
     `[out:json][timeout:8];(` +
     `relation["boundary"="protected_area"](around:25000,${p.lat},${p.lon});` +
