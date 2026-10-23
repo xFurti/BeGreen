@@ -5,14 +5,14 @@ import { Alert, Pressable, ScrollView, Share, Text, useWindowDimensions, View } 
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { BadgeSheet, BadgeTile } from "@/components/badge-sheet";
 import { ComuneSection } from "@/components/comune-card";
 import { Icon, type IconName } from "@/components/icon";
 import { LanguageSwitch } from "@/components/language-switch";
 import { TitledName } from "@/components/titled-name";
 import { Avatar, IconButton, Logo, Mono, Press, SectionHeader, TopCover, useCountUp } from "@/components/ui";
 import { ACTIONS } from "@/data/actions";
-import { BADGE_ART } from "@/data/badge-art";
-import { BADGES, earnedBadges } from "@/data/badges";
+import { BADGES, earnedBadges, type BadgeId } from "@/data/badges";
 import { daysTo2030, SDG_LIST } from "@/data/sdgs";
 import type { Post } from "@/data/types";
 import { useComune } from "@/hooks/use-comune";
@@ -198,6 +198,8 @@ export default function Me() {
   const setExplain = useApp((s) => s.setExplain);
   const reset = useApp((s) => s.reset);
   const equipBadge = useApp((s) => s.equipBadge);
+  const [selected, setSelected] = useState<BadgeId | null>(null);
+  const selectedBadge = BADGES.find((b) => b.id === selected);
   const { t, language } = useI18n();
   const pulse = useApp((s) => s.pulse);
   const comuneView = useComune();
@@ -221,7 +223,7 @@ export default function Me() {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
-      <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ paddingTop: top + 10, paddingHorizontal: 20, paddingBottom: 140, gap: 40 }}>
+      <ScrollView aria-hidden={!!selected} accessibilityElementsHidden={!!selected} importantForAccessibility={selected ? "no-hide-descendants" : "auto"} style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ paddingTop: top + 10, paddingHorizontal: 20, paddingBottom: 140, gap: 40 }}>
         <View style={{ gap: 20 }}>
           <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" }}>
             <Avatar name={profileName(profile.name, t)} size={76} ring={C.lime} />
@@ -273,48 +275,9 @@ export default function Me() {
         <View style={{ gap: 16 }}>
           <SectionHeader index="05" title={t("me.badges")} action={`${earned.length}/${BADGES.length}`} />
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-            {BADGES.map((b) => {
-              const on = earned.includes(b.id);
-              const equipped = profile.badgeId === b.id;
-              const progressLine = b.progress ? t(b.progress.key, { n: Math.min(b.progress.of(stats), b.progress.goal), goal: b.progress.goal }) : "";
-              const reqLine = on ? t(b.requirement) : b.progress ? progressLine : t(b.requirement);
-              const alertLine = b.progress ? `${t(b.requirement)} ${progressLine}` : t(b.requirement);
-              return (
-                <Pressable
-                  key={b.id}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: equipped }}
-                  accessibilityLabel={`${t(b.name)}, ${equipped ? t("badges.active") : on ? t("badges.earned") : t("badges.locked")}. ${reqLine}`}
-                  onPress={() => {
-                    haptic.tap();
-                    if (on) equipBadge(equipped ? null : b.id);
-                    else Alert.alert(t(b.name), alertLine);
-                  }}
-                  style={{
-                    width: badgeSize,
-                    minHeight: badgeSize * 1.1,
-                    borderRadius: R.md,
-                    borderCurve: "continuous",
-                    backgroundColor: on ? C.forest : C.card,
-                    borderWidth: equipped ? 2 : 0,
-                    borderColor: C.leaf,
-                    padding: equipped ? 10 : 12,
-                    justifyContent: "space-between",
-                  }}
-                >
-                  {!on && (
-                    <View style={{ position: "absolute", top: 8, right: 8 }}>
-                      <Icon name="lock" size={12} color={C.faint} />
-                    </View>
-                  )}
-                  <Image source={BADGE_ART[b.id]} style={{ width: badgeSize * 0.38, height: badgeSize * 0.38, opacity: on ? 1 : 0.35 }} />
-                  <View style={{ gap: 2 }}>
-                    <Text style={{ fontFamily: F.medium, fontSize: 13, letterSpacing: -0.2, color: on ? C.white : C.mute }}>{t(b.name)}</Text>
-                    {!on && <Text numberOfLines={2} style={{ fontFamily: F.regular, fontSize: 11, color: C.mute }}>{b.progress ? progressLine : t(b.requirement)}</Text>}
-                  </View>
-                </Pressable>
-              );
-            })}
+            {BADGES.map((b) => (
+              <BadgeTile key={b.id} badge={b} stats={stats} equipped={profile.badgeId === b.id} size={badgeSize} onOpen={() => setSelected(b.id)} />
+            ))}
           </View>
         </View>
 
@@ -359,6 +322,8 @@ export default function Me() {
           <Mono color={C.faint}>{t("me.tagline")}</Mono>
         </View>
       </ScrollView>
+      {selectedBadge && <BadgeSheet badge={selectedBadge} stats={stats} equipped={profile.badgeId === selectedBadge.id}
+        onEquip={() => equipBadge(selectedBadge.id)} onUnequip={() => equipBadge(null)} onClose={() => setSelected(null)} />}
       <TopCover />
     </View>
   );
