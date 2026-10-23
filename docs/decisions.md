@@ -49,6 +49,14 @@
 - Le prove dei gruppi non sono raccolte automaticamente dai post degli autori. I permessi coprono anche interazioni e media: bucket privato e URL firmati a scadenza. Il rilascio richiede app e migrazione coordinate; non è un deploy automatico e non può revocare copie già scaricate.
 - La precedente specifica di #59 (classifica in testa ai gruppi) è superata da questa scelta. Le PR #52/#53 sui vecchi percorsi Classifica vanno coordinate con i redirect; il lavoro #13 sull'onboarding rimane separato.
 
+## 2026-10-23 — Restyle Community e accesso alle classifiche (proposta su branch)
+
+- Riscontro dell’utente sulla proposta: tenere la distinzione Territorio/Gruppi, eliminare la ricerca ripetuta delle altre community in fondo e aprire la mappa già presente su main. La revisione riusa quella schermata senza modificarla.
+- Ulteriore richiesta: rendere di nuovo accessibili le classifiche nella Community. Si aggiunge una terza sezione facoltativa **Classifiche**, con scelta tra il Comune selezionato e i gruppi di cui si è membri. I collegamenti dai dettagli restano disponibili.
+- La scelta della classifica non cambia Comune o iscrizioni. Il confronto resta fra persone della singola community, con i punteggi esistenti sulle prove caricate degli ultimi sette giorni, esclusi gli esempi e mantenendo isolate le prove riservate ai gruppi. Il limite del campione resta visibile.
+- Nessuna prova recente: stato vuoto, senza assegnare un primo posto a zero punti. La proposta non ripristina piazzamenti in Feed, profilo o completamento.
+- Stato: revisione locale su `design/community-restyle`, da valutare prima di aprire la PR; nessun merge o deploy autorizzato in questa fase.
+
 ## Come registrare una nuova decisione
 
 Indica data, problema, opzioni considerate, scelta, motivo e conseguenza pratica. Collega issue o PR e indica chi ha concordato la scelta. Non usare questo registro come elenco di idee non ancora decise.

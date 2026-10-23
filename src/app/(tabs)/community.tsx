@@ -5,6 +5,8 @@ import Animated, { FadeIn, useReducedMotion } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { CommunitySections, GroupHub, type CommunitySection } from "@/components/community-hub";
+import { CommunityRankings } from "@/components/community-rankings";
+import { toast } from "@/components/toast";
 import { Icon } from "@/components/icon";
 import { LoveYourCity } from "@/components/love-your-city";
 import { TerritoryCard } from "@/components/territory-card";
@@ -23,6 +25,7 @@ export default function CommunityTab() {
   const { groups } = useJoined();
   const [section, setSection] = useState<CommunitySection>("territory");
   const [refreshing, setRefreshing] = useState(false);
+  const [rankingCommunity, setRankingCommunity] = useState<string>();
   const scroll = useRef<ScrollViewInstance>(null);
   const reduced = useReducedMotion();
 
@@ -30,8 +33,10 @@ export default function CommunityTab() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    try { await syncCommunity(); } finally { setRefreshing(false); }
-  }, []);
+    try { await syncCommunity(section === "rankings" ? rankingCommunity : undefined); }
+    catch { toast(t("shared.offline"), "refresh"); }
+    finally { setRefreshing(false); }
+  }, [section, rankingCommunity, t]);
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
@@ -65,7 +70,7 @@ export default function CommunityTab() {
         </View>}
 
         <Animated.View key={section} entering={reduced ? undefined : FadeIn.duration(220)}>
-          {section === "territory" ? <TerritoryCard /> : <GroupHub groups={groups} />}
+          {section === "territory" ? <TerritoryCard /> : section === "groups" ? <GroupHub groups={groups} /> : <CommunityRankings groups={groups} onContextChange={setRankingCommunity} />}
         </Animated.View>
 
         <View accessible accessibilityLabel="Love your city · BeGreen" style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 14, paddingTop: 4 }}>

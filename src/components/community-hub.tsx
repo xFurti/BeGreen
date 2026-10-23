@@ -13,26 +13,28 @@ import { F, R } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
 
-export type CommunitySection = "territory" | "groups";
+const SECTIONS = ["territory", "groups", "rankings"] as const;
+export type CommunitySection = typeof SECTIONS[number];
 
 export function CommunitySections({ value, count, onChange }: { value: CommunitySection; count: number; onChange: (value: CommunitySection) => void }) {
   const { C } = useTheme();
   const { t, language } = useI18n();
   const reduced = useReducedMotion();
   const [width, setWidth] = useState(0);
-  const position = useSharedValue(value === "groups" ? 1 : 0);
-  useEffect(() => { position.set(withTiming(value === "groups" ? 1 : 0, { duration: reduced ? 0 : 230 })); }, [value, reduced, position]);
-  const indicator = useAnimatedStyle(() => ({ transform: [{ translateX: position.get() * width / 2 }] }));
+  const compact = width < 340;
+  const position = useSharedValue(SECTIONS.indexOf(value));
+  useEffect(() => { position.set(withTiming(SECTIONS.indexOf(value), { duration: reduced ? 0 : 230 })); }, [value, reduced, position]);
+  const indicator = useAnimatedStyle(() => ({ transform: [{ translateX: position.get() * width / SECTIONS.length }] }));
   return (
     <View accessibilityRole="tablist" accessibilityLabel={t("community.hub.sections")} onLayout={(event) => setWidth(Math.max(0, event.nativeEvent.layout.width - 10))} style={{ flexDirection: "row", padding: 4, borderRadius: 18, backgroundColor: C.card, borderWidth: 1, borderColor: C.line }}>
-      <Animated.View pointerEvents="none" style={[{ position: "absolute", left: 4, top: 4, bottom: 4, width: width / 2, borderRadius: 13, backgroundColor: C.forest }, indicator]} />
-      {(["territory", "groups"] as const).map((tab) => {
+      <Animated.View pointerEvents="none" style={[{ position: "absolute", left: 4, top: 4, bottom: 4, width: width / SECTIONS.length, borderRadius: 13, backgroundColor: C.forest }, indicator]} />
+      {SECTIONS.map((tab) => {
         const selected = tab === value;
         return (
-          <Pressable key={tab} accessibilityRole="tab" accessibilityLabel={t(`community.hub.${tab}Tab`)} accessibilityState={{ selected }} aria-selected={process.env.EXPO_OS === "web" ? selected : undefined} onPress={() => { if (!selected) { haptic.tap(); onChange(tab); } }} style={{ flex: 1, minHeight: 46, paddingHorizontal: 8, gap: 8, flexDirection: "row", alignItems: "center", justifyContent: "center" }}>
-            <Icon name={tab === "territory" ? "map" : "people"} size={17} color={selected ? C.lime : C.mute} />
-            <Text style={{ fontFamily: F.medium, fontSize: 14, color: selected ? C.white : C.ink2 }}>{t(`community.hub.${tab}Tab`)}</Text>
-            {tab === "groups" && count > 0 && <Text style={{ fontFamily: F.mono, fontSize: 10, color: selected ? C.forestMute : C.mute }}>{formatNumber(count, language)}</Text>}
+          <Pressable key={tab} accessibilityRole="tab" accessibilityLabel={t(`community.hub.${tab}Tab`)} accessibilityState={{ selected }} aria-selected={process.env.EXPO_OS === "web" ? selected : undefined} onPress={() => { if (!selected) { haptic.tap(); onChange(tab); } }} style={{ flex: 1, minHeight: 46, paddingHorizontal: 6, gap: 6, flexDirection: "row", alignItems: "center", justifyContent: "center" }}>
+            {!compact && <Icon name={tab === "territory" ? "map" : tab === "groups" ? "people" : "league"} size={15} color={selected ? C.lime : C.mute} />}
+            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85} style={{ flexShrink: 1, fontFamily: F.medium, fontSize: compact ? 12 : 13, color: selected ? C.white : C.ink2 }}>{t(`community.hub.${tab}Tab`)}</Text>
+            {!compact && tab === "groups" && count > 0 && <Text style={{ fontFamily: F.mono, fontSize: 10, color: selected ? C.forestMute : C.mute }}>{formatNumber(count, language)}</Text>}
           </Pressable>
         );
       })}
