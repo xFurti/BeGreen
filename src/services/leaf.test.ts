@@ -58,7 +58,7 @@ test("the AI backend can send a structured answer; bad fields are dropped and a 
     Response.json({
       text: "Oggi sì.",
       headline: "Vai in bici",
-      cites: ["cams", "made-up"],
+      cites: ["cams", "made-up", "toString", "__proto__"],
       facts: [{ label: "PM2.5", value: 8, unit: "µg/m³", level: "good" }, { label: "" }],
       followUps: ["E domani?", 3, "E per la classe?", "Troppe"],
     }),
@@ -82,4 +82,11 @@ test("suggestions skip questions the loaded data cannot answer", () => {
   const keys = suggestionsFor(onlyAirAndNature).map((s) => s.key);
   assert.ok(!keys.includes("answers.suggested.bike"));
   assert.deepEqual(keys, ["answers.suggested.live", "answers.suggested.class", "answers.suggested.pm"]);
+});
+
+test("dry soil makes the dry verdict say yes even when it is only amber in Pulse", () => {
+  const pulse = { ...SAMPLE_PULSE, water: undefined, soil: { ...SAMPLE_PULSE.soil!, moisture: 0.15 } };
+  const insights = buildInsights(pulse, community, "it");
+  const answer = answerLocally(translate("it", "answers.suggested.dry"), { pulse, insights, audience: "me", language: "it" });
+  assert.equal(answer.headline, translate("it", "answers.dryYesHead"));
 });

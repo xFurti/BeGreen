@@ -32,7 +32,7 @@ import { haptic } from "@/utils/format";
 
 // Each turn keeps the audience and the answer it was asked with: switching
 // "Explained for" or re-asking adds a new turn, the past never rewrites itself.
-type Turn = { id: number; shown: string; question: string; audience: Explain; answer: LeafAnswer | null };
+type Turn = { id: number; shown: string; question: string; audience: Explain; place: string; answer: LeafAnswer | null };
 
 const AUDIENCES: Explain[] = ["me", "class", "comune"];
 const dot = (C: Palette): Record<Level, string> => ({ good: C.green, ok: C.amber, bad: C.red, info: C.faint });
@@ -62,7 +62,7 @@ export default function Leaf() {
     const forWhom = opts?.audience ?? audience;
     if (!opts) setQ("");
     const id = nextId.current++;
-    setTurns((m) => [...m, { id, shown: opts?.shown ?? text, question: text, audience: forWhom, answer: null }]);
+    setTurns((m) => [...m, { id, shown: opts?.shown ?? text, question: text, audience: forWhom, place, answer: null }]);
     setBusy(true);
     scrollToEnd();
     const answer = await askLeaf(text, { pulse, insights, audience: forWhom, language });
@@ -138,8 +138,9 @@ export default function Leaf() {
               question={turn.shown}
               answer={turn.answer}
               audience={turn.audience}
-              place={place}
-              latest={turn.id === lastAnswered && !busy}
+              place={turn.place}
+              // Chips re-ask with today's data, so only offer them while the place is still the same.
+              latest={turn.id === lastAnswered && !busy && turn.place === place}
               onAsk={(question) => ask(question)}
               onReask={(aud) => ask(turn.question, { audience: aud, shown: t(`leaf.reask.${aud}`) })}
             />

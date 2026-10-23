@@ -6,7 +6,7 @@ import { translate, type MessageKey, type Translator } from "@/i18n/catalog";
 import { formatNumber } from "@/i18n/format";
 import type { Language } from "@/i18n/schema";
 import type { Pulse } from "@/services/env";
-import { aqiBand, dominant, weatherText, type Insight, type Level } from "@/services/interpret";
+import { aqiBand, dominant, soilState, weatherText, type Insight, type Level } from "@/services/interpret";
 
 // Leaf: the assistant that answers questions about your local environment,
 // always grounded in the Pulse data and always citing where a number comes from.
@@ -205,7 +205,9 @@ export function answerLocally(question: string, ctx: Ctx): LeafAnswer {
     const water = find("water");
     const soil = find("soil");
     if (!water && !soil) return { text: t("answers.noWater"), cites: [], mode: "local", followUps: follow("trust"), tailored: false };
-    const dry = water?.level === "bad" || soil?.level === "bad";
+    // "Dry" soil is only amber in Pulse, but it is still dry for a plant.
+    const soilDry = pulse.soil ? ["veryDry", "dry"].includes(soilState(pulse.soil.moisture, language).id) : false;
+    const dry = water?.level === "bad" || soilDry;
     return {
       headline: t(dry ? "answers.dryYesHead" : "answers.dryNoHead"),
       text: [water?.explain[audience], soil?.explain[audience]].filter(Boolean).join("\n\n"),
@@ -265,7 +267,7 @@ function fromRemote(j: unknown): LeafAnswer | null {
     : undefined;
   return {
     text: r.text,
-    cites: Array.isArray(r.cites) ? (r.cites.filter((c) => typeof c === "string" && c in SOURCES) as SourceId[]) : [],
+    cites: Array.isArray(r.cites) ? (r.cites.filter((c) => typeof c === "string" && Object.hasOwn(SOURCES, c)) as SourceId[]) : [],
     mode: "ai",
     headline: str(r.headline),
     facts: facts?.length ? facts : undefined,
