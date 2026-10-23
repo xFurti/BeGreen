@@ -47,6 +47,7 @@ export type Post = {
   isDemo?: boolean;
   // Saved on this device, not yet on the shared feed.
   pending?: boolean;
+  publishError?: import("../services/publish-errors").PublishFailure;
 };
 
 export type SquadKind = "class" | "association" | "comune" | "friends";

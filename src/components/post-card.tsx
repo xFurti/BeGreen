@@ -12,6 +12,7 @@ import type { Post } from "@/data/types";
 import { actionCopy, placeLabel, textOf } from "@/i18n/content";
 import { compact, timeAgo } from "@/i18n/format";
 import { useI18n } from "@/i18n/use-i18n";
+import { PUBLISH_MESSAGES } from "@/services/publish-errors";
 import { useApp, useAuthor } from "@/store/app-store";
 import { C, F, R, shadow } from "@/theme/tokens";
 import { haptic } from "@/utils/format";
@@ -34,6 +35,8 @@ function Dots({ n, dark }: { n: number; dark?: boolean }) {
 
 export function VerifyBar({ post }: { post: Post }) {
   const verify = useApp((s) => s.verify);
+  const retry = useApp((s) => s.retryPost);
+  const [retrying, setRetrying] = useState(false);
   const me = useApp((s) => s.userId);
   const author = useAuthor();
   const { t } = useI18n();
@@ -60,9 +63,15 @@ export function VerifyBar({ post }: { post: Post }) {
 
   if (mine && post.pending) {
     return (
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-        <Icon name="refresh" size={13} color={C.mute} />
-        <Text style={{ fontFamily: F.medium, fontSize: 13, color: C.ink2 }}>{t("post.notShared")}</Text>
+      <View style={{ flex: 1, gap: 8 }}>
+        <Text accessibilityLiveRegion="polite" style={{ fontFamily: F.medium, fontSize: 13, color: C.ink2 }}>
+          {post.publishError ? t(PUBLISH_MESSAGES[post.publishError]) : t("post.notShared")}
+        </Text>
+        <Press disabled={retrying} onPress={async () => { setRetrying(true); try { await retry(post.id); } finally { setRetrying(false); } }}
+          accessibilityLabel={t("post.retry")} style={{ alignSelf: "flex-start", minHeight: 44, flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <Icon name="refresh" size={14} color={C.leaf} />
+          <Text style={{ fontFamily: F.medium, fontSize: 14, color: C.leaf }}>{t("post.retry")}</Text>
+        </Press>
       </View>
     );
   }

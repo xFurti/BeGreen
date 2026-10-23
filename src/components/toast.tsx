@@ -28,6 +28,7 @@ export function Toaster() {
       entering={FadeInUp.springify().damping(18)}
       exiting={FadeOutUp.duration(200)}
       pointerEvents="none"
+      accessible accessibilityRole="alert" accessibilityLiveRegion="polite"
       style={{ position: "absolute", top: top + 8, left: 0, right: 0, alignItems: "center" }}
     >
       <View

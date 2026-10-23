@@ -4,6 +4,7 @@ import type { ActionId } from "@/data/actions";
 import { isBadgeId, type BadgeId } from "@/data/badges";
 import { assetKey, resolveMedia } from "@/data/demo";
 import type { Audience, Comment, Comune, Media, Post, Role, Squad, SquadKind, User } from "@/data/types";
+import { classifyPublishError, UploadError } from "@/services/publish-errors";
 import { shrinkPhoto } from "@/services/media";
 import { SUPABASE_KEY, SUPABASE_URL, supabase } from "@/services/supabase";
 
@@ -222,6 +223,17 @@ const MIME: Record<string, string> = {
 };
 
 async function upload(me: string, m: Media, kind: "photo" | "proof"): Promise<string> {
+  try {
+    return await uploadMedia(me, m, kind);
+  } catch (error) {
+    const reason = classifyPublishError(error);
+    if (reason === "auth" || reason === "offline") throw error;
+    const e = error as { message?: string; status?: number; statusCode?: string | number };
+    throw new UploadError(e.message ?? "Upload failed", e.status ?? Number(e.statusCode));
+  }
+}
+
+async function uploadMedia(me: string, m: Media, kind: "photo" | "proof"): Promise<string> {
   // Bundled demo media are numbers on native and objects or local URLs on web: never upload them.
   // Native files are uploaded directly from disk, without passing the body through JavaScript.
   const key = assetKey(m);
@@ -259,7 +271,7 @@ async function upload(me: string, m: Media, kind: "photo" | "proof"): Promise<st
         "Cache-Control": "max-age=3600",
       },
     });
-    if (result.status < 200 || result.status >= 300) throw new Error(`Upload failed (${result.status}): ${result.body}`);
+    if (result.status < 200 || result.status >= 300) throw new UploadError(`Upload failed (${result.status})`, result.status);
   }
   return s.storage.from("proofs").getPublicUrl(path).data.publicUrl;
 }

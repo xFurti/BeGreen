@@ -30,8 +30,9 @@ import {
   saveProfile,
   setReaction,
 } from "@/services/social";
+import { classifyPublishError, PUBLISH_MESSAGES, withAuthRetry } from "@/services/publish-errors";
 import { canClaimDrop, DROP_BONUS, publishWithReward, seedsFor } from "@/services/rewards";
-import { ensureSession, hasBackend } from "@/services/supabase";
+import { ensureSession, hasBackend, supabase } from "@/services/supabase";
 
 export type Profile = { name: string; handle: string; role: Role; badgeId: BadgeId | null };
 
@@ -76,6 +77,7 @@ type Actions = {
   setPulse: (p: Pulse) => void;
   setChallenge: (d: Drop) => void;
   addPost: (p: NewPost) => Promise<Post>;
+  retryPost: (postId: string) => Promise<void>;
   verify: (postId: string) => void;
   react: (postId: string, emoji: string) => void;
   comment: (postId: string, text: string) => void;
@@ -116,7 +118,8 @@ const tr = (key: MessageKey) => translate(useApp.getState().language, key);
 
 function fail(e: unknown) {
   if (__DEV__) console.warn(e);
-  toast(tr("shared.offline"), "refresh");
+  const reason = classifyPublishError(e);
+  toast(tr(reason === "offline" ? "shared.offline" : reason === "auth" ? "shared.actionAuth" : "shared.actionFailed"), "refresh");
 }
 
 const patchPost = (posts: Post[], id: string, f: (p: Post) => Post) => posts.map((p) => (p.id === id ? f(p) : p));
@@ -186,7 +189,12 @@ export const useApp = create<State & Actions>()(
               )
             : s.squads,
         });
-        return hasBackend ? await publish(post) : post;
+        return hasBackend ? await publish(post, true) : post;
+      },
+      retryPost: async (postId) => {
+        const post = get().posts.find((p) => p.id === postId);
+        if (!hasBackend || !post?.pending || post.authorId !== get().userId) return;
+        await publish(post, true);
       },
       verify: (postId) => {
         const s = get();
@@ -312,31 +320,41 @@ export const useApp = create<State & Actions>()(
 // ---------- sync with the shared backend ----------
 
 // A post being uploaded must not be sent again by a sync running at the same time.
-const publishing = new Set<string>();
+const publishing = new Map<string, { task: Promise<Post>; enableNotify: () => void }>();
 // Server id → when this device finished publishing it, so a sync that started earlier doesn't drop it.
 const published = new Map<string, number>();
 
-async function publish(post: Post) {
-  if (publishing.has(post.id)) return post;
-  publishing.add(post.id);
-  try {
-    return await send(post);
-  } finally {
-    publishing.delete(post.id);
+function publish(post: Post, notify = false): Promise<Post> {
+  const running = publishing.get(post.id);
+  if (running) {
+    if (notify) running.enableNotify();
+    return running.task;
   }
+  let shouldNotify = notify;
+  const task = send(post, () => shouldNotify).finally(() => publishing.delete(post.id));
+  publishing.set(post.id, { task, enableNotify: () => { shouldNotify = true; } });
+  return task;
 }
 
-async function send(post: Post): Promise<Post> {
+async function renewPublishSession() {
+  if (!supabase) throw new Error("No session");
+  const { data, error } = await supabase.auth.refreshSession();
+  if (error) throw error;
+  if (!data.session || data.session.user.id !== useApp.getState().userId) throw new Error("No session for this proof");
+}
+
+async function send(post: Post, notify: () => boolean): Promise<Post> {
   let current = post;
+  let duplicate = false;
   try {
-    const saved = await publishWithReward(post, (p) => publishPost(useApp.getState().userId, p), (regular) => {
+    const saved = await publishWithReward(post, (p) => withAuthRetry(() => publishPost(useApp.getState().userId, p), renewPublishSession), (regular) => {
+      duplicate = true;
       current = regular;
       const s = useApp.getState();
       useApp.setState({
         posts: patchPost(s.posts, post.id, () => regular),
         squads: s.squads.map((q) => q.id === post.squadId ? { ...q, points: q.points - DROP_BONUS } : q),
       });
-      toast(tr("shared.challengeAlreadyDone"), "info");
     });
     published.set(saved.id, Date.now());
     // Keep the local files on screen: no flicker while the uploaded copies load.
@@ -346,10 +364,14 @@ async function send(post: Post): Promise<Post> {
       posts: patchPost(useApp.getState().posts, post.id, () => ({ ...saved, photo: post.photo, proof: post.proof })),
       ...(photo || proof ? { localMedia: { ...useApp.getState().localMedia, [saved.id]: { photo, proof } } } : {}),
     });
+    if (notify()) toast(tr(duplicate ? "shared.challengeAlreadyDone" : "post.published"), "check");
     return saved;
   } catch (e) {
     if (__DEV__) console.warn(e);
-    toast(tr("shared.savedLocally"), "refresh");
+    const reason = classifyPublishError(e);
+    current = { ...current, publishError: reason };
+    useApp.setState({ posts: patchPost(useApp.getState().posts, post.id, () => current) });
+    if (notify()) toast(tr(PUBLISH_MESSAGES[reason]), "refresh");
     return current;
   }
 }
