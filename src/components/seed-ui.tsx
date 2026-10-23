@@ -216,6 +216,7 @@ export function HoldButton({ label, a11yLabel, onComplete, busy, busyLabel, disa
   const [holding, setHolding] = useState(false);
   const p = useSharedValue(0);
   const squish = useSharedValue(1);
+  const active = useRef(false);
   const done = useRef(false);
   const tap = reduced || reader;
 
@@ -228,7 +229,9 @@ export function HoldButton({ label, a11yLabel, onComplete, busy, busyLabel, disa
   const finish = () => {
     if (done.current) return;
     done.current = true;
+    active.current = false;
     setHolding(false);
+    p.set(withTiming(0, { duration: 220 }));
     haptic.success();
     onComplete();
     setTimeout(() => {
@@ -239,8 +242,11 @@ export function HoldButton({ label, a11yLabel, onComplete, busy, busyLabel, disa
   const start = () => {
     if (disabled || busy || tap) return;
     haptic.soft();
+    active.current = true;
     setHolding(true);
     squish.set(withSpring(0.95));
+    cancelAnimation(p);
+    p.set(0);
     p.set(
       withTiming(1, { duration: HOLD_MS, easing: Easing.linear }, (ok) => {
         if (ok) scheduleOnRN(finish);
@@ -250,7 +256,8 @@ export function HoldButton({ label, a11yLabel, onComplete, busy, busyLabel, disa
   const stop = () => {
     if (tap) return;
     squish.set(withSpring(1));
-    if (p.value < 1) {
+    if (active.current) {
+      active.current = false;
       cancelAnimation(p);
       p.set(withTiming(0, { duration: 220 }));
       setHolding(false);
