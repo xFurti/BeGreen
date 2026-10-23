@@ -123,3 +123,21 @@ test("storage: uploads only into your own folder of a public bucket", async () =
   await as(B, `insert into storage.objects (bucket_id, name) values ('proofs', '${B}/x.jpg')`);
   assert.equal((await db.query(`select public from storage.buckets where id = 'proofs'`)).rows[0].public, true);
 });
+
+test("challenge reward survives a database round trip and is credited once to the squad", async () => {
+  for (const [action, base] of [["refill", 10], ["sort", 10], ["move", 20]]) {
+    const comune = `reward-${action}`;
+    const challengeId = `${comune}:${day}`;
+    await as(A, `insert into comuni (id, name, lat, lon) values ('${comune}', 'Reward test', 45, 9)`);
+    await as(A, `insert into challenges (id, comune_id, day, action, title, why, metric) values ('${challengeId}', '${comune}', '${day}', '${action}', 't', 'w', 'm')`);
+    const [s] = await as(A, `insert into squads (name, kind, comune_id, code, quest) values ('Reward test', 'class', '${comune}', '${action.toUpperCase()}10', jsonb_build_object('title','Test','action','${action}','goal',10,'progress',0,'endsAt',now() + interval '7 days')) returning id`);
+    await as(A, `insert into squad_members (squad_id) values ('${s.id}')`);
+    const [p] = await as(A, `insert into posts (author_id, comune_id, challenge_id, action, photo, proof, audience, squad_id) values ('${A}', '${comune}', '${challengeId}', '${action}', 'p', 'v', 'squad', '${s.id}') returning id`);
+    assert.equal((await as(A, `select challenge_id from posts where id = '${p.id}'`))[0].challenge_id, challengeId);
+    assert.equal((await as(A, `select points from squads where id = '${s.id}'`))[0].points, base + 10);
+    await rejects(A, `insert into posts (author_id, comune_id, challenge_id, action, photo, proof, audience, squad_id) values ('${A}', '${comune}', '${challengeId}', '${action}', 'p', 'v', 'squad', '${s.id}')`);
+    assert.equal((await as(A, `select points from squads where id = '${s.id}'`))[0].points, base + 10);
+    await as(A, `insert into posts (author_id, comune_id, action, photo, proof, audience, squad_id) values ('${A}', '${comune}', '${action}', 'p', 'v', 'squad', '${s.id}')`);
+    assert.equal((await as(A, `select points from squads where id = '${s.id}'`))[0].points, base * 2 + 10);
+  }
+});

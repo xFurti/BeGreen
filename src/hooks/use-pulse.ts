@@ -51,8 +51,8 @@ async function syncChallenge(pulse: Pulse) {
 }
 
 const SAMPLE_SPECIES = {
-  "Sciurus carolinensis": "ref.sampleSpecies.squirrel",
-  "Columba palumbus": "ref.sampleSpecies.pigeon",
+  "Bellis perennis": "ref.sampleSpecies.daisy",
+  "Taraxacum officinale": "ref.sampleSpecies.dandelion",
   "Hedera helix": "ref.sampleSpecies.ivy",
 } as const;
 

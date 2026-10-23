@@ -1,7 +1,7 @@
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useState, type ReactNode } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, View, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View, type PressableProps, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
@@ -50,6 +50,7 @@ export function Press({
   disabled,
   hapticOn = true,
   accessibilityLabel,
+  hitSlop,
 }: {
   children: ReactNode;
   onPress?: () => void;
@@ -59,6 +60,7 @@ export function Press({
   disabled?: boolean;
   hapticOn?: boolean;
   accessibilityLabel?: string;
+  hitSlop?: PressableProps["hitSlop"];
 }) {
   const s = useSharedValue(1);
   const a = useAnimatedStyle(() => ({ transform: [{ scale: s.value }] }));
@@ -71,6 +73,8 @@ export function Press({
       style={outer}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
+      accessibilityState={{ disabled: !!disabled }}
+      hitSlop={hitSlop}
       disabled={disabled}
       onPressIn={() => s.set(withSpring(scale, { damping: 22, stiffness: 420 }))}
       onPressOut={() => s.set(withSpring(1, { damping: 15, stiffness: 300 }))}
@@ -310,9 +314,15 @@ export function Chip({
 }
 
 // Outlined mono tag: "DROP", "SDG 13".
-export function Tag({ label, dark, solid }: { label: string; dark?: boolean; solid?: boolean }) {
+export function Tag({ label, dark, solid, onPress, accessibilityLabel }: {
+  label: string;
+  dark?: boolean;
+  solid?: boolean;
+  onPress?: () => void;
+  accessibilityLabel?: string;
+}) {
   const fg = solid ? (dark ? C.ink : C.white) : dark ? C.white : C.forest;
-  return (
+  const body = (
     <View
       style={{
         height: 20,
@@ -327,6 +337,7 @@ export function Tag({ label, dark, solid }: { label: string; dark?: boolean; sol
       <Text style={{ fontFamily: F.monoMedium, fontSize: 10, letterSpacing: 0.4, color: fg }}>{label}</Text>
     </View>
   );
+  return onPress ? <Press onPress={onPress} accessibilityLabel={accessibilityLabel ?? label} hitSlop={10}>{body}</Press> : body;
 }
 
 export function SdgTags({ goals, dark }: { goals: number[]; dark?: boolean }) {
