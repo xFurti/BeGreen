@@ -27,6 +27,7 @@ type State = {
 
 type Actions = {
   finishOnboarding: (p: Profile, withDemo: boolean) => void;
+  updateProfile: (p: Profile) => void;
   setExplain: (e: Explain) => void;
   setPlace: (p: Place) => void;
   setPulse: (p: Pulse) => void;
@@ -37,6 +38,7 @@ type Actions = {
     caption: string;
     audience: Audience;
     place: string;
+    location?: Post["location"];
     isDrop: boolean;
     squadId?: string;
   }) => Post;
@@ -78,6 +80,7 @@ function demoHistory(): Post[] {
     proof: DEMO_CLIP,
     caption: "",
     place: DEFAULT_PLACE.name,
+    location: { lat: DEFAULT_PLACE.lat, lon: DEFAULT_PLACE.lon },
     createdAt: Date.now() - d * D - 3 * 3600e3,
     verifiedBy: ["giulia", "marco", "nico"].slice(0, 2 + (i % 2)),
     reactions: { "💚": 4 + i },
@@ -97,6 +100,7 @@ export const useApp = create<State & Actions>()(
           explain: profile.role === "student" ? "me" : profile.role === "comune" ? "comune" : "class",
           myPosts: withDemo ? demoHistory() : [],
         }),
+      updateProfile: (profile) => set({ profile }),
       setExplain: (explain) => set({ explain }),
       setPlace: (place) => set({ place }),
       setPulse: (pulse) => set({ pulse }),

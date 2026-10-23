@@ -356,6 +356,7 @@ export default function Capture() {
       caption: caption.trim(),
       audience,
       place: shareSpot ? pulse.place.name : "Somewhere green",
+      location: shareSpot ? { lat: Math.round(pulse.place.lat * 100) / 100, lon: Math.round(pulse.place.lon * 100) / 100 } : undefined,
       isDrop,
       squadId: audience === "squad" ? squadId : undefined,
     });

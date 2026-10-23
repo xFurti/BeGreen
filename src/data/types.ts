@@ -23,6 +23,8 @@ export type Post = {
   proof: Media; // 5-second proof video
   caption: string;
   place: string;
+  // Optional approximate area saved at capture time; legacy/private posts have no coordinates.
+  location?: { lat: number; lon: number };
   createdAt: number;
   verifiedBy: string[];
   reactions: Record<string, number>;

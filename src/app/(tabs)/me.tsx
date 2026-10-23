@@ -1,349 +1,251 @@
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import { useState } from "react";
-import { Alert, Pressable, ScrollView, Share, Text, useWindowDimensions, View } from "react-native";
-import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
+import { useState, type ReactNode } from "react";
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Icon, type IconName } from "@/components/icon";
-import { Avatar, IconButton, Logo, Mono, Press, SectionHeader, TopCover, useCountUp } from "@/components/ui";
-import { ACTIONS } from "@/data/actions";
-import { daysTo2030, SDG_LIST, SDGS } from "@/data/sdgs";
-import type { Post } from "@/data/types";
-import { sdgsOf, seedsOf, streakOf, useApp, useLeague } from "@/store/app-store";
-import { C, F, R, T } from "@/theme/tokens";
+import { ImpactPanel, MapPanel, MemoriesPanel, PROFILE_MUTED } from "@/components/profile-panels";
+import { Avatar, IconButton, Press, toast } from "@/components/ui";
+import type { Role } from "@/data/types";
+import { seedsOf, streakOf, useApp } from "@/store/app-store";
+import { C, F } from "@/theme/tokens";
 import { haptic } from "@/utils/format";
+import { cleanProfile, ROLE_LABEL, validProfile } from "@/utils/profile";
 
-const ROLE_LABEL = { student: "Student", teacher: "Teacher", association: "Association", comune: "Comune" } as const;
-
-function impact(posts: Post[]) {
-  const t = { co2: 0, items: 0, litres: 0, records: 0 };
-  for (const p of posts) {
-    const i = ACTIONS[p.action].impact;
-    if (i.unit === "kg CO₂e") t.co2 += i.value;
-    if (i.unit === "items") t.items += i.value;
-    if (i.unit === "litres") t.litres += i.value;
-    if (i.unit === "records") t.records += i.value;
-  }
-  return t;
-}
-
-function Agenda({ posts }: { posts: Post[] }) {
-  const { width } = useWindowDimensions();
-  const touched = sdgsOf(posts);
-  const [sel, setSel] = useState<number | null>(null);
-  const gap = 6;
-  const cell = Math.floor((width - 40 - gap * 5) / 6);
-  const counts = new Map<number, number>();
-  posts.forEach((p) => ACTIONS[p.action].sdgs.forEach((g) => counts.set(g, (counts.get(g) ?? 0) + 1)));
-
-  return (
-    <View style={{ gap: 14 }}>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap }}>
-        {SDG_LIST.map((g, i) => {
-          const on = touched.has(g);
-          const active = sel === g;
-          return (
-            <Animated.View key={g} entering={FadeIn.delay(i * 25)}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`SDG ${g}: ${SDGS[g]}${on ? ", moved" : ""}`}
-                onPress={() => {
-                  haptic.tap();
-                  setSel(active ? null : g);
-                }}
-                style={{
-                  width: cell,
-                  height: cell,
-                  borderRadius: 12,
-                  borderCurve: "continuous",
-                  backgroundColor: on ? C.leaf : C.mint,
-                  borderWidth: active ? 2 : 0,
-                  borderColor: on ? C.forest : C.leaf,
-                  padding: 8,
-                  justifyContent: "space-between",
-                }}
-              >
-                <Text style={{ fontFamily: F.medium, fontSize: 20, letterSpacing: -0.8, color: on ? C.white : C.forestMute }}>{g}</Text>
-                {on && <Text style={{ fontFamily: F.monoMedium, fontSize: 9, color: C.mint, alignSelf: "flex-end" }}>×{counts.get(g)}</Text>}
-              </Pressable>
-            </Animated.View>
-          );
-        })}
-        <View style={{ width: cell, height: cell, borderRadius: 12, backgroundColor: C.forest, padding: 7, justifyContent: "space-between" }}>
-          <Text numberOfLines={1} style={{ fontFamily: F.medium, fontSize: 15, letterSpacing: -0.7, color: C.lime }}>
-            {daysTo2030()}
-          </Text>
-          <Text style={{ fontFamily: F.monoMedium, fontSize: 8, color: C.forestMute, lineHeight: 10 }}>DAYS TO 2030</Text>
-        </View>
-      </View>
-      <Text style={[T.callout, { minHeight: 42 }]}>
-        {sel ? (
-          <>
-            <Text style={{ fontFamily: F.medium, color: C.ink }}>
-              SDG {sel} · {SDGS[sel]}.
-            </Text>{" "}
-            {touched.has(sel) ? `You moved it ${counts.get(sel)} time${counts.get(sel) === 1 ? "" : "s"}.` : "Not yet. Which act could move it?"}
-          </>
-        ) : (
-          <>
-            You’ve moved <Text style={{ fontFamily: F.medium, color: C.ink }}>{touched.size} of 17</Text> UN goals. Tap one to see it. Collect
-            them all before 2030.
-          </>
-        )}
-      </Text>
-    </View>
-  );
-}
-
-function Calendar({ posts }: { posts: Post[] }) {
-  const { width } = useWindowDimensions();
-  const cell = Math.floor((width - 40) / 7);
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  const first = new Date(year, month, 1);
-  const lead = (first.getDay() + 6) % 7; // Monday first
-  const days = new Date(year, month + 1, 0).getDate();
-  const byDay = new Map<number, Post>();
-  posts.forEach((p) => {
-    const d = new Date(p.createdAt);
-    if (d.getMonth() === month && d.getFullYear() === year && !byDay.has(d.getDate())) byDay.set(d.getDate(), p);
-  });
-  const cells: (number | null)[] = [...Array(lead).fill(null), ...Array.from({ length: days }, (_, i) => i + 1)];
-
-  return (
-    <View style={{ gap: 8 }}>
-      <View style={{ flexDirection: "row" }}>
-        {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
-          <Mono key={i} style={{ flex: 1, textAlign: "center" }}>
-            {d}
-          </Mono>
-        ))}
-      </View>
-      <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-        {cells.map((d, i) => {
-          const p = d ? byDay.get(d) : undefined;
-          const today = d === now.getDate();
-          return (
-            <View key={i} style={{ width: cell, height: cell * 1.25, padding: 2 }}>
-              {d && (
-                <Pressable
-                  disabled={!p}
-                  onPress={() => p && router.push({ pathname: "/post/[id]", params: { id: p.id } })}
-                  accessibilityLabel={p ? `${ACTIONS[p.action].label} on day ${d}` : `Day ${d}`}
-                  style={{
-                    flex: 1,
-                    borderRadius: 9,
-                    overflow: "hidden",
-                    backgroundColor: p ? C.card2 : "transparent",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderWidth: today ? 1.5 : 0,
-                    borderColor: C.leaf,
-                  }}
-                >
-                  {p ? (
-                    <>
-                      <Image source={p.photo} style={{ position: "absolute", width: "100%", height: "100%" }} contentFit="cover" />
-                      <Text style={{ color: C.white, fontFamily: F.medium, fontSize: 12, textShadowColor: "rgba(0,0,0,0.5)", textShadowRadius: 4 }}>{d}</Text>
-                    </>
-                  ) : (
-                    <Text style={{ color: d > now.getDate() ? C.faint : C.mute, fontFamily: F.regular, fontSize: 12 }}>{d}</Text>
-                  )}
-                </Pressable>
-              )}
-            </View>
-          );
-        })}
-      </View>
-    </View>
-  );
-}
-
-function Stat({ value, label, first }: { value: number; label: string; first?: boolean }) {
-  const n = useCountUp(value);
-  return (
-    <View style={{ flex: 1, gap: 4, paddingLeft: first ? 0 : 14, borderLeftWidth: first ? 0 : 1, borderLeftColor: C.line }}>
-      <Text style={{ fontFamily: F.medium, fontSize: 34, lineHeight: 38, letterSpacing: -1.6, color: C.ink, fontVariant: ["tabular-nums"] }}>
-        {n.toLocaleString("en")}
-      </Text>
-      <Mono>{label}</Mono>
-    </View>
-  );
-}
+type ProfileTab = "impact" | "memories" | "map";
+const TABS: { id: ProfileTab; label: string; icon: IconName }[] = [
+  { id: "impact", label: "Impact", icon: "leaf" },
+  { id: "memories", label: "Memories", icon: "calendar" },
+  { id: "map", label: "Map", icon: "map" },
+];
+const ROLE_ICON: Record<Role, IconName> = { student: "school", teacher: "book", association: "people", comune: "building" };
 
 export default function Me() {
   const { top } = useSafeAreaInsets();
   const profile = useApp((s) => s.profile);
   const posts = useApp((s) => s.myPosts);
   const bonus = useApp((s) => s.bonusSeeds);
-  const verifiedCount = useApp((s) => Object.keys(s.verified).length);
+  const verifications = useApp((s) => Object.keys(s.verified).length);
+  const place = useApp((s) => s.place);
+  const [tab, setTab] = useState<ProfileTab>("impact");
+  const [sheet, setSheet] = useState<"edit" | "settings" | null>(null);
+  const streak = streakOf(posts);
+  const verified = posts.filter((p) => p.verifiedBy.length >= 3).length;
+
+  const share = async () => {
+    try {
+      await Share.share({ message: `${profile.name || "I"} on BeGreen: ${verified} verified green acts and a ${streak}-day streak. Proof, not promises. #BeGreen` });
+    } catch { toast("Sharing isn’t available right now."); }
+  };
+
+  return (
+    <View style={s.root}>
+      <ScrollView contentContainerStyle={{ paddingTop: top + 12, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
+        <View style={s.page}>
+          <View style={s.cover}>
+            <Image source={require("../../../assets/demo/forest.jpg")} style={StyleSheet.absoluteFill} contentFit="cover" accessibilityLabel="A green forest canopy" />
+            <View style={s.coverActions}>
+              <IconButton icon="gear" label="Profile settings" bg={C.forest} color={C.white} size={44} onPress={() => setSheet("settings")} />
+              <IconButton icon="share" label="Share profile" bg={C.forest} color={C.white} size={44} onPress={share} />
+            </View>
+          </View>
+          <View style={s.identity}>
+            <View style={s.avatarFrame}><Avatar name={profile.name || "You"} size={80} /></View>
+            <View style={s.nameBlock}>
+              <Text accessibilityRole="header" numberOfLines={2} style={s.name}>{profile.name || "You"}</Text>
+            </View>
+            <View style={s.identityTags}>
+              <View style={s.role}>
+                <Icon name={ROLE_ICON[profile.role]} size={14} color={C.forest} />
+                <Text style={s.roleText}>{ROLE_LABEL[profile.role]}</Text>
+              </View>
+              <View style={s.city}>
+                <Icon name="location" size={13} color={PROFILE_MUTED} />
+                <Text numberOfLines={1} style={s.subline}>{place.name}</Text>
+              </View>
+            </View>
+          </View>
+          <View style={s.stats}>
+            <Stat value={streak} label="Day streak" />
+            <Stat value={seedsOf(posts, bonus)} label="Seeds" middle />
+            <Stat value={verified} label="Verified" />
+          </View>
+          <View accessibilityRole="tablist" style={s.tabs}>
+            {TABS.map((item) => <Pressable
+              key={item.id}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: tab === item.id }}
+              accessibilityLabel={item.label}
+              onPress={() => { haptic.tap(); setTab(item.id); }}
+              style={[s.tab, tab === item.id && s.activeTab]}
+            >
+              <Icon name={item.icon} size={17} color={tab === item.id ? C.leaf : PROFILE_MUTED} />
+              <Text style={[s.tabText, tab === item.id && { color: C.leaf, fontFamily: F.semibold }]}>{item.label}</Text>
+            </Pressable>)}
+          </View>
+          <View style={s.panel}>
+            {tab === "impact" && <ImpactPanel posts={posts} verifications={verifications} />}
+            {tab === "memories" && <MemoriesPanel posts={posts} />}
+            {tab === "map" && <MapPanel posts={posts} />}
+          </View>
+        </View>
+      </ScrollView>
+      {sheet !== null && <Sheet title={sheet === "edit" ? "Edit profile" : "Settings"} onClose={() => setSheet(null)}>
+        {sheet === "edit"
+          ? <EditProfile onClose={() => setSheet(null)} />
+          : <Settings onClose={() => setSheet(null)} onEdit={() => setSheet("edit")} />}
+      </Sheet>}
+    </View>
+  );
+}
+
+function Stat({ value, label, middle }: { value: number; label: string; middle?: boolean }) {
+  return <View style={[s.stat, middle && s.middleStat]}>
+    <Text style={s.statValue}>{value.toLocaleString("en")}</Text>
+    <Text style={s.statLabel}>{label}</Text>
+  </View>;
+}
+
+function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+  const { top, bottom } = useSafeAreaInsets();
+  return <Modal visible transparent animationType="slide" onRequestClose={onClose}>
+    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={s.modalRoot}>
+      <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close dialog" />
+      <View accessibilityViewIsModal style={[s.sheet, { maxHeight: "94%", marginTop: top + 12, paddingBottom: Math.max(bottom, 20) }]}>
+        <View style={s.sheetHandle} />
+        <View style={s.sheetHeader}>
+          <Text accessibilityRole="header" style={s.sheetTitle}>{title}</Text>
+          <IconButton icon="close" label={`Close ${title.toLowerCase()}`} size={44} bg={C.card} color={C.ink} onPress={onClose} />
+        </View>
+        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 24, gap: 20, paddingBottom: 8 }}>{children}</ScrollView>
+      </View>
+    </KeyboardAvoidingView>
+  </Modal>;
+}
+
+function EditProfile({ onClose }: { onClose: () => void }) {
+  const profile = useApp((s) => s.profile);
+  const update = useApp((s) => s.updateProfile);
+  const [name, setName] = useState(profile.name);
+  const [handle, setHandle] = useState(profile.handle);
+  const [role, setRole] = useState(profile.role);
+  const [error, setError] = useState("");
+  const save = () => {
+    const next = cleanProfile(name, handle, role);
+    if (!validProfile(next)) { setError("Add your name and a username of 2–24 letters, numbers or underscores."); return; }
+    update(next);
+    haptic.success();
+    onClose();
+    toast("Profile saved");
+  };
+  return <>
+    <View style={{ alignItems: "center", gap: 8 }}>
+      <Avatar name={name || "You"} size={72} />
+      <Text style={s.subline}>Make it yours.</Text>
+    </View>
+    <View style={s.field}>
+      <Text style={s.fieldLabel}>Full name</Text>
+      <TextInput accessibilityLabel="Full name" value={name} onChangeText={setName} maxLength={50} autoCapitalize="words" style={s.input} returnKeyType="next" />
+    </View>
+    <View style={s.field}>
+      <Text style={s.fieldLabel}>Username</Text>
+      <TextInput accessibilityLabel="Username" value={handle} onChangeText={setHandle} maxLength={25} autoCapitalize="none" autoCorrect={false} style={s.input} />
+      <Text style={s.subline}>2–24 letters, numbers or underscores. Saved on this device.</Text>
+    </View>
+    <View style={s.field}>
+      <Text style={s.fieldLabel}>I’m here as a</Text>
+      <View style={s.roles}>
+        {(Object.keys(ROLE_LABEL) as Role[]).map((r) => <Pressable key={r} accessibilityRole="radio" accessibilityState={{ checked: role === r }} accessibilityLabel={ROLE_LABEL[r]} onPress={() => { setRole(r); haptic.tap(); }} style={[s.roleOption, role === r && { backgroundColor: C.mint, borderColor: C.leaf }]}>
+          <Icon name={ROLE_ICON[r]} size={18} color={role === r ? C.leaf : PROFILE_MUTED} />
+          <Text style={[s.fieldLabel, { flex: 1, fontSize: 14 }]}>{ROLE_LABEL[r]}</Text>
+          {role === r && <Icon name="check" size={16} color={C.leaf} />}
+        </Pressable>)}
+      </View>
+    </View>
+    {!!error && <Text accessibilityRole="alert" style={[s.subline, { color: C.red }]}>{error}</Text>}
+    <Press onPress={save} accessibilityLabel="Save profile changes" style={s.edit}><Text style={s.editText}>Save changes</Text></Press>
+  </>;
+}
+
+function Settings({ onClose, onEdit }: { onClose: () => void; onEdit: () => void }) {
   const explain = useApp((s) => s.explain);
   const setExplain = useApp((s) => s.setExplain);
   const reset = useApp((s) => s.reset);
-  const league = useLeague();
-  const rank = league.findIndex((r) => r.me) + 1;
-
-  const { width } = useWindowDimensions();
-  const badgeSize = Math.floor((width - 40 - 16) / 3);
-  const streak = streakOf(posts);
-  const seeds = seedsOf(posts, bonus);
-  const imp = impact(posts);
-  const kinds = new Set(posts.map((p) => p.action));
-  const goals = sdgsOf(posts);
-
-  const badges: { icon: IconName; label: string; on: boolean }[] = [
-    { icon: "camera", label: "First proof", on: posts.length > 0 },
-    { icon: "flame", label: "7-day streak", on: streak >= 7 },
-    { icon: "bike", label: "Car-free ×5", on: posts.filter((p) => p.action === "move").length >= 5 },
-    { icon: "binoculars", label: "Spotter", on: kinds.has("spot") },
-    { icon: "shield", label: "Verifier ×10", on: verifiedCount >= 10 },
-    { icon: "globe", label: "10 of 17 goals", on: goals.size >= 10 },
-  ];
-
-  return (
-    <View style={{ flex: 1, backgroundColor: C.bg }}>
-      <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ paddingTop: top + 10, paddingHorizontal: 20, paddingBottom: 140, gap: 40 }}>
-        <View style={{ gap: 20 }}>
-          <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" }}>
-            <Avatar name={profile.name || "You"} size={76} ring={C.lime} />
-            <IconButton
-              icon="share"
-              label="Share profile"
-              onPress={() =>
-                Share.share({ message: `I’m on a ${streak}-day BeGreen streak and #${rank} among my friends this week. Beat that. 🌱 #BeGreen` })
-              }
-            />
-          </View>
-          <View style={{ gap: 6 }}>
-            <Text style={[T.hero, { fontSize: 40, lineHeight: 42 }]}>{profile.name || "You"}</Text>
-            <Mono>
-              @{profile.handle || "you"} · {ROLE_LABEL[profile.role]} · #{rank} this week
-            </Mono>
-          </View>
-          <View style={{ flexDirection: "row" }}>
-            <Stat value={streak} label="Day streak" first />
-            <Stat value={seeds} label="Seeds" />
-            <Stat value={posts.filter((p) => p.verifiedBy.length >= 3).length} label="Verified" />
-          </View>
-        </View>
-
-        <Animated.View entering={FadeInDown.delay(80)} style={{ gap: 16 }}>
-          <SectionHeader index="01" title="Agenda 2030" action={`${goals.size}/17`} />
-          <Agenda posts={posts} />
-        </Animated.View>
-
-        <View style={{ gap: 16 }}>
-          <SectionHeader index="02" title="Impact" action="How we count →" onAction={() => router.push("/sources")} />
-          <View style={{ flexDirection: "row", flexWrap: "wrap", borderTopWidth: 1, borderTopColor: C.line }}>
-            <Imp value={imp.co2.toFixed(1)} label="kg CO₂e avoided" />
-            <Imp value={String(imp.items)} label="items kept from waste" right />
-            <Imp value={String(imp.litres)} label="litres saved" />
-            <Imp value={String(imp.records)} label="species records" right />
-          </View>
-          <Text style={T.caption}>Estimates. Useful to compare and motivate, not to certify.</Text>
-        </View>
-
-        <View style={{ gap: 16 }}>
-          <SectionHeader index="03" title="Memories" action={new Date().toLocaleString("en", { month: "long" })} />
-          <Calendar posts={posts} />
-        </View>
-
-        <View style={{ gap: 16 }}>
-          <SectionHeader index="04" title="Badges" action={`${badges.filter((b) => b.on).length}/${badges.length}`} />
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-            {badges.map((b) => (
-              <View
-                key={b.label}
-                style={{
-                  width: badgeSize,
-                  height: badgeSize * 0.9,
-                  borderRadius: R.md,
-                  borderCurve: "continuous",
-                  backgroundColor: b.on ? C.forest : C.card,
-                  padding: 12,
-                  justifyContent: "space-between",
-                }}
-              >
-                <Icon name={b.on ? b.icon : "lock"} size={18} color={b.on ? C.lime : C.faint} />
-                <Text style={{ fontFamily: F.medium, fontSize: 13, letterSpacing: -0.2, color: b.on ? C.white : C.mute }}>{b.label}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        <View style={{ borderTopWidth: 1, borderTopColor: C.line }}>
-          <Row
-            icon="doc"
-            label="Explanations"
-            value={{ me: "Me", class: "My class", comune: "Comune" }[explain]}
-            onPress={() => setExplain(explain === "me" ? "class" : explain === "class" ? "comune" : "me")}
-          />
-          <Row icon="book" label="How-to guide" onPress={() => router.push("/guide")} />
-          <Row icon="shield" label="Data sources & trust" onPress={() => router.push("/sources")} />
-          <Row icon="sparkle" label="Ask Leaf" onPress={() => router.push("/leaf")} />
-          <Row
-            icon="refresh"
-            label="Reset demo"
-            onPress={() =>
-              Alert.alert("Reset BeGreen?", "This clears your posts and returns to onboarding.", [
-                { text: "Cancel", style: "cancel" },
-                {
-                  text: "Reset",
-                  style: "destructive",
-                  onPress: () => {
-                    reset();
-                    router.replace("/onboarding");
-                  },
-                },
-              ])
-            }
-          />
-        </View>
-
-        <View style={{ alignItems: "center", gap: 6, paddingTop: 8 }}>
-          <Logo size={22} color={C.faint} />
-          <Mono color={C.faint}>Proof, not promises · v1.1</Mono>
-        </View>
-      </ScrollView>
-      <TopCover />
+  const [confirmReset, setConfirmReset] = useState(false);
+  const go = (path: "/guide" | "/sources" | "/leaf") => { onClose(); router.push(path); };
+  return <>
+    <SettingRow icon="me" label="Edit profile" onPress={onEdit} />
+    <View style={{ gap: 6 }}>
+      <Text style={s.fieldLabel}>Make BeGreen work for you</Text>
+      <Text style={s.subline}>Choose who the environmental explanations are for.</Text>
+      <View style={s.explanations}>
+        {([['me', 'Me'], ['class', 'My class'], ['comune', 'Comune']] as const).map(([value, label]) => <Pressable key={value} accessibilityRole="radio" accessibilityLabel={`Explain for ${label}`} accessibilityState={{ checked: explain === value }} onPress={() => { setExplain(value); haptic.tap(); }} style={[s.explanation, explain === value && { backgroundColor: C.white }]}><Text style={[s.fieldLabel, { fontSize: 14 }]}>{label}</Text></Pressable>)}
+      </View>
     </View>
-  );
-}
-
-function Imp({ value, label, right }: { value: string; label: string; right?: boolean }) {
-  return (
-    <View
-      style={{
-        width: "50%",
-        gap: 4,
-        paddingVertical: 16,
-        paddingLeft: right ? 16 : 0,
-        borderLeftWidth: right ? 1 : 0,
-        borderLeftColor: C.line,
-        borderBottomWidth: 1,
-        borderBottomColor: C.line,
-      }}
-    >
-      <Text style={{ fontFamily: F.medium, fontSize: 32, letterSpacing: -1.4, color: C.ink, fontVariant: ["tabular-nums"] }}>{value}</Text>
-      <Text style={{ fontFamily: F.regular, fontSize: 13, color: C.mute }}>{label}</Text>
+    <View>
+      <SettingRow icon="book" label="How-to guide" onPress={() => go("/guide")} />
+      <SettingRow icon="shield" label="Data sources & trust" onPress={() => go("/sources")} />
+      <SettingRow icon="sparkle" label="Ask Leaf" onPress={() => go("/leaf")} />
     </View>
-  );
+    <View style={{ gap: 12, paddingTop: 8 }}>
+      <Text style={s.fieldLabel}>Demo data</Text>
+      <Text style={s.subline}>Reset clears your profile, posts and progress on this device and returns to onboarding.</Text>
+      {confirmReset ? <View style={{ gap: 12 }}>
+        <Text accessibilityRole="alert" style={s.fieldLabel}>Clear all your BeGreen demo data?</Text>
+        <Press onPress={() => { reset(); onClose(); router.replace("/onboarding"); }} accessibilityLabel="Confirm reset of all demo data" style={[s.edit, { backgroundColor: C.ink }]}><Text style={s.editText}>Yes, reset demo</Text></Press>
+        <Press onPress={() => setConfirmReset(false)} accessibilityLabel="Keep my data" style={s.cancel}><Text style={s.fieldLabel}>Keep my data</Text></Press>
+      </View> : <Press onPress={() => setConfirmReset(true)} accessibilityLabel="Reset demo" style={s.cancel}><Text style={s.fieldLabel}>Reset demo</Text><Icon name="refresh" size={17} /></Press>}
+    </View>
+  </>;
 }
 
-function Row({ icon, label, value, onPress }: { icon: IconName; label: string; value?: string; onPress: () => void }) {
-  return (
-    <Press
-      scale={0.99}
-      onPress={onPress}
-      accessibilityLabel={label}
-      style={{ flexDirection: "row", alignItems: "center", gap: 14, height: 56, borderBottomWidth: 1, borderBottomColor: C.line }}
-    >
-      <Icon name={icon} size={16} color={C.leaf} />
-      <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2 }}>{label}</Text>
-      {value && <Mono color={C.ink}>{value}</Mono>}
-      <Icon name="chevron" size={12} color={C.faint} />
-    </Press>
-  );
+function SettingRow({ icon, label, onPress }: { icon: IconName; label: string; onPress: () => void }) {
+  return <Press onPress={onPress} accessibilityLabel={label} style={s.settingRow}>
+    <Icon name={icon} size={19} color={PROFILE_MUTED} />
+    <Text style={[s.fieldLabel, { flex: 1 }]}>{label}</Text>
+    <Icon name="chevron" size={14} color={PROFILE_MUTED} />
+  </Press>;
 }
+
+const s = StyleSheet.create({
+  root: { flex: 1, backgroundColor: C.bg },
+  page: { width: "100%", maxWidth: 620, alignSelf: "center" },
+  cover: { height: 132, marginHorizontal: 16, borderRadius: 24, overflow: "hidden", backgroundColor: C.forest },
+  coverActions: { position: "absolute", right: 12, top: 12, flexDirection: "row", alignItems: "center", gap: 8 },
+  identity: { alignItems: "center", marginTop: -44, paddingHorizontal: 20, gap: 10 },
+  avatarFrame: { borderRadius: 60, padding: 5, backgroundColor: C.white },
+  nameBlock: { alignItems: "center", gap: 4 },
+  name: { fontFamily: F.semibold, fontSize: 28, lineHeight: 33, letterSpacing: -1, color: C.ink, textAlign: "center" },
+  identityTags: { flexDirection: "row", justifyContent: "center", flexWrap: "wrap", alignItems: "center", gap: 12 },
+  role: { backgroundColor: C.mint, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, flexDirection: "row", alignItems: "center", gap: 6 },
+  roleText: { fontFamily: F.medium, fontSize: 12, color: C.forest },
+  city: { flexDirection: "row", alignItems: "center", gap: 4, maxWidth: "55%" },
+  subline: { fontFamily: F.regular, fontSize: 13, lineHeight: 19, color: PROFILE_MUTED },
+  stats: { flexDirection: "row", paddingVertical: 16, marginHorizontal: 20, marginTop: 16, backgroundColor: C.card, borderRadius: 20 },
+  stat: { flex: 1, alignItems: "center", gap: 4 },
+  middleStat: { borderLeftWidth: 1, borderRightWidth: 1, borderColor: "#DDE2DD" },
+  statValue: { fontFamily: F.medium, fontSize: 28, letterSpacing: -0.8, color: C.ink, fontVariant: ["tabular-nums"] },
+  statLabel: { fontFamily: F.regular, fontSize: 12, color: PROFILE_MUTED },
+  edit: { flex: 1, minHeight: 48, paddingHorizontal: 22, borderRadius: 25, backgroundColor: C.forest, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 9 },
+  editText: { fontFamily: F.medium, fontSize: 14, color: C.white },
+  tabs: { flexDirection: "row", marginHorizontal: 20, marginTop: 12, borderBottomWidth: 1, borderBottomColor: C.line },
+  tab: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, height: 52, borderBottomWidth: 2, borderBottomColor: "transparent" },
+  activeTab: { borderBottomColor: C.leaf, backgroundColor: C.mint, borderTopLeftRadius: 12, borderTopRightRadius: 12 },
+  tabText: { fontFamily: F.medium, fontSize: 14, color: PROFILE_MUTED },
+  panel: { paddingHorizontal: 20, paddingTop: 24 },
+  modalRoot: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.35)" },
+  sheet: { width: "100%", maxWidth: 620, alignSelf: "center", backgroundColor: C.white, borderTopLeftRadius: 28, borderTopRightRadius: 28, flexShrink: 1 },
+  sheetHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: "#DDE2DD", alignSelf: "center", marginTop: 10 },
+  sheetHeader: { paddingHorizontal: 24, paddingVertical: 14, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
+  sheetTitle: { fontFamily: F.semibold, fontSize: 23, letterSpacing: -0.6, color: C.ink },
+  field: { gap: 9 },
+  fieldLabel: { fontFamily: F.medium, fontSize: 15, color: C.ink },
+  input: { backgroundColor: C.card, borderRadius: 14, paddingHorizontal: 16, height: 50, fontFamily: F.regular, fontSize: 16, color: C.ink, borderWidth: 1, borderColor: "#DDE2DD" },
+  roles: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  roleOption: { flexDirection: "row", alignItems: "center", gap: 8, flexBasis: "46%", flexGrow: 1, paddingHorizontal: 12, minHeight: 50, borderRadius: 14, borderWidth: 1, borderColor: C.line },
+  explanations: { flexDirection: "row", padding: 4, backgroundColor: C.card, borderRadius: 16, marginTop: 10 },
+  explanation: { flex: 1, minHeight: 44, alignItems: "center", justifyContent: "center", borderRadius: 12 },
+  settingRow: { flexDirection: "row", gap: 12, alignItems: "center", minHeight: 58, borderBottomWidth: 1, borderBottomColor: C.line },
+  cancel: { minHeight: 48, borderRadius: 25, backgroundColor: C.card, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10 },
+});
