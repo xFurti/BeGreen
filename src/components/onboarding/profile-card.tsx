@@ -5,18 +5,20 @@ import { Gesture, GestureDetector } from "react-native-gesture-handler";
 
 import { Icon } from "@/components/icon";
 import { LeafMark } from "@/components/nature";
-import { Avatar, Mono, Tag } from "@/components/ui";
+import { Avatar, Mono } from "@/components/ui";
 import { AVATARS, type AvatarId } from "@/data/avatars";
-import type { Comune, Role } from "@/data/types";
+import type { Comune } from "@/data/types";
 import type { MessageKey } from "@/i18n/catalog";
 import { useI18n } from "@/i18n/use-i18n";
 import { aqiBand } from "@/services/interpret";
 import { comuneLabel } from "@/services/comuni";
 import { usePulse } from "@/hooks/use-pulse";
-import { C, F, R } from "@/theme/tokens";
+import { F, R } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
 
 function ComuneAir() {
+  const { C } = useTheme();
   const { pulse } = usePulse();
   const { language, t } = useI18n();
   if (!pulse.air) return null;
@@ -34,18 +36,15 @@ function ComuneAir() {
 export function ProfileCard({
   name,
   handle,
-  role,
-  roleLabel,
   avatarId,
   comune,
 }: {
   name: string;
   handle: string;
-  role: Role;
-  roleLabel: string;
   avatarId: AvatarId | null;
   comune: Comune | null;
 }) {
+  const { C } = useTheme();
   const { t } = useI18n();
   const reducedMotion = useReducedMotion();
   const rotateX = useSharedValue(0);
@@ -76,7 +75,6 @@ export function ProfileCard({
               @{handle || t("onboarding.profileHandlePlaceholder")}
             </Text>
           </View>
-          <Tag label={roleLabel} dark />
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
           <Icon name="location" size={14} color={C.lime} />
@@ -95,6 +93,7 @@ export function ProfileCard({
 }
 
 function AvatarChoice({ id, selected, onPress }: { id: AvatarId; selected: boolean; onPress: () => void }) {
+  const { C } = useTheme();
   const { t } = useI18n();
   const reducedMotion = useReducedMotion();
   const scale = useSharedValue(selected ? 1.08 : 1);
@@ -118,6 +117,7 @@ function AvatarChoice({ id, selected, onPress }: { id: AvatarId; selected: boole
 }
 
 export function AvatarPicker({ value, onChange }: { value: AvatarId | null; onChange: (id: AvatarId) => void }) {
+  const { C } = useTheme();
   const { t } = useI18n();
   return (
     <View style={{ gap: 8 }}>

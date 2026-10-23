@@ -18,10 +18,12 @@ import { formatNumber, timeAgo } from "@/i18n/format";
 import { useI18n } from "@/i18n/use-i18n";
 import { composerInset } from "@/services/keyboard-inset";
 import { useApp, useAuthor } from "@/store/app-store";
-import { C, F, R, T } from "@/theme/tokens";
+import { F, R } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
 
 export default function PostDetail() {
+  const { C, T } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { bottom } = useSafeAreaInsets();
   const { ref: keyboardRoot, cover } = useKeyboardCover();
@@ -86,7 +88,7 @@ export default function PostDetail() {
         <View style={{ gap: 12 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <Icon name={action.icon} size={16} color={C.leaf} />
-            <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 18, letterSpacing: -0.4 }}>{action.label}</Text>
+            <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 18, letterSpacing: -0.4, color: C.ink }}>{action.label}</Text>
           </View>
           {!!caption && (
             <Text selectable style={[T.body, { fontSize: 17, lineHeight: 25 }]}>
@@ -98,7 +100,7 @@ export default function PostDetail() {
 
         <View style={{ borderTopWidth: 1, borderBottomWidth: 1, borderColor: C.line, paddingVertical: 16, gap: 12 }}>
           <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
-            <Text style={{ fontFamily: F.medium, fontSize: 28, letterSpacing: -1.2 }}>
+            <Text style={{ fontFamily: F.medium, fontSize: 28, letterSpacing: -1.2, color: C.ink }}>
               ≈ {formatNumber(action.impact.value, language)} <Text style={{ fontSize: 16, letterSpacing: -0.3 }}>{action.impact.unitLabel}</Text>
             </Text>
             <Mono>{t("common.estimate")}</Mono>

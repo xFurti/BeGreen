@@ -4,7 +4,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { create } from "zustand";
 
 import { Icon, type IconName } from "@/components/icon";
-import { C, F, shadow } from "@/theme/tokens";
+import { F, shadow } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 
 // Kept apart from ui.tsx: the store raises toasts, and ui.tsx reads the store's language.
 
@@ -21,6 +22,7 @@ export function toast(text: string, icon?: IconName) {
 export function Toaster() {
   const msg = useToast((s) => s.msg);
   const { top } = useSafeAreaInsets();
+  const { C } = useTheme();
   if (!msg) return null;
   return (
     <Animated.View

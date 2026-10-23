@@ -10,7 +10,8 @@ import { actionCopy } from "@/i18n/content";
 import { formatNumber } from "@/i18n/format";
 import { useI18n } from "@/i18n/use-i18n";
 import type { Drop } from "@/services/drop";
-import { C, F, R } from "@/theme/tokens";
+import { F, R } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -44,6 +45,7 @@ export function DropCard({
   crowd: User[];
   ready?: boolean;
 }) {
+  const { C } = useTheme();
   const { t, language } = useI18n();
   const action = actionCopy(t, drop.action);
   const left = useCountdown();

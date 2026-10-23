@@ -1,9 +1,10 @@
 import { Pressable, View } from "react-native";
 import Animated, { interpolate, useAnimatedStyle, type SharedValue } from "react-native-reanimated";
 
-import { C } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 
 function Segment({ index, progress }: { index: number; progress: SharedValue<number> }) {
+  const { C } = useTheme();
   const fill = useAnimatedStyle(() => ({
     width: `${interpolate(progress.value, [index, index + 1], [0, 100], "clamp")}%`,
   }));

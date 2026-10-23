@@ -1,7 +1,8 @@
 import { View } from "react-native";
 import Svg, { G, Path } from "react-native-svg";
 
-import { C } from "@/theme/tokens";
+import { fixed } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 
 // Vector paths from the BeGreen Brand Kit (Logos/SVG, v1.0). Lockup geometry is baked in:
 // mark = 1.32 × wordmark height, gap = 0.34 × wordmark height, bottoms aligned.
@@ -26,16 +27,18 @@ const MARK_BOX = { w: 282.83, h: 319.25 };
 const LOCKUP_BOX = { w: 1316.45, h: 282.82 };
 
 // Full lockup (mark + wordmark). `size` is the lockup height in points; min width is 88.
-export function Logo({ size = 28, color = C.canopy }: { size?: number; color?: string }) {
+export function Logo({ size = 28, color }: { size?: number; color?: string }) {
+  const { C, scheme } = useTheme();
+  const fill = color ?? (scheme === "dark" ? C.white : fixed.canopy);
   return (
     <View accessible accessibilityRole="header" accessibilityLabel="BeGreen">
       <Svg width={(size * LOCKUP_BOX.w) / LOCKUP_BOX.h} height={size} viewBox={`0 0 ${LOCKUP_BOX.w} ${LOCKUP_BOX.h}`}>
-        <G scale={0.8859} fill={color}>
+        <G scale={0.8859} fill={fill}>
           {MARK.map((d) => (
             <Path key={d} d={d} />
           ))}
         </G>
-        <G x={323.41} y={68.56} fill={color}>
+        <G x={323.41} y={68.56} fill={fill}>
           {WORDMARK.map((d) => (
             <Path key={d} d={d} />
           ))}
@@ -46,7 +49,8 @@ export function Logo({ size = 28, color = C.canopy }: { size?: number; color?: s
 }
 
 // The leaf "B" on its own: avatars, stickers, watermark. `size` is its height; min 16.
-export function LogoMark({ size = 28, color = C.canopy }: { size?: number; color?: string }) {
+export function LogoMark({ size = 28, color }: { size?: number; color?: string }) {
+  const { C, scheme } = useTheme();
   return (
     <Svg
       width={(size * MARK_BOX.w) / MARK_BOX.h}
@@ -54,7 +58,7 @@ export function LogoMark({ size = 28, color = C.canopy }: { size?: number; color
       viewBox={`0 0 ${MARK_BOX.w} ${MARK_BOX.h}`}
       accessibilityLabel="BeGreen"
     >
-      <G fill={color}>
+      <G fill={color ?? (scheme === "dark" ? C.white : fixed.canopy)}>
         {MARK.map((d) => (
           <Path key={d} d={d} />
         ))}

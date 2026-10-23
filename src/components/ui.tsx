@@ -21,7 +21,8 @@ import { SOURCE_KINDS, SOURCES, type SourceId } from "@/data/sources";
 import type { Media } from "@/data/types";
 import { sourceCopy, sourceKindCopy } from "@/i18n/content";
 import { useI18n } from "@/i18n/use-i18n";
-import { C, F, R, T } from "@/theme/tokens";
+import { F, R } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
 
 // ---------- Logo ----------
@@ -31,9 +32,10 @@ export { Logo, LogoMark } from "@/components/logo";
 // ---------- Text helpers ----------
 
 // Small monospaced metadata: "SDG 13", "CITTÀ STUDI · 4M", "PROOF 0:05".
-export function Mono({ children, color = C.mute, size = 11, style }: { children: ReactNode; color?: string; size?: number; style?: StyleProp<TextStyle> }) {
+export function Mono({ children, color, size = 11, style }: { children: ReactNode; color?: string; size?: number; style?: StyleProp<TextStyle> }) {
+  const { C, T } = useTheme();
   return (
-    <Text numberOfLines={1} style={[T.label, { color, fontSize: size }, style]}>
+    <Text numberOfLines={1} style={[T.label, { color: color ?? C.mute, fontSize: size }, style]}>
       {children}
     </Text>
   );
@@ -118,6 +120,7 @@ export function Button({
   size?: "lg" | "md" | "sm";
   style?: StyleProp<ViewStyle>;
 }) {
+  const { C } = useTheme();
   const reducedMotion = useReducedMotion();
   const sheenProgress = useSharedValue(-1);
   useEffect(() => {
@@ -132,8 +135,9 @@ export function Button({
     );
   }, [reducedMotion, sheen, sheenProgress]);
   const sheenStyle = useAnimatedStyle(() => ({ transform: [{ translateX: sheenProgress.value * 260 }] }));
-  const bg = { primary: C.ink, green: C.forest, secondary: C.mint, ghost: "transparent", inverse: C.white, glass: "rgba(255,255,255,0.12)" }[kind];
-  const fg = { primary: C.white, green: C.white, secondary: C.forest, ghost: C.ink, inverse: C.ink, glass: C.white }[kind];
+  // `inverse` and `glass` sit on dark surfaces (camera, forest cards) in both themes.
+  const bg = { primary: C.ink, green: C.forest, secondary: C.mint, ghost: "transparent", inverse: C.white, glass: C.glass }[kind];
+  const fg = { primary: C.bg, green: C.white, secondary: C.forestInk, ghost: C.ink, inverse: C.night, glass: C.white }[kind];
   const h = { lg: 56, md: 46, sm: 34 }[size];
   return (
     <Press
@@ -151,16 +155,16 @@ export function Button({
           alignItems: "center",
           justifyContent: "center",
           gap: 8,
-          overflow: sheen ? "hidden" : undefined,
           borderWidth: kind === "ghost" ? 1 : 0,
           borderColor: C.line,
+          overflow: sheen ? "hidden" : undefined,
         },
         style,
       ]}
     >
       {sheen && !reducedMotion && (
         <Animated.View pointerEvents="none" style={[{ position: "absolute", top: 0, bottom: 0, left: -80, width: 68, opacity: 0.18 }, sheenStyle]}>
-          <LinearGradient colors={["rgba(255,255,255,0)", "rgba(255,255,255,0.9)", "rgba(255,255,255,0)"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ flex: 1 }} />
+          <LinearGradient colors={[C.bg, C.white, C.bg]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ flex: 1 }} />
         </Animated.View>
       )}
       {loading ? (
@@ -183,8 +187,8 @@ export function Button({
 export function IconButton({
   icon,
   onPress,
-  bg = C.mint,
-  color = C.forest,
+  bg,
+  color,
   size = 40,
   label,
 }: {
@@ -195,13 +199,14 @@ export function IconButton({
   size?: number;
   label: string;
 }) {
+  const { C } = useTheme();
   return (
     <Press
       onPress={onPress}
       accessibilityLabel={label}
-      style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: bg, alignItems: "center", justifyContent: "center" }}
+      style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: bg ?? C.mint, alignItems: "center", justifyContent: "center" }}
     >
-      <Icon name={icon} size={size * 0.42} color={color} />
+      <Icon name={icon} size={size * 0.42} color={color ?? C.forestInk} />
     </Press>
   );
 }
@@ -209,21 +214,8 @@ export function IconButton({
 // ---------- Avatar ----------
 
 // `invert` for monograms sitting on black.
-export function Avatar({
-  src,
-  avatarId,
-  name,
-  size = 36,
-  ring,
-  invert,
-}: {
-  src?: Media;
-  avatarId?: AvatarId | null;
-  name: string;
-  size?: number;
-  ring?: string;
-  invert?: boolean;
-}) {
+export function Avatar({ src, avatarId, name, size = 36, ring, invert }: { src?: Media; avatarId?: AvatarId | null; name: string; size?: number; ring?: string; invert?: boolean }) {
+  const { C } = useTheme();
   const avatar = avatarId ? avatarById(avatarId) : null;
   const inner = src ? (
     <Image source={src} style={{ width: size, height: size, borderRadius: size / 2 }} contentFit="cover" transition={150} />
@@ -257,12 +249,13 @@ export function Avatar({
   return <View style={{ padding: 2, borderRadius: size, backgroundColor: ring }}>{inner}</View>;
 }
 
-export function AvatarStack({ people, size = 24, ring = C.bg }: { people: { avatar?: Media; avatarId?: AvatarId | null; name: string }[]; size?: number; ring?: string }) {
+export function AvatarStack({ people, size = 24, ring }: { people: { avatar?: Media; avatarId?: AvatarId | null; name: string }[]; size?: number; ring?: string }) {
+  const { C } = useTheme();
   return (
     <View style={{ flexDirection: "row" }}>
       {people.map((p, i) => (
         <View key={i} style={{ marginLeft: i === 0 ? 0 : -size * 0.32 }}>
-          <Avatar src={p.avatar} avatarId={p.avatarId} name={p.name} size={size} ring={ring} />
+          <Avatar src={p.avatar} avatarId={p.avatarId} name={p.name} size={size} ring={ring ?? C.bg} />
         </View>
       ))}
     </View>
@@ -284,8 +277,9 @@ export function Chip({
   onPress?: () => void;
   dark?: boolean;
 }) {
+  const { C } = useTheme();
   const bg = active ? (dark ? C.lime : C.forest) : dark ? C.night2 : C.card;
-  const fg = active ? (dark ? C.ink : C.white) : dark ? C.white : C.ink;
+  const fg = active ? (dark ? C.night : C.white) : dark ? C.white : C.ink;
   const body = (
     <View
       style={{
@@ -321,7 +315,8 @@ export function Tag({ label, dark, solid, onPress, accessibilityLabel }: {
   onPress?: () => void;
   accessibilityLabel?: string;
 }) {
-  const fg = solid ? (dark ? C.ink : C.white) : dark ? C.white : C.forest;
+  const { C } = useTheme();
+  const fg = solid ? (dark ? C.night : C.white) : dark ? C.white : C.forestInk;
   const body = (
     <View
       style={{
@@ -329,7 +324,7 @@ export function Tag({ label, dark, solid, onPress, accessibilityLabel }: {
         paddingHorizontal: 6,
         borderRadius: 5,
         borderWidth: solid ? 0 : 1,
-        borderColor: dark ? "rgba(255,255,255,0.28)" : C.mint2,
+        borderColor: dark ? C.glassLine : C.band,
         backgroundColor: solid ? (dark ? C.lime : C.forest) : "transparent",
         justifyContent: "center",
       }}
@@ -351,6 +346,7 @@ export function SdgTags({ goals, dark }: { goals: number[]; dark?: boolean }) {
 }
 
 export function SourceBadge({ id, onPress, dark }: { id: SourceId; onPress?: () => void; dark?: boolean }) {
+  const { C } = useTheme();
   const { t } = useI18n();
   const src = SOURCES[id];
   const kind = sourceKindCopy(t, src.kind);
@@ -379,21 +375,31 @@ export function Segmented<V extends string>({
   options,
   onChange,
   dark,
+  label,
 }: {
   value: V;
   options: { value: V; label: string }[];
   onChange: (v: V) => void;
   dark?: boolean;
+  // Names the group for VoiceOver / TalkBack. Each option keeps its own label and selected state.
+  label?: string;
 }) {
+  const { C } = useTheme();
   return (
-    <View style={{ flexDirection: "row", backgroundColor: dark ? C.night2 : C.card, borderRadius: R.pill, padding: 3 }}>
+    <View
+      accessibilityRole="tablist"
+      accessibilityLabel={label}
+      style={{ flexDirection: "row", backgroundColor: dark ? C.night2 : C.card, borderRadius: R.pill, padding: 3 }}
+    >
       {options.map((o) => {
         const on = o.value === value;
         return (
           <Pressable
             key={o.value}
             accessibilityRole="tab"
+            accessibilityLabel={o.label}
             accessibilityState={{ selected: on }}
+            aria-selected={process.env.EXPO_OS === "web" ? on : undefined}
             onPress={() => {
               if (on) return;
               haptic.tap();
@@ -405,7 +411,7 @@ export function Segmented<V extends string>({
               borderRadius: R.pill,
               alignItems: "center",
               justifyContent: "center",
-              backgroundColor: on ? (dark ? C.white : C.bg) : "transparent",
+              backgroundColor: on ? (dark ? C.white : C.raised) : "transparent",
               boxShadow: on && !dark ? "0 1px 3px rgba(0,0,0,0.08), 0 1px 1px rgba(0,0,0,0.04)" : undefined,
             }}
           >
@@ -413,7 +419,7 @@ export function Segmented<V extends string>({
               numberOfLines={1}
               adjustsFontSizeToFit
               minimumFontScale={0.78}
-              style={{ fontFamily: F.medium, fontSize: 14, letterSpacing: -0.15, color: on ? C.forest : dark ? C.nightMute : C.mute }}
+              style={{ fontFamily: F.medium, fontSize: 14, letterSpacing: -0.15, color: on ? (dark ? C.forest : C.forestInk) : dark ? C.nightMute : C.mute }}
             >
               {o.label}
             </Text>
@@ -434,6 +440,7 @@ export function TextTabs<V extends string>({
   options: { value: V; label: string; count?: number }[];
   onChange: (v: V) => void;
 }) {
+  const { C } = useTheme();
   return (
     <View style={{ flexDirection: "row", gap: 20, alignItems: "flex-end" }}>
       {options.map((o) => {
@@ -470,10 +477,11 @@ export function TextTabs<V extends string>({
 // Keeps scrolling content from running under the status bar on header-less screens.
 export function TopCover() {
   const { top } = useSafeAreaInsets();
+  const { C } = useTheme();
   return (
     <View
       pointerEvents="none"
-      style={{ position: "absolute", top: 0, left: 0, right: 0, height: top, backgroundColor: "rgba(255,255,255,0.96)" }}
+      style={{ position: "absolute", top: 0, left: 0, right: 0, height: top, backgroundColor: C.veil }}
     />
   );
 }
@@ -489,6 +497,7 @@ export function SectionHeader({
   action?: string;
   onAction?: () => void;
 }) {
+  const { C, T } = useTheme();
   return (
     <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10 }}>
       {index && <Mono color={C.leaf}>{index}</Mono>}
@@ -503,13 +512,14 @@ export function SectionHeader({
 }
 
 export function Hairline({ dark, style }: { dark?: boolean; style?: StyleProp<ViewStyle> }) {
+  const { C } = useTheme();
   return <View style={[{ height: 1, backgroundColor: dark ? C.nightLine : C.line }, style]} />;
 }
 
 export function Bar({
   value,
-  color = C.leaf,
-  track = C.mint2,
+  color,
+  track,
   height = 4,
 }: {
   value: number;
@@ -517,14 +527,15 @@ export function Bar({
   track?: string;
   height?: number;
 }) {
+  const { C } = useTheme();
   const w = useSharedValue(0);
   useEffect(() => {
     w.set(withTiming(Math.max(0.02, Math.min(1, value)), { duration: 900 }));
   }, [value, w]);
   const a = useAnimatedStyle(() => ({ width: `${w.value * 100}%` }));
   return (
-    <View style={{ height, borderRadius: height, backgroundColor: track, overflow: "hidden" }}>
-      <Animated.View style={[{ height: "100%", borderRadius: height, backgroundColor: color }, a]} />
+    <View style={{ height, borderRadius: height, backgroundColor: track ?? C.band, overflow: "hidden" }}>
+      <Animated.View style={[{ height: "100%", borderRadius: height, backgroundColor: color ?? C.leaf }, a]} />
     </View>
   );
 }
@@ -538,7 +549,9 @@ export function Card({
   style?: StyleProp<ViewStyle>;
   tone?: "card" | "white" | "ink" | "mint" | "forest";
 }) {
-  const bg = { card: C.card, white: C.white, ink: C.ink, mint: C.mint, forest: C.forest }[tone];
+  const { C } = useTheme();
+  // "white" is the page colour with a hairline, so it reads as a raised card in either theme.
+  const bg = { card: C.card, white: C.bg, ink: C.ink, mint: C.mint, forest: C.forest }[tone];
   return (
     <View
       style={[
@@ -552,13 +565,14 @@ export function Card({
   );
 }
 
-export function LiveDot({ color = C.leaf, size = 7 }: { color?: string; size?: number }) {
+export function LiveDot({ color, size = 7 }: { color?: string; size?: number }) {
+  const { C } = useTheme();
   const o = useSharedValue(1);
   useEffect(() => {
     o.set(withRepeat(withSequence(withTiming(0.2, { duration: 800 }), withTiming(1, { duration: 800 })), -1));
   }, [o]);
   const s = useAnimatedStyle(() => ({ opacity: o.value }));
-  return <Animated.View style={[{ width: size, height: size, borderRadius: size / 2, backgroundColor: color }, s]} />;
+  return <Animated.View style={[{ width: size, height: size, borderRadius: size / 2, backgroundColor: color ?? C.leaf }, s]} />;
 }
 
 // Counts up to a number: used for Seeds and celebrations.

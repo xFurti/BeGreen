@@ -5,27 +5,25 @@ import { Alert, AppState, Pressable, ScrollView, Share, Text, useWindowDimension
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { BadgeSheet, BadgeTile } from "@/components/badge-sheet";
 import { ComuneSection } from "@/components/comune-card";
 import { Icon, type IconName } from "@/components/icon";
 import { LanguageSwitch } from "@/components/language-switch";
 import { TitledName } from "@/components/titled-name";
 import { Avatar, IconButton, Logo, Mono, Press, SectionHeader, Segmented, TopCover, useCountUp } from "@/components/ui";
 import { ACTIONS } from "@/data/actions";
-import { BADGE_ART } from "@/data/badge-art";
-import { BADGES, earnedBadges } from "@/data/badges";
+import { BADGES, earnedBadges, type BadgeId } from "@/data/badges";
 import { daysTo2030, SDG_LIST } from "@/data/sdgs";
 import type { Explain, Post } from "@/data/types";
 import { useComune } from "@/hooks/use-comune";
-import type { MessageKey } from "@/i18n/catalog";
 import { profileName, sdgTitle } from "@/i18n/content";
 import { formatDecimal, formatNumber, monthName, weekdayInitials } from "@/i18n/format";
 import { useI18n } from "@/i18n/use-i18n";
 import { supabase } from "@/services/supabase";
-import { badgeStatsOf, dropStaleBadge, sdgsOf, seedsOf, streakOf, useApp, useLeague, useMyPosts } from "@/store/app-store";
-import { C, F, R, T } from "@/theme/tokens";
+import { badgeStatsOf, dropStaleBadge, sdgsOf, seedsOf, streakOf, useApp, useLeague, useMyPosts, type ThemePref } from "@/store/app-store";
+import { F } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
-
-const ROLE_LABEL = { student: "roles.student", teacher: "roles.teacher", association: "roles.association", comune: "roles.comune" } as const satisfies Record<string, MessageKey>;
 
 function impact(posts: Post[]) {
   const t = { co2: 0, items: 0, litres: 0, records: 0 };
@@ -40,6 +38,7 @@ function impact(posts: Post[]) {
 }
 
 function Agenda({ posts }: { posts: Post[] }) {
+  const { C, T } = useTheme();
   const { t } = useI18n();
   const { width } = useWindowDimensions();
   const touched = sdgsOf(posts);
@@ -91,7 +90,7 @@ function Agenda({ posts }: { posts: Post[] }) {
                   justifyContent: "space-between",
                 }}
               >
-                <Text style={{ fontFamily: F.medium, fontSize: 20, letterSpacing: -0.8, color: on ? C.white : C.forestMute }}>{g}</Text>
+                <Text style={{ fontFamily: F.medium, fontSize: 20, letterSpacing: -0.8, color: on ? C.onLeaf : C.forestMute }}>{g}</Text>
                 {on && <Text style={{ fontFamily: F.monoMedium, fontSize: 9, color: C.mint, alignSelf: "flex-end" }}>×{counts.get(g)}</Text>}
               </Pressable>
             </Animated.View>
@@ -125,6 +124,7 @@ function Agenda({ posts }: { posts: Post[] }) {
 }
 
 function Calendar({ posts }: { posts: Post[] }) {
+  const { C } = useTheme();
   const { t, language } = useI18n();
   const { width } = useWindowDimensions();
   const cell = Math.floor((width - 40) / 7);
@@ -191,6 +191,7 @@ function Calendar({ posts }: { posts: Post[] }) {
 }
 
 function Stat({ value, label, first }: { value: number; label: string; first?: boolean }) {
+  const { C } = useTheme();
   const n = useCountUp(value);
   const { language } = useI18n();
   return (
@@ -204,8 +205,11 @@ function Stat({ value, label, first }: { value: number; label: string; first?: b
 }
 
 export default function Me() {
+  const { C, T } = useTheme();
   const { top } = useSafeAreaInsets();
   const profile = useApp((s) => s.profile);
+  const themePref = useApp((s) => s.theme);
+  const setTheme = useApp((s) => s.setTheme);
   const posts = useMyPosts();
   const verifiedCount = useApp((s) => s.verifiedCount);
   const comune = useApp((s) => s.comune);
@@ -213,6 +217,8 @@ export default function Me() {
   const setExplain = useApp((s) => s.setExplain);
   const reset = useApp((s) => s.reset);
   const equipBadge = useApp((s) => s.equipBadge);
+  const [selected, setSelected] = useState<BadgeId | null>(null);
+  const selectedBadge = BADGES.find((b) => b.id === selected);
   const { t, language } = useI18n();
   const pulse = useApp((s) => s.pulse);
   const comuneView = useComune();
@@ -236,7 +242,7 @@ export default function Me() {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
-      <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ paddingTop: top + 10, paddingHorizontal: 20, paddingBottom: 140, gap: 40 }}>
+      <ScrollView aria-hidden={!!selected} accessibilityElementsHidden={!!selected} importantForAccessibility={selected ? "no-hide-descendants" : "auto"} style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ paddingTop: top + 10, paddingHorizontal: 20, paddingBottom: 140, gap: 40 }}>
         <View style={{ gap: 20 }}>
           <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" }}>
             <Avatar avatarId={profile.avatarId} name={profileName(profile.name, t)} size={76} ring={C.lime} />
@@ -249,7 +255,7 @@ export default function Me() {
           <View style={{ gap: 6 }}>
             <TitledName name={profileName(profile.name, t)} badgeId={profile.badgeId} lines={2} style={[T.hero, { fontSize: 40, lineHeight: 42 }]} />
             <Mono>
-              @{profile.handle || t("common.youInline")} · {t(ROLE_LABEL[profile.role])} · {t("me.rankIn", { rank, place })}
+              @{profile.handle || t("common.youInline")} · {t("me.rankIn", { rank, place })}
             </Mono>
           </View>
           <View style={{ flexDirection: "row" }}>
@@ -288,49 +294,26 @@ export default function Me() {
         <View style={{ gap: 16 }}>
           <SectionHeader index="05" title={t("me.badges")} action={`${earned.length}/${BADGES.length}`} />
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-            {BADGES.map((b) => {
-              const on = earned.includes(b.id);
-              const equipped = profile.badgeId === b.id;
-              const progressLine = b.progress ? t(b.progress.key, { n: Math.min(b.progress.of(stats), b.progress.goal), goal: b.progress.goal }) : "";
-              const reqLine = on ? t(b.requirement) : b.progress ? progressLine : t(b.requirement);
-              const alertLine = b.progress ? `${t(b.requirement)} ${progressLine}` : t(b.requirement);
-              return (
-                <Pressable
-                  key={b.id}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: equipped }}
-                  accessibilityLabel={`${t(b.name)}, ${equipped ? t("badges.active") : on ? t("badges.earned") : t("badges.locked")}. ${reqLine}`}
-                  onPress={() => {
-                    haptic.tap();
-                    if (on) equipBadge(equipped ? null : b.id);
-                    else Alert.alert(t(b.name), alertLine);
-                  }}
-                  style={{
-                    width: badgeSize,
-                    minHeight: badgeSize * 1.1,
-                    borderRadius: R.md,
-                    borderCurve: "continuous",
-                    backgroundColor: on ? C.forest : C.card,
-                    borderWidth: equipped ? 2 : 0,
-                    borderColor: C.leaf,
-                    padding: equipped ? 10 : 12,
-                    justifyContent: "space-between",
-                  }}
-                >
-                  {!on && (
-                    <View style={{ position: "absolute", top: 8, right: 8 }}>
-                      <Icon name="lock" size={12} color={C.faint} />
-                    </View>
-                  )}
-                  <Image source={BADGE_ART[b.id]} style={{ width: badgeSize * 0.38, height: badgeSize * 0.38, opacity: on ? 1 : 0.35 }} />
-                  <View style={{ gap: 2 }}>
-                    <Text style={{ fontFamily: F.medium, fontSize: 13, letterSpacing: -0.2, color: on ? C.white : C.mute }}>{t(b.name)}</Text>
-                    {!on && <Text numberOfLines={2} style={{ fontFamily: F.regular, fontSize: 11, color: C.mute }}>{b.progress ? progressLine : t(b.requirement)}</Text>}
-                  </View>
-                </Pressable>
-              );
-            })}
+            {BADGES.map((b) => (
+              <BadgeTile key={b.id} badge={b} stats={stats} equipped={profile.badgeId === b.id} size={badgeSize} onOpen={() => setSelected(b.id)} />
+            ))}
           </View>
+        </View>
+
+        <View style={{ gap: 12 }}>
+          <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+            <Mono color={C.ink}>{t("me.appearance")}</Mono>
+          </View>
+          <Segmented<ThemePref>
+            label={t("me.appearance")}
+            value={themePref}
+            onChange={setTheme}
+            options={[
+              { value: "system", label: t("me.themeSystem") },
+              { value: "light", label: t("me.themeLight") },
+              { value: "dark", label: t("me.themeDark") },
+            ]}
+          />
         </View>
 
         <View style={{ borderTopWidth: 1, borderTopColor: C.line }}>
@@ -350,7 +333,7 @@ export default function Me() {
           <Row icon="location" label={t("common.comune")} value={comune?.name} onPress={() => router.push("/comune")} />
           <View style={{ flexDirection: "row", alignItems: "center", gap: 14, minHeight: 56, borderBottomWidth: 1, borderBottomColor: C.line }}>
             <Icon name="globe" size={16} color={C.ink} />
-            <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2 }}>{t("language.row")}</Text>
+            <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2, color: C.ink }}>{t("language.row")}</Text>
             <LanguageSwitch />
           </View>
           <Row icon="book" label={t("me.guide")} onPress={() => router.push("/guide")} />
@@ -381,12 +364,15 @@ export default function Me() {
           <Mono color={C.faint}>{t("me.tagline")}</Mono>
         </View>
       </ScrollView>
+      {selectedBadge && <BadgeSheet badge={selectedBadge} stats={stats} equipped={profile.badgeId === selectedBadge.id}
+        onEquip={() => equipBadge(selectedBadge.id)} onUnequip={() => equipBadge(null)} onClose={() => setSelected(null)} />}
       <TopCover />
     </View>
   );
 }
 
 function Imp({ value, label, right }: { value: string; label: string; right?: boolean }) {
+  const { C } = useTheme();
   return (
     <View
       style={{
@@ -407,6 +393,7 @@ function Imp({ value, label, right }: { value: string; label: string; right?: bo
 }
 
 function Row({ icon, label, value, onPress }: { icon: IconName; label: string; value?: string; onPress: () => void }) {
+  const { C } = useTheme();
   return (
     <Press
       scale={0.99}
@@ -415,7 +402,7 @@ function Row({ icon, label, value, onPress }: { icon: IconName; label: string; v
       style={{ flexDirection: "row", alignItems: "center", gap: 14, height: 56, borderBottomWidth: 1, borderBottomColor: C.line }}
     >
       <Icon name={icon} size={16} color={C.leaf} />
-      <Text numberOfLines={2} style={{ flex: 1, fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2 }}>
+      <Text numberOfLines={2} style={{ flex: 1, fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2, color: C.ink }}>
         {label}
       </Text>
       {value && (

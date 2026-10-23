@@ -1,9 +1,11 @@
 import { Text, View } from "react-native";
 import Animated, { FadeInDown, useReducedMotion } from "react-native-reanimated";
 
-import { F, T } from "@/theme/tokens";
+import { F } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 
 export function WordsIn({ text }: { text: string }) {
+  const { T } = useTheme();
   const reducedMotion = useReducedMotion();
   if (reducedMotion) {
     return (

@@ -20,7 +20,7 @@ BeGreen is built for the brief **“2. La mia sostenibilità”**: it takes sust
 | --- | --- |
 | **Onboarding** | Four-slide story (Proof, not promises / Your city, decoded / Beat your friends. Save the planet. / 17 goals, one tiny act at a time), then name, public handle, role (Student · Teacher · Association · Comune) and your Comune. Starting creates an anonymous account (no email, no password) with that profile. |
 | **Comune** | Search any Italian Comune (or use your location to suggest it). Pulse, the Drop, the feed and the league all follow the Comune you pick. Change it any time from Pulse or Me. |
-| **Feed** | Today's challenge with a live countdown to midnight and the real people in your Comune who already did it, your post for today (or a streak-saver prompt), your rank in this week's Comune race, and *Comune* / Squads / Everyone lenses. While fewer than 3 people have done today's Drop, example proofs for it (marked **DEMO**, never verifiable or counted) fill the Comune lens. Proof clips autoplay as each post scrolls into view. Double-tap to react, verify, comment. |
+| **Feed** | Today's Drop with a live countdown to midnight and the real people in your Comune who already did it, your post for today (or a streak-saver prompt), your rank in this week's Comune race, and *Comune* / Squads / Everyone lenses. While fewer than 3 people have done today's Drop, example proofs for it (marked **DEMO**, never verifiable or counted) fill the Comune lens. Proof clips autoplay as each post scrolls into view. Double-tap to react, verify, comment. |
 | **Capture** | Full-screen camera with two steps: photo, then a recording of up to 5 seconds with a progress ring. You can stop it once the camera has 2 seconds of video. If the clip fails, you stay on Prove and can record again. Then review: choose the act, write a caption (or tap a caption idea), pick who sees it (your Comune / Squad / Everyone) and whether to show your area. Doing the Drop's act claims today's challenge, once. The celebration shows Seeds, streak, who you just passed in the league, new Agenda 2030 goals and the feed unlock, with a share button. A **?** opens the how-to for the act. |
 | **Pulse** | Live local data for air, weather, water, soil, nature and protected areas. Every card has a **source badge** and an **“Explain it for: Me / My class / Comune”** switch, plus a button that turns the insight into an action. |
 | **Leaf** | An assistant that answers questions about your area using only the data you can see, and cites its sources. It adapts to the audience. |
@@ -39,14 +39,14 @@ BeGreen is built for the brief **“2. La mia sostenibilità”**: it takes sust
 | Starts from the local environment | Pulse + the Drop, from the Comune the user picks (GPS only suggests it) |
 | Links knowledge to concrete action | Every Pulse card ends in an action button; the Drop turns today's worst indicator into today's mission |
 | Air, water, soil, biodiversity, consumption, mobility, community | Pulse cards (air, water, soil, nature, protected areas) and the 10 action types, each tagged with its areas; the report shows how many of the 7 a squad covers |
-| Protected areas, species, nature observations | iNaturalist plant species list with photos and attribution; OpenStreetMap protected areas nearby |
+| Protected areas, species, nature observations | iNaturalist species list with photos and attribution; OpenStreetMap protected areas nearby |
 | Air quality, weather, local climate | CAMS European AQI with a 24 h chart, pollutant breakdown and dominant pollutant; current weather |
 | Soil and landscape changes | Top-soil moisture and its trend; class and Comune text points to land-sealing and land-use cartography (access marked “to verify”) |
 | Individual behaviour and group activity | Personal proofs, squad quests, city league, Community Report |
 | AI to understand measurements and documents | Leaf turns raw numbers into plain language and plugs into an LLM backend (see below) |
 | Answers that cite sources | Every Leaf answer carries source badges; every Pulse card carries its source |
 | Interpreting images | Proof photo + video verified by peers today; the backend contract covers image interpretation (species ID, proof checks) |
-| Explanations adapted to the reader | Me / My class / Comune on Pulse, in Leaf, in the Explain it for block on Me and in the defaults set from your role |
+| Explanations adapted to the reader | Me / My class / Comune on Pulse, in Leaf and in the defaults set from your role |
 | Sources aren't equivalent | Five source kinds, colour-coded everywhere; each data card's text names its limits (e.g. “model, ~10 km grid, not an ARPA station”) |
 | Some access and terms still to verify | The `verified: false` flag in `src/data/sources.ts` shows a ⚠︎ in *How we know* (ISPRA Catasto Rifiuti reuse licence) |
 
@@ -56,20 +56,16 @@ BeGreen is built for the brief **“2. La mia sostenibilità”**: it takes sust
 | --- | --- | --- |
 | Air quality (EAQI, PM2.5, PM10, NO₂, O₃, 24 h forecast) | Copernicus CAMS via Open-Meteo | Model |
 | Weather, rain over the past 7 days and next 3, soil moisture | Open-Meteo | Model |
-| Plant species seen within 10 km in the last 30 days (research grade) | iNaturalist API | Citizen science |
+| Species seen within 10 km in the last 30 days (research grade) | iNaturalist API | Citizen science |
 | Protected areas and nature reserves within 25 km | OpenStreetMap via Overpass | Open map |
 | Citizen PM2.5 sensors within 10 km (median of the latest readings) | Sensor.Community | Citizen science |
-| Plant species recorded within 5 km in the last 5 years | GBIF API | Citizen science |
+| Species recorded within 5 km in the last 5 years | GBIF API | Citizen science |
 | Italian Comuni (search, coordinates) | Open-Meteo geocoding (GeoNames) | Open map |
 | PM10 annual mean and exceedance days per station (2025), emissions per comune (INEMAR 2019) | ARPAV open data (bundled CSV extract) | Official |
 | Land sealed per comune (2024) and separate collection per comune (2024) | ISPRA/SNPA, ISPRA Catasto Rifiuti (bundled extract) | Official |
 | Acts, quests, reports | BeGreen (aggregated, anonymised) | Community |
 
 Official per-comune data is a bundled extract for the Province of Vicenza, matched to the Comune you picked by name (or, failing that, by the nearest centroid); datasets, joins and thresholds are documented in `docs/dati-comune.md`.
-
-Nature and Leaf show plants only (iNaturalist `iconic_taxa=Plantae`; GBIF `taxonKey=6`). An empty result is shown as 0 recorded plant species, not as an absence of plants. The `spot` action keeps its ID and existing proofs, with plant-focused instructions. Older mixed-species caches are refreshed; existing shared Drops keep their identity and omit the old mixed count.
-
-Biodiversity questions use Leaf's grounded local engine even when an AI endpoint is configured, so its answers stay within the plants shown in Pulse.
 
 Each source loads separately, so one outage never empties the Pulse. If everything is offline, the app shows clearly labelled sample data, and a Drop built from sample data is never saved as the Comune's challenge.
 
@@ -154,7 +150,7 @@ assets/                   Icon, splash, demo photos (Unsplash), 5 s proof clips
 
 - Accounts are anonymous and tied to the phone: signing out or reinstalling loses the account (your proofs stay on the feed). There are no friends or follows yet; the social unit is your Comune and your squads.
 - The daily Drop is built by the first phone that opens the app in a Comune that day. The database checks its shape and date, not its numbers; a server-side job would make it tamper-proof.
-- Moderation is still missing: “Flag proof” saves one local flag per proof on this device, with no moderator queue or Seeds penalties. Verifications are one per person but not yet checked against proximity or fraud patterns.
+- Moderation is still missing: “Flag proof” only asks for confirmation. Verifications are one per person but not yet checked against proximity or fraud patterns.
 - The league and the Comune counts are computed from the proofs the app downloads (last 8 days in your Comune), not from a server-side aggregate.
 - Impact figures are conservative estimates per act and are labelled that way everywhere.
 - ARPA / ISPRA official data isn't wired in yet, because access and terms vary by region. It's listed as “to verify”.
@@ -166,15 +162,17 @@ See **[MARKETING.md](MARKETING.md)** for the go-to-market plan.
 1. Read [AGENTS.md](AGENTS.md); it applies to AI assistants too.
 2. Track tasks and owners in [docs/team.md](docs/team.md); park new ideas in [docs/ideas.md](docs/ideas.md).
 3. Branch from an up-to-date `main` and open a PR to `main`. `npm run verify` (typecheck, lint, workflow and database tests) must pass: it's the `Verify` CI check.
-4. Pi reviews ready PRs when opened and after new commits. Comment `/PI review` to repeat it without a push, fix what it finds, then get approval from a teammate.
+4. Get approval from a teammate before merge. If Pi CI review is configured, it runs on ready PRs and new commits by itself; comment `/PI review` on the PR only to repeat it without a push.
 
-Shared agent skills live in [`skills/`](skills/) (linked from `.agents/skills` for Codex and `.pi/skills` for Pi):
+Hackathon track and rules: [`docs/traccia.md`](docs/traccia.md), [`docs/regolamento.md`](docs/regolamento.md). Default agent rules: [`AGENTS.md`](AGENTS.md). Optional skills in [`skills/`](skills/) (symlinked as `.agents/skills` / `.pi/skills`):
 
 | For | Skill |
 | --- | --- |
-| Comparing ideas and scoping the MVP | [hackathon-ideas](skills/hackathon-ideas/SKILL.md) |
+| Stay on the official FESAV track | [hackathon-track](skills/hackathon-track/SKILL.md) |
 | Building a feature or fix | [hackathon-feature](skills/hackathon-feature/SKILL.md) |
-| Reviewing a PR | [hackathon-review](skills/hackathon-review/SKILL.md) |
-| Pitch, slides and demo | [hackathon-pitch](skills/hackathon-pitch/SKILL.md) |
+| Review-only on a PR | [hackathon-review](skills/hackathon-review/SKILL.md) |
+| Pitch, slides and demo (8 min) | [hackathon-pitch](skills/hackathon-pitch/SKILL.md) |
 
-Pi review setup (secrets, variables, `main` protection): [docs/github-setup.md](docs/github-setup.md). Decisions: [docs/decisions.md](docs/decisions.md). Pitch and demo: [docs/presentation.md](docs/presentation.md).
+Out-of-track backlog: [`docs/ideas.md`](docs/ideas.md) or an Idea issue.
+
+Pi review setup: [docs/github-setup.md](docs/github-setup.md). Decisions: [docs/decisions.md](docs/decisions.md). Pitch: [docs/presentation.md](docs/presentation.md).

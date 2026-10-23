@@ -16,7 +16,8 @@ import Animated, {
 import { Icon } from "@/components/icon";
 import type { Media } from "@/data/types";
 import { useI18n } from "@/i18n/use-i18n";
-import { C, F, R } from "@/theme/tokens";
+import { F, light, R } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
 
 // The BeGreen frame: the "thing" (photo) + the "proof" (5-second clip) in one tile.
@@ -87,6 +88,7 @@ export function ProofMedia({
   onDoubleTap?: () => void;
   popEmoji?: string;
 }) {
+  const { C, scheme } = useTheme();
   const { t } = useI18n();
   const [swapped, setSwapped] = useState(false);
   const [loadedPhoto, setLoadedPhoto] = useState<Media | null>(() => (typeof photo === "number" ? photo : null));
@@ -176,7 +178,7 @@ export function ProofMedia({
               overflow: "hidden",
               borderWidth: 2,
               borderColor: C.white,
-              backgroundColor: C.ink,
+              backgroundColor: C.black,
               boxShadow: "0 6px 18px rgba(0,0,0,0.22)",
             }}
           >
@@ -185,7 +187,7 @@ export function ProofMedia({
               {!showClip && !swapped && (
                 <View
                   pointerEvents="none"
-                  style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(0,0,0,0.35)" }}
+                  style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, alignItems: "center", justifyContent: "center", backgroundColor: C.scrim }}
                 >
                   <Icon name="play" size={18} color={C.white} />
                 </View>
@@ -209,7 +211,7 @@ export function ProofMedia({
             paddingHorizontal: 9,
             height: 24,
             borderRadius: R.pill,
-            backgroundColor: "rgba(0,0,0,0.5)",
+            backgroundColor: C.scrim,
           }}
         >
           <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: C.red }} />
@@ -235,7 +237,8 @@ export function ProofMedia({
             backgroundColor: C.white,
           }}
         >
-          <Icon name="checkSeal" size={14} color={C.leaf} />
+          {/* A white pill on the photo in both themes, so it keeps the light green. */}
+          <Icon name="checkSeal" size={14} color={light.leaf} />
           <Text style={{ color: C.forest, fontFamily: F.monoMedium, fontSize: 10.5, letterSpacing: 0.5 }}>{t("common.verified")}</Text>
         </Animated.View>
       )}
@@ -244,7 +247,7 @@ export function ProofMedia({
 
       {locked && (
         <Animated.View entering={FadeIn} style={{ position: "absolute", inset: 0 } as never}>
-          <BlurView intensity={70} tint="light" style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 12 }}>
+          <BlurView intensity={70} tint={scheme} style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 12 }}>
             <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: C.forest, alignItems: "center", justifyContent: "center" }}>
               <Icon name="lock" size={19} color={C.lime} />
             </View>

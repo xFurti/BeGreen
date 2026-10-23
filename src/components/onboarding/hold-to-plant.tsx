@@ -4,7 +4,8 @@ import Animated, { useAnimatedProps, useAnimatedStyle, useReducedMotion, useShar
 import Svg, { Circle } from "react-native-svg";
 
 import { LeafBurst, Sprout } from "@/components/nature";
-import { C, F, R } from "@/theme/tokens";
+import { F, R } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
 
 const ACircle = Animated.createAnimatedComponent(Circle);
@@ -24,6 +25,7 @@ export function HoldToPlant({
   busyLabel: string;
   onComplete: () => void;
 }) {
+  const { C } = useTheme();
   const reducedMotion = useReducedMotion();
   const [screenReader, setScreenReader] = useState(false);
   const [burst, setBurst] = useState(0);

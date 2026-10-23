@@ -4,7 +4,7 @@ import { View } from "react-native";
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming, type SharedValue } from "react-native-reanimated";
 
 import { LeafMark } from "@/components/nature";
-import { C } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 
 const AGradient = Animated.createAnimatedComponent(LinearGradient);
 
@@ -18,6 +18,7 @@ const LEAVES = [
 ];
 
 function FloatingLeaf({ leaf, reducedMotion }: { leaf: (typeof LEAVES)[number]; reducedMotion: boolean }) {
+  const { C } = useTheme();
   const drift = useSharedValue(0);
   useEffect(() => {
     if (reducedMotion) return;
@@ -34,6 +35,7 @@ function FloatingLeaf({ leaf, reducedMotion }: { leaf: (typeof LEAVES)[number]; 
 }
 
 export function Aurora({ progress }: { progress: SharedValue<number> }) {
+  const { C } = useTheme();
   const reducedMotion = useReducedMotion();
   const drift = useSharedValue(0);
   useEffect(() => {
@@ -48,8 +50,8 @@ export function Aurora({ progress }: { progress: SharedValue<number> }) {
   }));
   return (
     <View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ position: "absolute", inset: 0, overflow: "hidden", opacity: 0.34 } as never}>
-      <AGradient colors={[C.mint, "rgba(230,246,236,0)", C.lime]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[{ position: "absolute", width: "110%", height: "52%", top: -50, left: "-5%", borderRadius: 260 }, blob]} />
-      <AGradient colors={["rgba(207,232,216,0)", C.mint2, "rgba(27,125,68,0)"]} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={[{ position: "absolute", width: "90%", height: "48%", bottom: -40, left: "12%", borderRadius: 260 }, second]} />
+      <AGradient colors={[C.mint, C.bg, C.lime]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[{ position: "absolute", width: "110%", height: "52%", top: -50, left: "-5%", borderRadius: 260 }, blob]} />
+      <AGradient colors={[C.bg, C.mint2, C.bg]} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={[{ position: "absolute", width: "90%", height: "48%", bottom: -40, left: "12%", borderRadius: 260 }, second]} />
       {!reducedMotion && LEAVES.map((leaf) => <FloatingLeaf key={`${leaf.left}-${leaf.top}`} leaf={leaf} reducedMotion={!!reducedMotion} />)}
     </View>
   );

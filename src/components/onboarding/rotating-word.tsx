@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import { Text } from "react-native";
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withTiming } from "react-native-reanimated";
 
-import { C, F, R } from "@/theme/tokens";
+import { F, R } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 
 export function RotatingWord({ words, active }: { words: string[]; active: boolean }) {
+  const { C } = useTheme();
   const reducedMotion = useReducedMotion();
   const [index, setIndex] = useState(0);
   const opacity = useSharedValue(1);

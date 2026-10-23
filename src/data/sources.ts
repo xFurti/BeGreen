@@ -1,4 +1,4 @@
-import { C } from "@/theme/tokens";
+import { fixed as C } from "@/theme/tokens";
 
 // Not all data is equal. Every number in BeGreen carries one of these kinds,
 // so people can tell an official measurement from a model or a citizen report.
@@ -9,7 +9,7 @@ export const SOURCE_KINDS: Record<SourceKind, { color: string }> = {
   official: { color: C.blue },
   model: { color: C.violet },
   citizen: { color: C.amber },
-  map: { color: C.mute },
+  map: { color: C.grey },
   community: { color: C.green },
 };
 

@@ -12,9 +12,11 @@ import { useI18n } from "@/i18n/use-i18n";
 import { countComuneMembers } from "@/services/social";
 import { hasBackend } from "@/services/supabase";
 import { useApp } from "@/store/app-store";
-import { C, F, R, T } from "@/theme/tokens";
+import { F, R } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 
 export default function Welcome() {
+  const { C, T } = useTheme();
   const { top } = useSafeAreaInsets();
   const { t } = useI18n();
   const reducedMotion = useReducedMotion();

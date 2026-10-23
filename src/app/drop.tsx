@@ -15,7 +15,8 @@ import type { Drop } from "@/services/drop";
 import { canClaimDrop, seedsFor } from "@/services/rewards";
 import { hasBackend } from "@/services/supabase";
 import { useApp } from "@/store/app-store";
-import { C, F, T } from "@/theme/tokens";
+import { F } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 
 const READINGS: { key: string; label: MessageKey; unit?: string; pct?: boolean; unitKey?: MessageKey }[] = [
   { key: "aqi", label: "dropSheet.readings.aqi", unit: "EAQI" },
@@ -39,6 +40,7 @@ function readings(d: Drop["data"], t: Translator, lang: Language) {
 }
 
 export default function DropSheet() {
+  const { C, T } = useTheme();
   const { drop, pulse } = usePulse();
   const comune = useApp((s) => s.comune);
   const { t, language } = useI18n();
@@ -60,12 +62,12 @@ export default function DropSheet() {
           <View style={{ flex: 1, gap: 4 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
               <LiveDot color={C.leaf} />
-              <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 14, color: C.forest }}>{t("dropSheet.title")}</Text>
+              <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 14, color: C.forestInk }}>{t("dropSheet.title")}</Text>
             </View>
             <Mono>{place}</Mono>
           </View>
           <View style={{ alignItems: "flex-end", gap: 4 }}>
-            <Mono color={C.forest} style={{ fontVariant: ["tabular-nums"] }}>{left}</Mono>
+            <Mono color={C.forestInk} style={{ fontVariant: ["tabular-nums"] }}>{left}</Mono>
             <Text style={{ fontFamily: F.regular, fontSize: 12, color: C.mute }}>{t("dropCard.leftToday")}</Text>
           </View>
         </View>
@@ -77,7 +79,7 @@ export default function DropSheet() {
         <Mono>{t("dropSheet.why")}</Mono>
         <Text style={[T.body, { fontSize: 17, lineHeight: 25 }]}>{drop.why}</Text>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap", paddingTop: 4 }}>
-          <Text style={{ fontFamily: F.medium, fontSize: 14 }}>{drop.metric}</Text>
+          <Text style={{ fontFamily: F.medium, fontSize: 14, color: C.ink }}>{drop.metric}</Text>
           {drop.sources.map((s) => (
             <SourceBadge key={s} id={s} onPress={() => router.push("/sources")} />
           ))}
@@ -90,7 +92,7 @@ export default function DropSheet() {
           {rows.map((r) => (
             <View key={r.key} style={{ flexDirection: "row", alignItems: "baseline", gap: 10, paddingVertical: 7 }}>
               <Text style={{ flex: 1, fontFamily: F.regular, fontSize: 15, color: C.ink2 }}>{r.label}</Text>
-              <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3, fontVariant: ["tabular-nums"] }} numberOfLines={1}>
+              <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3, fontVariant: ["tabular-nums"], color: C.ink }} numberOfLines={1}>
                 {r.value}
               </Text>
               {r.unit && <Text style={{ fontFamily: F.regular, fontSize: 12, color: C.mute }}>{r.unit}</Text>}
@@ -111,7 +113,7 @@ export default function DropSheet() {
               {String(i + 1).padStart(2, "0")}
             </Mono>
             <View style={{ flex: 1, gap: 2 }}>
-              <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3 }}>{s.title}</Text>
+              <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3, color: C.ink }}>{s.title}</Text>
               <Text style={[T.callout, { fontSize: 14, lineHeight: 20 }]}>{s.d}</Text>
             </View>
             <Icon name={s.icon} size={16} color={C.leaf} />

@@ -2,7 +2,8 @@ import { Pressable, Text, View } from "react-native";
 
 import { useI18n } from "@/i18n/use-i18n";
 import type { Language } from "@/i18n/schema";
-import { C, F, R } from "@/theme/tokens";
+import { F, R } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
 
 const OPTIONS: { value: Language; label: string }[] = [
@@ -13,6 +14,7 @@ const OPTIONS: { value: Language; label: string }[] = [
 // Binary switch. Each pole keeps its own language name. The group name follows the active language.
 export function LanguageSwitch({ compact = false }: { compact?: boolean }) {
   const { language, setLanguage, t } = useI18n();
+  const { C } = useTheme();
   return (
     <View
       accessibilityRole="radiogroup"
@@ -39,7 +41,7 @@ export function LanguageSwitch({ compact = false }: { compact?: boolean }) {
               borderRadius: R.pill,
               alignItems: "center",
               justifyContent: "center",
-              backgroundColor: on ? C.bg : "transparent",
+              backgroundColor: on ? C.raised : "transparent",
             }}
           >
             <Text
