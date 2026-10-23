@@ -1,5 +1,6 @@
 import * as Device from "expo-device";
 import { CameraView, useCameraPermissions, type CameraType } from "expo-camera";
+import { File } from "expo-file-system";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
@@ -27,6 +28,7 @@ import Svg, { Circle } from "react-native-svg";
 import { Icon, type IconName } from "@/components/icon";
 import { Blobs, LeafMark, LeafSwitch } from "@/components/nature";
 import { ProofMedia } from "@/components/proof-media";
+import { toast } from "@/components/toast";
 import { Button, Chip, IconButton, Mono, Press, SdgTags, Segmented, useCountUp } from "@/components/ui";
 import { CATEGORIES } from "@/data/community";
 import { ACTION_LIST, ACTIONS, type ActionId } from "@/data/actions";
@@ -37,7 +39,7 @@ import { actionCopy } from "@/i18n/content";
 import { useI18n } from "@/i18n/use-i18n";
 import { HIDDEN_PLACE } from "@/i18n/persist";
 import { usePulse } from "@/hooks/use-pulse";
-import { persistMedia } from "@/services/media";
+import { persistMedia, proofWithinBudget } from "@/services/media";
 import { canStopProof, displaySeconds, noteProgress, outcomeFromRecording, PROOF_SECONDS } from "@/services/proof-recording.mjs";
 import { canClaimDrop, seedsFor } from "@/services/rewards";
 import { hasBackend } from "@/services/supabase";
@@ -400,8 +402,23 @@ export default function Capture() {
 
   const pick = async (kind: "images" | "videos") => {
     const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: [kind], quality: 0.8, videoMaxDuration: PROOF_SECONDS });
-    const uri = r.assets?.[0]?.uri;
+    const asset = r.assets?.[0];
+    const uri = asset?.uri;
     if (!uri) return;
+    if (kind === "videos") {
+      let size = asset.fileSize ?? null;
+      if (size == null && process.env.EXPO_OS !== "web" && uri.startsWith("file:")) {
+        try {
+          size = new File(uri).size;
+        } catch {
+          size = null;
+        }
+      }
+      if (!proofWithinBudget(size)) {
+        toast(t("capture.proofTooLarge"));
+        return;
+      }
+    }
     if (kind === "images") {
       setPhoto(uri);
       setStep("proof");
@@ -687,7 +704,7 @@ export default function Capture() {
                 ratio="4:3"
                 facing={facing}
                 mode={isProof ? "video" : "picture"}
-                videoQuality="720p"
+                videoQuality="480p"
                 videoBitrate={4_000_000}
                 mute
                 flash={flash ? "on" : "off"}
