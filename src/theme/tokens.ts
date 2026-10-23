@@ -186,3 +186,12 @@ export const seedArt = {
     fir: { color: "#1F6E4A", coat: "#8A5A35", heart: "#5A3A22" },
   },
 } as const;
+
+// Badge medals (src/components/badge-art.tsx): the same sticker in both themes, like the seed —
+// white face, forest drawing, lime ring. Locked badges take theme greys instead.
+export const badgeArt = {
+  face: "#FFFFFF",
+  ink: "#0B3D2A",
+  leaf: "#1B7D44",
+  lime: "#B6F23C",
+} as const;

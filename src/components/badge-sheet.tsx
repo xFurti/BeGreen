@@ -1,10 +1,9 @@
-import { Image } from "expo-image";
 import { useRef, type ComponentRef } from "react";
 import { AccessibilityInfo, Modal, Platform, Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { BadgeArt } from "@/components/badge-art";
 import { Bar, Button, IconButton } from "@/components/ui";
-import { BADGE_ART } from "@/data/badge-art";
 import type { Badge, BadgeStats } from "@/data/badges";
 import { useI18n } from "@/i18n/use-i18n";
 import { F, R } from "@/theme/tokens";
@@ -17,18 +16,22 @@ export function BadgeTile({ badge: b, stats, equipped, size, onOpen }: {
   const { C } = useTheme();
   const { t } = useI18n();
   const earned = b.earned(stats);
+  const frac = b.progress ? Math.min(b.progress.of(stats) / b.progress.goal, 1) : undefined;
   const progress = b.progress ? t(b.progress.key, { n: Math.min(b.progress.of(stats), b.progress.goal), goal: b.progress.goal }) : t(b.requirement);
   return (
     <Pressable accessibilityRole="button" accessibilityState={{ selected: equipped }}
       accessibilityLabel={`${t(b.name)}, ${equipped ? t("badges.active") : earned ? t("badges.earned") : t("badges.locked")}. ${t("badges.details")}`}
       onPress={() => { haptic.tap(); onOpen(); }}
-      style={{ width: size, minHeight: size * 1.1, borderRadius: R.md, backgroundColor: earned ? C.forest : C.card,
-        borderWidth: equipped ? 2 : 0, borderColor: C.leaf, padding: equipped ? 10 : 12, justifyContent: "space-between", gap: 8 }}>
-      <Image source={BADGE_ART[b.id]} style={{ width: size * 0.38, height: size * 0.38, opacity: earned ? 1 : 0.35 }} />
-      <View style={{ gap: 3 }}>
-        <Text style={{ fontFamily: F.medium, fontSize: 13, color: earned ? C.white : C.mute }}>{t(b.name)}</Text>
+      style={{ width: size, minHeight: size * 1.14, borderRadius: R.md, backgroundColor: earned ? C.forest : C.card,
+        borderWidth: equipped ? 2 : 1, borderColor: equipped ? C.leaf : earned ? C.forest : C.line,
+        padding: equipped ? 11 : 12, alignItems: "center", gap: 10 }}>
+      <View style={{ flex: 1, justifyContent: "center" }}>
+        <BadgeArt id={b.id} size={size * 0.52} earned={earned} progress={frac} />
+      </View>
+      <View style={{ gap: 3, alignItems: "center" }}>
+        <Text numberOfLines={2} style={{ fontFamily: F.medium, fontSize: 13, lineHeight: 17, textAlign: "center", color: earned ? C.white : C.ink }}>{t(b.name)}</Text>
         {equipped && <Text style={{ fontFamily: F.medium, fontSize: 11, color: C.lime }}>{t("badges.active")}</Text>}
-        {!earned && <Text numberOfLines={2} style={{ fontFamily: F.regular, fontSize: 11, color: C.mute }}>{progress}</Text>}
+        {!earned && <Text numberOfLines={2} style={{ fontFamily: F.regular, fontSize: 11, lineHeight: 14, textAlign: "center", color: C.mute }}>{progress}</Text>}
       </View>
     </Pressable>
   );
@@ -62,7 +65,9 @@ export function BadgeSheet({ badge: b, stats, equipped, onEquip, onUnequip, onCl
               </View>
               <IconButton icon="close" label={t("common.close")} onPress={onClose} />
             </View>
-            <Image source={BADGE_ART[b.id]} accessibilityLabel={t(b.name)} style={{ width: 140, height: 140, alignSelf: "center" }} />
+            <View accessibilityLabel={t(b.name)} style={{ alignSelf: "center" }}>
+              <BadgeArt id={b.id} size={148} earned={earned} progress={progress ? current / progress.goal : undefined} />
+            </View>
             <View style={{ gap: 8 }}>
               <Text accessibilityRole="header" style={T.title}>{t(b.name)}</Text>
               <Text style={{ fontFamily: F.medium, fontSize: 14, color: earned ? C.leaf : C.mute }}>{earned ? t("badges.earned") : t("badges.locked")}</Text>
