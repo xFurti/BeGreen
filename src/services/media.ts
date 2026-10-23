@@ -4,7 +4,7 @@ import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 import type { Media } from "@/data/types";
 import { fitWithin, preferLocal as preferLocalPure } from "@/services/media-pure";
 
-export { fitWithin, MAX_PHOTO_SIDE } from "@/services/media-pure";
+export { fitWithin, MAX_PHOTO_SIDE, MAX_PROOF_BYTES, proofWithinBudget } from "@/services/media-pure";
 
 // Camera output lands in the cache, which iOS may purge.
 // Move proofs into the documents folder so your Memories survive.

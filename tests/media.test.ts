@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { fitWithin, preferLocal } from "../src/services/media-pure.ts";
+import { fitWithin, MAX_PROOF_BYTES, preferLocal, proofWithinBudget } from "../src/services/media-pure.ts";
 
 test("fitWithin scales oversized photos to the long-side limit", () => {
   assert.deepEqual(fitWithin(2448, 3264), { width: 960, height: 1280 });
@@ -30,4 +30,12 @@ test("preferLocal only replaces media confirmed by the local file check", () => 
   const photoOnly = preferLocal([posts[0]!], { one: { photo: "file:///one.jpg" } }, exists);
   assert.equal(photoOnly[0]?.photo, "file:///one.jpg");
   assert.equal(photoOnly[0]?.proof, posts[0]?.proof);
+});
+
+test("proofWithinBudget rejects known oversize library clips", () => {
+  assert.equal(proofWithinBudget(null), true);
+  assert.equal(proofWithinBudget(undefined), true);
+  assert.equal(proofWithinBudget(MAX_PROOF_BYTES), true);
+  assert.equal(proofWithinBudget(MAX_PROOF_BYTES + 1), false);
+  assert.equal(proofWithinBudget(Number.NaN), true);
 });

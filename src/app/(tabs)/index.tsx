@@ -229,7 +229,7 @@ export default function Feed() {
       <FlatList
         data={posts}
         keyExtractor={(p) => p.id}
-        windowSize={7}
+        windowSize={3}
         ListHeaderComponent={header}
         contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 6, paddingBottom: 140, gap: 34 }}
         renderItem={({ item, index }) => (
