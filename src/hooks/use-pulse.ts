@@ -23,7 +23,8 @@ export function refreshPulse(): Promise<void> {
     const place = useApp.getState().place;
     const pulse = await fetchPulse(place, useApp.getState().pulse, useApp.getState().language);
     useApp.getState().setPulse(pulse);
-    await syncChallenge(pulse);
+    // Areas must not wait on the challenge sync: it can block on backend calls,
+    // and without this a stalled sync left the card loading forever.
     fetchAreas(place)
       .then((areas) => ({ areas, areasStatus: undefined }))
       .catch(() => ({ areas: undefined, areasStatus: "error" as const }))
@@ -33,6 +34,7 @@ export function refreshPulse(): Promise<void> {
         if (!patch.areas && cur.areas) return; // keep the last good list
         useApp.getState().setPulse({ ...cur, ...patch });
       });
+    await syncChallenge(pulse);
   })().finally(() => {
     inflight = null;
     useLoading.setState({ loading: false });

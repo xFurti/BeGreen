@@ -4,7 +4,6 @@ import { ActivityIndicator, Platform, RefreshControl, ScrollView, Text, View } f
 import Animated, { cancelAnimation, FadeIn, FadeInDown, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { DailyCard } from "@/components/drop-card";
 import { Icon } from "@/components/icon";
 import { levelColor, PulseDetail } from "@/components/pulse-detail";
 import { SeedTip } from "@/components/seed-ui";
@@ -63,7 +62,6 @@ function PulseSkeleton() {
   const shimmer = useAnimatedStyle(() => ({ opacity: opacity.value }));
   return (
     <View accessibilityLabel={t("pulse.updating")} accessibilityState={{ busy: true }} aria-busy style={{ gap: 16 }}>
-      <Animated.View accessible={false} style={[{ height: 180, borderRadius: R.xl, backgroundColor: C.mint }, shimmer]} />
       {[0, 1, 2].map((row) => <View key={row} accessible={false} style={{ flexDirection: "row", gap: 10 }}>
         {[0, 1].map((col) => <Animated.View key={col} style={[{ flex: 1, height: 176, borderRadius: R.lg, backgroundColor: C.card, padding: 18, gap: 18 }, shimmer]}>
           <View style={{ width: "55%", height: 12, borderRadius: 6, backgroundColor: C.card2 }} />
@@ -124,9 +122,6 @@ export default function PulseScreen() {
         </View>
         {ready && pulse.sample && <View style={{ backgroundColor: C.card, borderRadius: R.md, padding: 12, borderLeftWidth: 3, borderLeftColor: C.amber }}><Text style={T.callout}>{t("pulse.offline")}</Text></View>}
         {!ready ? <PulseSkeleton /> : <>
-          <Animated.View entering={reduced ? undefined : FadeInDown.duration(350)}>
-            <DailyCard />
-          </Animated.View>
           <View style={{ gap: 12 }}>
             <View style={{ gap: 4 }}><Text accessibilityRole="header" style={T.title}>{t("pulse.explore")}</Text><Text style={T.caption}>{t("pulse.tapCard")}</Text></View>
             {[0, 2, 4].map((start) => <View key={start} style={{ flexDirection: "row", alignItems: "stretch", gap: 10 }}>
