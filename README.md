@@ -34,7 +34,7 @@ BeGreen is built for the brief **“2. La mia sostenibilità”**: it takes sust
 | **League** | Still there, no longer a tab: this week's friendly race in your Comune, squads with quests and join-by-code, and the squads ranking. Reached from the feed. |
 | **How to** | For people who don't know where to start: a searchable **“Where does it go?”** lookup (pizza box, Tetra Pak, receipts…), the six Italian waste streams, and three steps for every act. |
 | **Squad page** | Quest progress, invite code, and a **Community Report**: anonymised acts by type, estimated impact, which of the 7 areas are covered, today's local context. It can be shared with a school or Comune. |
-| **Me** | Streak, Seeds, verified count, **My Comune** (official per-comune indicators for the Province of Vicenza: PM10 from the nearest ARPAV station, CO₂ per resident, land sealed, separate collection, each compared with legal targets or the other 113 comuni; plus live citizen sensors and GBIF species, and one thing to ask your Comune), **Agenda 2030** grid (which of the 17 UN goals your proofs moved, plus days left to 2030), estimated impact, a Memories calendar, badges with a requirement each and one you equip as a title next to your name (also in the feed and in League), saved places, your contributions, settings. |
+| **Me** | Streak, Seeds, verified count, **Agenda 2030** grid (which of the 17 UN goals your proofs moved, plus days left to 2030), estimated impact, a Memories calendar, badges with a requirement each and one you equip as a title next to your name (also in the feed and in League), saved places, your contributions, settings. |
 
 ## How the brief is covered
 
@@ -124,7 +124,7 @@ To share the feed between phones, connect a Supabase project:
 
 ## Language
 
-The interface is Italian or English. On first launch BeGreen uses Italian if the device language is Italian and English otherwise. A switch on onboarding (beside Skip) and on Me changes it immediately, keeps the current screen, and survives a restart. Signing out keeps the chosen language and returns to onboarding. Captions, comments and names people typed stay as they wrote them. Drop, Pulse explanations, My Comune and Leaf’s local answers follow the active language and keep the same measured numbers: the shared daily challenge stores its readings, and every phone writes its title and text in its own language.
+The interface is Italian or English. On first launch BeGreen uses Italian if the device language is Italian and English otherwise. A switch on onboarding (beside Skip) and on Me changes it immediately, keeps the current screen, and survives a restart. Signing out keeps the chosen language and returns to onboarding. Captions, comments and names people typed stay as they wrote them. Drop, Pulse explanations and Leaf’s local answers follow the active language and keep the same measured numbers: the shared daily challenge stores its readings, and every phone writes its title and text in its own language.
 
 ```bash
 npm run typecheck
