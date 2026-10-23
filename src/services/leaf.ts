@@ -83,6 +83,14 @@ export function suggestionsFor(insights: Insight[]): Suggestion[] {
     .map((id) => SUGGESTIONS[id]);
 }
 
+// The one line Leaf opens with: what matters most in this place today.
+export function todayVerdict(insights: Insight[], place: string, language: Language) {
+  const bad = insights.find((i) => i.level === "bad");
+  return bad
+    ? translate(language, "answers.todayBad", { place, label: bad.label.toLowerCase(), status: bad.status.toLowerCase() })
+    : translate(language, "answers.calmHead", { place });
+}
+
 type Ctx = { pulse: Pulse; insights: Insight[]; audience: Explain; language: Language };
 
 const has = (q: string, ...words: string[]) => words.some((w) => q.includes(w));

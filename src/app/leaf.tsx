@@ -20,10 +20,11 @@ import { Mono, Press, SourceBadge } from "@/components/ui";
 import type { Explain } from "@/data/types";
 import { useKeyboardCover } from "@/hooks/use-keyboard-cover";
 import { usePulse } from "@/hooks/use-pulse";
+import { intlLocale } from "@/i18n/format";
 import { useI18n } from "@/i18n/use-i18n";
 import type { Level } from "@/services/interpret";
 import { composerInset } from "@/services/keyboard-inset";
-import { askLeaf, suggestionsFor, type LeafAnswer, type LeafFact } from "@/services/leaf";
+import { askLeaf, suggestionsFor, todayVerdict, type LeafAnswer, type LeafFact } from "@/services/leaf";
 import { useApp } from "@/store/app-store";
 import { F, R, type Palette } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
@@ -37,7 +38,7 @@ const AUDIENCES: Explain[] = ["me", "class", "comune"];
 const dot = (C: Palette): Record<Level, string> => ({ good: C.green, ok: C.amber, bad: C.red, info: C.faint });
 
 export default function Leaf() {
-  const { C, T } = useTheme();
+  const { C } = useTheme();
   const { bottom } = useSafeAreaInsets();
   const { ref: keyboardRoot, cover } = useKeyboardCover();
   const { pulse, insights } = usePulse();
@@ -76,6 +77,7 @@ export default function Leaf() {
   };
 
   const today = insights.filter((i) => i.key !== "areas").slice(0, 4);
+  const updatedAt = new Intl.DateTimeFormat(intlLocale(language), { hour: "2-digit", minute: "2-digit" }).format(pulse.fetchedAt);
   const suggestions = suggestionsFor(insights);
   const lastAnswered = [...turns].reverse().find((turn) => turn.answer)?.id;
   const canSend = !!q.trim() && !busy;
@@ -91,57 +93,39 @@ export default function Leaf() {
         contentContainerStyle={{ paddingBottom: 24 }}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={{ paddingHorizontal: 20, paddingTop: 22, paddingBottom: 12, backgroundColor: C.bg, flexDirection: "row", alignItems: "center", gap: 10 }}>
-          <Avatar size={36} />
-          <View style={{ flex: 1, gap: 1 }}>
-            <Text style={[T.title, { fontSize: 22 }]}>Leaf</Text>
-            <Press
-              onPress={() => router.push("/comune")}
-              accessibilityLabel={t("leaf.openComune", { place })}
-              style={{ flexDirection: "row", alignItems: "center", gap: 2, alignSelf: "flex-start" }}
-            >
-              <Text numberOfLines={1} style={{ fontFamily: F.regular, fontSize: 14, color: C.mute, flexShrink: 1 }}>
-                {t("leaf.sub", { place })}
-              </Text>
-              <Icon name="chevron" size={12} color={C.mute} />
-            </Press>
-          </View>
+        <View style={{ paddingHorizontal: 20, paddingTop: 18, paddingBottom: 10, backgroundColor: C.bg, flexDirection: "row", alignItems: "center", gap: 10 }}>
+          <Avatar size={28} />
+          <Text style={{ fontFamily: F.semibold, fontSize: 18, letterSpacing: -0.3, color: C.ink }}>Leaf</Text>
+          <View style={{ flex: 1 }} />
+          <Press
+            onPress={() => router.push("/comune")}
+            accessibilityLabel={t("leaf.openComune", { place })}
+            style={{ flexDirection: "row", alignItems: "center", gap: 5, height: 30, paddingLeft: 10, paddingRight: 8, borderRadius: R.pill, backgroundColor: C.card }}
+          >
+            <Icon name="location" size={12} color={C.forestInk} />
+            <Text numberOfLines={1} style={{ fontFamily: F.medium, fontSize: 13, color: C.ink, flexShrink: 1 }}>
+              {pulse.sample ? t("leaf.sample", { place }) : t("leaf.updated", { place, time: updatedAt })}
+            </Text>
+            <Icon name="chevron" size={11} color={C.mute} />
+          </Press>
         </View>
 
-        <View style={{ paddingHorizontal: 20, paddingTop: 4, gap: 18 }}>
-          {/* Leaf's first message: what it already knows about this place today. */}
-          <Animated.View entering={FadeInDown.springify()} style={{ backgroundColor: C.mint, borderRadius: R.lg, padding: 16, gap: 12 }}>
-            <Text style={{ fontFamily: F.medium, fontSize: 16, lineHeight: 22, color: C.ink }}>{t("leaf.greeting", { place })}</Text>
+        <View style={{ paddingHorizontal: 20, paddingTop: 10, gap: 22 }}>
+          {/* Leaf opens on today's verdict for this place, not on a greeting: the numbers come first. */}
+          <Animated.View entering={FadeInDown.springify()} style={{ gap: 12 }}>
+            <Text style={{ fontFamily: F.semibold, fontSize: 24, lineHeight: 30, letterSpacing: -0.5, color: C.ink }}>{todayVerdict(insights, place, language)}</Text>
             {today.length > 0 && (
-              <View style={{ gap: 8 }}>
-                <Mono color={C.forestInk}>{t("leaf.today", { place })}</Mono>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
                 {today.map((i) => (
-                  <View key={i.key} style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-                    <Icon name={i.icon} size={16} color={C.forestInk} />
-                    <View style={{ flex: 1, gap: 1 }}>
-                      <Text numberOfLines={1} style={{ fontFamily: F.medium, fontSize: 14, color: C.ink }}>
-                        {i.label}
-                      </Text>
-                      <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-                        <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: dot(C)[i.level] }} />
-                        <Text numberOfLines={1} style={{ fontFamily: F.regular, fontSize: 13, color: C.mute, flexShrink: 1 }}>
-                          {i.status}
-                        </Text>
-                      </View>
-                    </View>
-                    <Text numberOfLines={2} style={{ fontFamily: F.semibold, fontSize: 14, color: C.ink, textAlign: "right", maxWidth: "45%" }}>
-                      {i.value}
-                      {i.unit ? ` ${i.unit}` : ""}
-                    </Text>
-                  </View>
+                  <Fact key={i.key} f={{ label: i.label, value: i.value, unit: i.unit, level: i.level }} />
                 ))}
               </View>
             )}
+            <Text style={{ fontFamily: F.regular, fontSize: 15, lineHeight: 21, color: C.mute }}>{t("leaf.greeting")}</Text>
           </Animated.View>
 
           {turns.length === 0 && (
             <Animated.View entering={FadeIn.delay(150)} style={{ gap: 8 }}>
-              <Mono>{t("leaf.canAsk")}</Mono>
               {suggestions.map((s) => (
                 <Suggestion key={s.key} icon={s.icon} label={t(s.key)} onPress={() => ask(t(s.key))} />
               ))}
@@ -149,36 +133,16 @@ export default function Leaf() {
           )}
 
           {turns.map((turn) => (
-            <View key={turn.id} style={{ gap: 14 }}>
-              <Animated.View
-                entering={FadeInUp.springify()}
-                style={{
-                  alignSelf: "flex-end",
-                  maxWidth: "85%",
-                  backgroundColor: C.forest,
-                  borderRadius: 20,
-                  borderBottomRightRadius: 6,
-                  paddingHorizontal: 14,
-                  paddingVertical: 10,
-                }}
-              >
-                <Text selectable style={{ color: C.white, fontFamily: F.regular, fontSize: 15, lineHeight: 21 }}>
-                  {turn.shown}
-                </Text>
-              </Animated.View>
-              {turn.answer ? (
-                <Answer
-                  answer={turn.answer}
-                  audience={turn.audience}
-                  place={place}
-                  latest={turn.id === lastAnswered && !busy}
-                  onAsk={(question) => ask(question)}
-                  onReask={(aud) => ask(turn.question, { audience: aud, shown: t(`leaf.reask.${aud}`) })}
-                />
-              ) : (
-                <Typing label={t("leaf.busy")} />
-              )}
-            </View>
+            <Answer
+              key={turn.id}
+              question={turn.shown}
+              answer={turn.answer}
+              audience={turn.audience}
+              place={place}
+              latest={turn.id === lastAnswered && !busy}
+              onAsk={(question) => ask(question)}
+              onReask={(aud) => ask(turn.question, { audience: aud, shown: t(`leaf.reask.${aud}`) })}
+            />
           ))}
         </View>
       </ScrollView>
@@ -284,7 +248,9 @@ function Fact({ f }: { f: LeafFact }) {
   );
 }
 
+// A turn reads as a card: the question as its caption, Leaf's answer as the content.
 function Answer({
+  question,
   answer,
   audience,
   place,
@@ -292,7 +258,8 @@ function Answer({
   onAsk,
   onReask,
 }: {
-  answer: LeafAnswer;
+  question: string;
+  answer: LeafAnswer | null;
   audience: Explain;
   place: string;
   latest: boolean;
@@ -303,48 +270,68 @@ function Answer({
   const { t } = useI18n();
   const others = AUDIENCES.filter((a) => a !== audience);
   return (
-    <Animated.View entering={FadeInDown.springify()} style={{ flexDirection: "row", gap: 10, alignItems: "flex-start" }}>
-      <Avatar size={26} />
-      <View style={{ flex: 1, gap: 10 }}>
-        {audience !== "me" && <Mono color={C.forestInk}>{t(audience === "class" ? "leaf.audience.badgeClass" : "leaf.audience.badgeComune")}</Mono>}
-        {!!answer.headline && (
-          <Text selectable style={{ fontFamily: F.semibold, fontSize: 17, lineHeight: 23, letterSpacing: -0.2, color: C.ink }}>
-            {answer.headline}
+    <Animated.View entering={FadeInUp.springify()} style={{ gap: 12 }}>
+      <View style={{ borderRadius: R.lg, borderWidth: 1, borderColor: C.line, padding: 16, gap: 12 }}>
+        <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 8 }}>
+          <Text selectable style={{ flex: 1, fontFamily: F.medium, fontSize: 14, lineHeight: 19, color: C.mute }}>
+            {question}
           </Text>
-        )}
-        {!!answer.text && (
-          <Text selectable style={{ fontFamily: F.regular, fontSize: 15, lineHeight: 22, color: C.ink }}>
-            {answer.text}
-          </Text>
-        )}
-        {!!answer.facts?.length && (
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-            {answer.facts.map((f) => (
-              <Fact key={`${f.label}-${f.value}`} f={f} />
-            ))}
-          </View>
-        )}
-        {!!answer.cites.length && (
-          <Press
-            onPress={() => router.push("/sources")}
-            accessibilityLabel={t("leaf.sourcesA11y")}
-            style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", columnGap: 10, rowGap: 2 }}
-          >
-            <Text style={{ fontFamily: F.medium, fontSize: 12, color: C.mute }}>{t("leaf.sources")}</Text>
-            {answer.cites.map((c) => (
-              <SourceBadge key={c} id={c} />
-            ))}
-            <Icon name="info" size={13} color={C.mute} />
-          </Press>
-        )}
-        <Mono size={10}>{answer.mode === "ai" ? t("leaf.modeAi", { place }) : t("leaf.modeLocal")}</Mono>
-        {latest && (
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, paddingTop: 2 }}>
-            {answer.tailored && others.map((a) => <Chip key={a} icon="people" label={t(`leaf.reask.${a}`)} onPress={() => onReask(a)} />)}
-            {answer.followUps?.map((f) => <Chip key={f} label={f} onPress={() => onAsk(f)} />)}
-          </View>
+          {audience !== "me" && (
+            <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: R.pill, backgroundColor: C.mint }}>
+              <Text style={{ fontFamily: F.medium, fontSize: 11.5, color: C.forestInk }}>
+                {t(audience === "class" ? "leaf.audience.badgeClass" : "leaf.audience.badgeComune")}
+              </Text>
+            </View>
+          )}
+        </View>
+        {answer ? (
+          <Animated.View entering={FadeIn.duration(250)} style={{ gap: 12 }}>
+            {!!answer.headline && (
+              <Text selectable style={{ fontFamily: F.semibold, fontSize: 18, lineHeight: 24, letterSpacing: -0.3, color: C.ink }}>
+                {answer.headline}
+              </Text>
+            )}
+            {!!answer.text && (
+              <Text selectable style={{ fontFamily: F.regular, fontSize: 15, lineHeight: 22, color: C.ink }}>
+                {answer.text}
+              </Text>
+            )}
+            {!!answer.facts?.length && (
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                {answer.facts.map((f) => (
+                  <Fact key={`${f.label}-${f.value}`} f={f} />
+                ))}
+              </View>
+            )}
+            <View style={{ height: 1, backgroundColor: C.line }} />
+            <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", columnGap: 10, rowGap: 4 }}>
+              {!!answer.cites.length && (
+                <Press
+                  onPress={() => router.push("/sources")}
+                  accessibilityLabel={t("leaf.sourcesA11y")}
+                  style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", columnGap: 8, rowGap: 2, flexShrink: 1 }}
+                >
+                  {answer.cites.map((c) => (
+                    <SourceBadge key={c} id={c} />
+                  ))}
+                  <Icon name="info" size={13} color={C.mute} />
+                </Press>
+              )}
+              <Mono size={10} style={{ marginLeft: "auto" }}>
+                {answer.mode === "ai" ? t("leaf.modeAi", { place }) : t("leaf.modeLocal")}
+              </Mono>
+            </View>
+          </Animated.View>
+        ) : (
+          <Typing label={t("leaf.busy")} />
         )}
       </View>
+      {latest && answer && (
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+          {answer.tailored && others.map((a) => <Chip key={a} icon="people" label={t(`leaf.reask.${a}`)} onPress={() => onReask(a)} />)}
+          {answer.followUps?.map((f) => <Chip key={f} label={f} onPress={() => onAsk(f)} />)}
+        </View>
+      )}
     </Animated.View>
   );
 }
@@ -356,10 +343,9 @@ function Typing({ label }: { label: string }) {
       accessible
       accessibilityLabel={label}
       accessibilityLiveRegion="polite"
-      style={{ flexDirection: "row", gap: 10, alignItems: "center" }}
+      style={{ flexDirection: "row", gap: 5, paddingVertical: 6 }}
     >
-      <Avatar size={26} />
-      <View style={{ flexDirection: "row", gap: 5, paddingVertical: 8 }}>
+      <View style={{ flexDirection: "row", gap: 5 }}>
         {[0, 1, 2].map((i) => (
           <Dot key={i} delay={i * 160} />
         ))}
