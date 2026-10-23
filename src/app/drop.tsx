@@ -53,14 +53,18 @@ export default function DropSheet() {
   return (
     <ScrollView contentContainerStyle={{ padding: 22, paddingTop: 30, gap: 30 }}>
       <View style={{ gap: 14 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <LiveDot color={C.leaf} />
-          <Mono color={C.forest}>{t("dropSheet.title")}</Mono>
-          <Mono>· {place}</Mono>
-          <View style={{ flex: 1 }} />
-          <Mono color={C.forest} style={{ fontVariant: ["tabular-nums"] }}>
-            {left}
-          </Mono>
+        <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}>
+          <View style={{ flex: 1, gap: 4 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <LiveDot color={C.leaf} />
+              <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 14, color: C.forest }}>{t("dropSheet.title")}</Text>
+            </View>
+            <Mono>{place}</Mono>
+          </View>
+          <View style={{ alignItems: "flex-end", gap: 4 }}>
+            <Mono color={C.forest} style={{ fontVariant: ["tabular-nums"] }}>{left}</Mono>
+            <Text style={{ fontFamily: F.regular, fontSize: 12, color: C.mute }}>{t("dropCard.leftToday")}</Text>
+          </View>
         </View>
         <Text style={[T.hero, { fontSize: 40, lineHeight: 42 }]}>{drop.title}</Text>
         <SdgTags goals={a.sdgs} />
