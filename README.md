@@ -194,7 +194,7 @@ assets/                   Icon, splash, demo photos (Unsplash), 5 s proof clips
 
 ## Honest limits of this prototype
 
-- Accounts are anonymous and tied to the phone: signing out or reinstalling loses the account (your proofs stay on the feed). There are no friends or follows yet; the social unit is your Comune and your squads.
+- Accounts are anonymous and tied to the phone: signing out or reinstalling loses the account (your proofs stay on the feed). Friends are the accounts you follow. With a backend they sync through `follows`; without one they stay on this phone and other people cannot be discovered. Your Comune and your groups are the other social units.
 - The daily Drop is built by the first phone that opens the app in a Comune that day. The database checks its shape and date, not its numbers; a server-side job would make it tamper-proof.
 - Moderation of proofs is still missing: “Flag proof” only asks for confirmation. Community places have flags, auto-hiding and moderators, but promoting someone to moderator (beyond a community's founder) is done in the database for now. Verifications are one per person but not yet checked against proximity or fraud patterns.
 - Community leaderboards and Comune counts use downloaded proofs, not complete server-side aggregates. City queries load up to 120 recent proofs per source; group detail initially loads up to 200 proofs. Group impact totals are server-maintained.

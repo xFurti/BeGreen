@@ -8,9 +8,9 @@ import { TitledName } from "@/components/titled-name";
 import { Avatar, Button, Mono } from "@/components/ui";
 import { challengeProgress } from "@/data/community";
 import { useI18n } from "@/i18n/use-i18n";
-import { fetchFollows } from "@/services/social";
+import { fetchFollows, fetchProfiles } from "@/services/social";
 import { hasBackend } from "@/services/supabase";
-import { streakOf, useApp, useAuthor } from "@/store/app-store";
+import { rememberProfiles, streakOf, useApp, useAuthor } from "@/store/app-store";
 import { useCommunity } from "@/store/community-store";
 import { F } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
@@ -41,6 +41,19 @@ export default function Member() {
   const myFollowers = useApp((s) => s.followers);
   const [counts, setCounts] = useState<{ following: number; followers: number } | null>(null);
   const photos = useMemo(() => allPosts.filter((p) => p.authorId === id && !p.isDemo), [allPosts, id]);
+
+  useEffect(() => {
+    if (!id || me || !hasBackend || id === "demo" || useApp.getState().profiles[id]) return;
+    let live = true;
+    fetchProfiles([id])
+      .then((more) => {
+        if (live) rememberProfiles(Object.values(more));
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [id, me]);
 
   useEffect(() => {
     if (me || !hasBackend) return;

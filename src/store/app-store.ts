@@ -17,6 +17,7 @@ import type { Language } from "@/i18n/schema";
 import { saveComune } from "@/services/comuni";
 import type { Drop } from "@/services/drop";
 import { DEFAULT_PLACE, type Place, type Pulse } from "@/services/env";
+import { followingAfterFailedFollow, nextFollowing } from "@/services/follows";
 import { existingLocal, preferLocal } from "@/services/media";
 import { assertDestination, isGroupPost } from "@/services/groups";
 import { mediaAccessVersion } from "@/services/storage-media";
@@ -330,17 +331,33 @@ export const useApp = create<State & Actions>()(
       follow: (userId, on, who) => {
         const s = get();
         if (!userId || userId === s.userId || userId === DEMO_AUTHOR.id) return;
-        const following = on ? [userId, ...s.following.filter((id) => id !== userId)] : s.following.filter((id) => id !== userId);
+        const generation = (followGeneration.get(userId) ?? 0) + 1;
+        followGeneration.set(userId, generation);
         followedAt = Date.now();
-        set({ following, ...(who && !s.profiles[userId] ? { profiles: { ...s.profiles, [userId]: who } } : {}) });
+        set({
+          following: nextFollowing(s.following, userId, on),
+          ...(who && !s.profiles[userId] ? { profiles: { ...s.profiles, [userId]: who } } : {}),
+        });
         if (!hasBackend) return;
-        setFollow(s.userId, userId, on)
-          .then(() => (on ? syncSocial() : undefined))
-          .catch((e) => {
-            // Put it back the way it was.
-            useApp.setState({ following: s.following });
-            fail(e);
-          });
+        const me = s.userId;
+        const prev = followTail.get(userId) ?? Promise.resolve();
+        const task = prev.catch(() => undefined).then(async () => {
+          // A newer tap on this account already replaced this one: send only the latest.
+          if (followGeneration.get(userId) !== generation) return;
+          try {
+            await setFollow(me, userId, on);
+            if (on && followGeneration.get(userId) === generation) await syncSocial();
+          } catch (e) {
+            const stillLatest = followGeneration.get(userId) === generation;
+            const following = followingAfterFailedFollow(useApp.getState().following, userId, on, stillLatest);
+            if (following) useApp.setState({ following });
+            if (stillLatest) fail(e);
+          }
+        });
+        followTail.set(userId, task);
+        void task.finally(() => {
+          if (followTail.get(userId) === task) followTail.delete(userId);
+        });
       },
       equipBadge: (id) => {
         const s = get();
@@ -456,6 +473,26 @@ async function send(post: Post): Promise<Post> {
 
 let syncing: Promise<void> | null = null;
 let followedAt = 0;
+// One generation per account, so a failed follow undoes only that tap.
+const followGeneration = new Map<string, number>();
+// Follows for one account run in order. A newer tap skips the request it replaced.
+const followTail = new Map<string, Promise<void>>();
+
+// Keep names the server already returned. Never overwrite a profile this phone already knows.
+export function rememberProfiles(users: Iterable<User>) {
+  const incoming = [...users];
+  if (!incoming.length) return;
+  useApp.setState((state) => {
+    const profiles = { ...state.profiles };
+    let changed = false;
+    for (const u of incoming) {
+      if (!u?.id || u.id === state.userId || u.id === DEMO_AUTHOR.id || profiles[u.id]) continue;
+      profiles[u.id] = u;
+      changed = true;
+    }
+    return changed ? { profiles } : state;
+  });
+}
 
 export function syncSocial(): Promise<void> {
   if (!hasBackend) return Promise.resolve();

@@ -11,7 +11,7 @@ import { useI18n } from "@/i18n/use-i18n";
 import { scrollPaddingBottom } from "@/services/keyboard-inset";
 import { fetchFollows, fetchNearbyProfiles, fetchProfiles, searchProfiles } from "@/services/social";
 import { hasBackend } from "@/services/supabase";
-import { useApp, useAuthor } from "@/store/app-store";
+import { rememberProfiles, useApp, useAuthor } from "@/store/app-store";
 import { useCommunity } from "@/store/community-store";
 import { F, R } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
@@ -51,7 +51,7 @@ export default function Friends() {
         const missing = [...f.following, ...f.followers].filter((x) => !useApp.getState().profiles[x] && x !== meId);
         const more = await fetchProfiles(missing).catch(() => ({}));
         if (!live) return;
-        useApp.setState({ profiles: { ...useApp.getState().profiles, ...more } });
+        rememberProfiles(Object.values(more));
         setTheirs(f);
       })
       .catch(() => live && setTheirs({ following: [], followers: [] }));
@@ -63,7 +63,10 @@ export default function Friends() {
   useEffect(() => {
     if (!mine || !hasBackend || !comuneId) return;
     fetchNearbyProfiles(comuneId, meId)
-      .then(setNearby)
+      .then((users) => {
+        rememberProfiles(users);
+        setNearby(users);
+      })
       .catch(() => {});
   }, [mine, comuneId, meId]);
 
@@ -76,7 +79,7 @@ export default function Friends() {
       searchProfiles(q, meId)
         .then((users) => {
           if (!live) return;
-          useApp.setState({ profiles: { ...Object.fromEntries(users.map((u) => [u.id, u])), ...useApp.getState().profiles } });
+          rememberProfiles(users);
           setRemote({ q, users });
         })
         .catch(() => live && setRemote({ q, users: [] }));
@@ -112,6 +115,22 @@ export default function Friends() {
     const seen = [...fromGroups, ...nearby.map((u) => u.id), ...Object.keys(profiles)];
     return [...new Set(seen)].filter((x) => x !== meId && x !== "demo" && !followed.has(x)).slice(0, 8);
   }, [mine, myFollowing, members, nearby, profiles, meId]);
+
+  // Group members are only ids. Load the ones this phone has never seen, or the row stays "Someone".
+  useEffect(() => {
+    if (!mine || !hasBackend) return;
+    const missing = suggested.filter((x) => !useApp.getState().profiles[x]);
+    if (!missing.length) return;
+    let live = true;
+    fetchProfiles(missing)
+      .then((more) => {
+        if (live) rememberProfiles(Object.values(more));
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [mine, suggested]);
 
   const empty =
     tab === "following"
