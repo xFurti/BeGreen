@@ -57,6 +57,7 @@ const MAP = {
   play: ["play.fill", "play"],
   trophy: ["trophy.fill", "trophy"],
   map: ["map.fill", "map"],
+  expand: ["arrow.up.left.and.arrow.down.right", "expand-outline"],
   chart: ["chart.bar.fill", "bar-chart"],
   gear: ["gearshape.fill", "settings"],
   globe: ["globe.europe.africa.fill", "globe"],
@@ -100,7 +101,6 @@ const MAP = {
   pencil: ["pencil", "create-outline"],
   pin: ["mappin.and.ellipse", "pin"],
   family: ["figure.2.and.child.holdinghands", "people"],
-  expand: ["arrow.up.left.and.arrow.down.right", "expand"],
 } as const satisfies Record<string, readonly [string, Ion]>;
 
 export type IconName = keyof typeof MAP;

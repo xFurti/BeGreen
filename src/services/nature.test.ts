@@ -11,6 +11,8 @@ import { buildInsights } from "@/services/interpret";
 import { answerLocally, askLeaf } from "@/services/leaf";
 
 const community = { carFree: 0, areaName: "Milano" };
+// What Leaf shows for an answer: the verdict, then the body.
+const shown = (a: { headline?: string; text: string }) => [a.headline, a.text].filter(Boolean).join("\n\n");
 const forbidden = /squirrel|pigeon|sciurus|columba|birds?|bugs?|uccell|insett|this guy/i;
 const empty: Pulse = { place: DEFAULT_PLACE, fetchedAt: Date.now(), sample: false, nature: { speciesCount: 0, top: [], taxon: "Plantae" } };
 
@@ -97,21 +99,21 @@ for (const language of ["en", "it"] as const) {
     const questions = ["What lives near me?", "Che cosa vive vicino a me?", "species", translate(language, "answers.suggested.live")];
     for (const question of questions) {
       const answer = answerLocally(question, ctx);
-      assert.match(answer.text, /Common Daisy/);
-      assert.doesNotMatch(answer.text, forbidden);
+      assert.match(shown(answer), /Common Daisy/);
+      assert.doesNotMatch(shown(answer), forbidden);
       assert.ok(answer.cites.includes("inat"));
     }
     for (const question of ["any birds near me?", "any bugs outside?", "uccelli vicino a me?", "insetti nel parco?"]) {
       const answer = answerLocally(question, ctx);
-      assert.match(answer.text, /animals are not included|animali non sono inclusi/);
-      assert.match(answer.text, /Common Daisy/);
-      assert.doesNotMatch(answer.text, forbidden);
+      assert.match(shown(answer), /animals are not included|animali non sono inclusi/);
+      assert.match(shown(answer), /Common Daisy/);
+      assert.doesNotMatch(shown(answer), forbidden);
     }
     const zero = answerLocally("species", { ...ctx, pulse: empty });
-    assert.match(zero.text, /^0 /);
-    assert.doesNotMatch(zero.text, /most seen|più viste/i);
+    assert.match(shown(zero), /^0 /);
+    assert.doesNotMatch(shown(zero), /most seen|più viste/i);
     const missing = answerLocally("species", { ...ctx, pulse: { ...empty, nature: undefined } });
-    assert.doesNotMatch(missing.text, /Common Daisy|^0 /);
+    assert.doesNotMatch(shown(missing), /Common Daisy|^0 /);
 
     const previous = process.env.EXPO_PUBLIC_LEAF_ENDPOINT;
     process.env.EXPO_PUBLIC_LEAF_ENDPOINT = "https://example.test/leaf";

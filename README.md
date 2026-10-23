@@ -101,8 +101,10 @@ BeGreen doesn't ask people to already care about sustainability: the Community t
 
 `src/services/leaf.ts` has two modes:
 
+Leaf opens on one line about today in your Comune (what to keep an eye on, or that nothing is alarming), today's numbers as chips and up to three questions picked from the data (a problem comes first). The chip at the top shows the place and when the data was updated, and opens the Comune page. Each question becomes a card: the question as caption, then a verdict, a short explanation, the numbers as chips, its sources (tap for what they are) and whether it is a guided or an AI answer. *Explained for* above the composer chooses Me, My class or the Comune for the next questions; it starts from your profile's choice but does not change Pulse or Me. Under the latest answer, chips re-ask it for another audience or suggest a next question; past answers never rewrite themselves.
+
 - **Grounded local engine (default):** answers by recognising the question's intent, using only the live Pulse numbers. It never invents a value and always cites sources. It works offline.
-- **AI backend:** set `EXPO_PUBLIC_LEAF_ENDPOINT`. The app sends `POST { question, audience, language, pulse, insights }` (`language` is `it` or `en`) and expects `{ text, cites: SourceId[] }`. That server is where a language model reads documents, interprets proof images, identifies species and rewrites answers for the audience. **Model keys stay on the server, never in the app.** If the backend fails or ignores `language`, the app falls back to the local engine, which answers in the active language.
+- **AI backend:** set `EXPO_PUBLIC_LEAF_ENDPOINT`. The app sends `POST { question, audience, language, pulse, insights }` (`language` is `it` or `en`) and expects `{ text, cites: SourceId[] }`, optionally with `headline` (the verdict shown in bold), `facts: { label, value, unit?, level? }[]` (number chips) and `followUps: string[]` (up to two next questions); unknown sources and malformed fields are dropped. That server is where a language model reads documents, interprets proof images, identifies species and rewrites answers for the audience. **Model keys stay on the server, never in the app.** If the backend fails or ignores `language`, the app falls back to the local engine, which answers in the active language.
 
 ## Run it
 
@@ -111,7 +113,7 @@ npm install
 npx expo start          # press i for the iOS simulator, or scan the QR code with Expo Go
 ```
 
-The app runs in **Expo Go**: it uses no custom native code. On a simulator (which has no camera), the capture screen offers **library** and **demo** capture so you can try the whole flow.
+The app runs in **Expo Go**, with a static compatibility preview in the profile map. The interactive native profile map uses **Expo Maps** and requires a new development build (Apple Maps on iOS; Google Maps on Android, with a Maps SDK key configured for that build). Native photo maps use iOS 18 or later; older iOS versions and unconfigured Android builds use the tile preview. Web uses an interactive OpenStreetMap preview. On a simulator (which has no camera), the capture screen offers **library** and **demo** capture so you can try the whole flow. See [docs/profile.md](docs/profile.md) for map setup and area-history limits.
 
 To share the feed between phones, connect a Supabase project:
 

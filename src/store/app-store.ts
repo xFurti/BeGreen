@@ -1,5 +1,6 @@
 import "expo-sqlite/localStorage/install";
 
+import { useMemo } from "react";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
@@ -28,10 +29,12 @@ import {
   joinByCode,
   publishPost,
   saveProfile,
+  saveProfileDetails,
   setReaction,
 } from "@/services/social";
 import { canClaimDrop, DROP_BONUS, publishWithReward, seedsFor } from "@/services/rewards";
 import { ensureSession, hasBackend } from "@/services/supabase";
+import { saveProfileChanges } from "@/utils/profile";
 
 export type Profile = { name: string; handle: string; role: Role; badgeId: BadgeId | null };
 
@@ -56,6 +59,7 @@ type State = {
   flagged: Record<string, true>;
   squads: Squad[];
   localSquads: Squad[];
+  localAreas: Record<string, NonNullable<Post["location"]>>;
   localMedia: Record<string, { photo?: string; proof?: string }>;
   verifiedCount: number;
   nudged: Record<string, number>;
@@ -69,12 +73,14 @@ type NewPost = {
   caption: string;
   audience: Audience;
   place: string;
+  location?: Post["location"];
   challengeId?: string;
   squadId?: string;
   spotId?: string;
 };
 
 type Actions = {
+  updateProfile: (changes: Pick<Profile, "name" | "handle" | "role">) => Promise<void>;
   finishOnboarding: (p: Omit<Profile, "badgeId"> & { badgeId?: BadgeId | null }) => void;
   setExplain: (e: Explain) => void;
   setTheme: (t: ThemePref) => void;
@@ -113,6 +119,7 @@ const initial: State = {
   flagged: {},
   squads: [],
   localSquads: [],
+  localAreas: {},
   localMedia: {},
   verifiedCount: 0,
   nudged: {},
@@ -142,6 +149,13 @@ export const useApp = create<State & Actions>()(
           userId: get().userId || localId(),
           explain: profile.role === "student" ? "me" : profile.role === "comune" ? "comune" : "class",
         });
+      },
+      updateProfile: async (changes) => {
+        const s = get();
+        const profile = await saveProfileChanges(s.profile, changes, async (next) => {
+          if (hasBackend) await saveProfileDetails(s.userId, next);
+        });
+        if (get().userId === s.userId) set({ profile: { ...profile, badgeId: get().profile.badgeId } });
       },
       setExplain: (explain) => set({ explain }),
       setTheme: (theme) => set({ theme }),
@@ -306,6 +320,7 @@ export const useApp = create<State & Actions>()(
         flagged: s.flagged,
         squads: s.squads,
         localSquads: s.localSquads,
+        localAreas: s.localAreas,
         localMedia: s.localMedia,
         verifiedCount: s.verifiedCount,
         nudged: s.nudged,
@@ -362,7 +377,8 @@ async function send(post: Post): Promise<Post> {
     const photo = typeof post.photo === "string" && post.photo.startsWith("file:") ? post.photo : undefined;
     const proof = typeof post.proof === "string" && post.proof.startsWith("file:") ? post.proof : undefined;
     useApp.setState({
-      posts: patchPost(useApp.getState().posts, post.id, () => ({ ...saved, photo: post.photo, proof: post.proof })),
+      posts: patchPost(useApp.getState().posts, post.id, () => ({ ...saved, location: post.location, photo: post.photo, proof: post.proof })),
+      ...(post.location ? { localAreas: { ...useApp.getState().localAreas, [saved.id]: post.location } } : {}),
       ...(photo || proof ? { localMedia: { ...useApp.getState().localMedia, [saved.id]: { photo, proof } } } : {}),
     });
     return saved;
@@ -417,7 +433,7 @@ export function syncSocial(): Promise<void> {
         .filter((entry): entry is [string, { photo?: string; proof?: string }] => entry !== null),
     );
     useApp.setState({
-      posts: [...keep, ...preferLocal(feed.posts, localMedia)],
+      posts: [...keep, ...preferLocal(feed.posts, localMedia).map((p) => ({ ...p, location: useApp.getState().localAreas[p.id] }))],
       profiles: { ...known, ...members },
       reacted: feed.myReactions,
       squads: mine,
@@ -504,7 +520,7 @@ export function seedsOf(posts: Post[], verified: number) {
 export function useMyPosts(): Post[] {
   const posts = useApp((s) => s.posts);
   const me = useApp((s) => s.userId);
-  return mineOf(posts, me);
+  return useMemo(() => mineOf(posts, me), [posts, me]);
 }
 
 export function mineOf(posts: Post[], me: string) {

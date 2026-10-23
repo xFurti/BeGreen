@@ -1,429 +1,522 @@
 import { Image } from "expo-image";
-import { router, useFocusEffect } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
-import { Alert, AppState, Pressable, ScrollView, Share, Text, useWindowDimensions, View } from "react-native";
-import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
+import { router, type Href } from "expo-router";
+import { useEffect, useRef, useState, type ComponentRef, type ReactNode } from "react";
+import {
+  AccessibilityInfo,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-import { BadgeSheet, BadgeTile } from "@/components/badge-sheet";
-import { ComuneSection } from "@/components/comune-card";
 import { Icon, type IconName } from "@/components/icon";
+import { ImpactPanel, MemoriesPanel } from "@/components/profile-panels";
+import { ProfileMap } from "@/components/profile-map";
 import { LanguageSwitch } from "@/components/language-switch";
 import { TitledName } from "@/components/titled-name";
-import { Avatar, IconButton, Logo, Mono, Press, SectionHeader, Segmented, TopCover, useCountUp } from "@/components/ui";
-import { ACTIONS } from "@/data/actions";
-import { BADGES, earnedBadges, type BadgeId } from "@/data/badges";
-import { daysTo2030, SDG_LIST } from "@/data/sdgs";
-import type { Explain, Post } from "@/data/types";
-import { useComune } from "@/hooks/use-comune";
-import type { MessageKey } from "@/i18n/catalog";
-import { profileName, sdgTitle } from "@/i18n/content";
-import { formatDecimal, formatNumber, monthName, weekdayInitials } from "@/i18n/format";
+import { Avatar, Button, IconButton, Press, Segmented, toast } from "@/components/ui";
+import type { Explain, Role } from "@/data/types";
+import { profileName } from "@/i18n/content";
+import { formatNumber } from "@/i18n/format";
 import { useI18n } from "@/i18n/use-i18n";
+import { HandleTaken } from "@/services/social";
 import { supabase } from "@/services/supabase";
-import { badgeStatsOf, dropStaleBadge, sdgsOf, seedsOf, streakOf, useApp, useLeague, useMyPosts, type ThemePref } from "@/store/app-store";
+import { badgeStatsOf, dropStaleBadge, seedsOf, streakOf, useApp, useLeague, useMyPosts, type ThemePref } from "@/store/app-store";
 import { useCommunity } from "@/store/community-store";
-import { F } from "@/theme/tokens";
+import { earnedBadges } from "@/data/badges";
+import { F, type Palette } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
-
-const ROLE_LABEL = { student: "roles.student", teacher: "roles.teacher", association: "roles.association", comune: "roles.comune" } as const satisfies Record<string, MessageKey>;
-
-function impact(posts: Post[]) {
-  const t = { co2: 0, items: 0, litres: 0, records: 0 };
-  for (const p of posts) {
-    const i = ACTIONS[p.action].impact;
-    if (i.unit === "kg CO₂e") t.co2 += i.value;
-    if (i.unit === "items") t.items += i.value;
-    if (i.unit === "litres") t.litres += i.value;
-    if (i.unit === "records") t.records += i.value;
-  }
-  return t;
-}
-
-function Agenda({ posts }: { posts: Post[] }) {
-  const { C, T } = useTheme();
-  const { t } = useI18n();
-  const { width } = useWindowDimensions();
-  const touched = sdgsOf(posts);
-  const [sel, setSel] = useState<number | null>(null);
-  const [days, setDays] = useState(() => daysTo2030());
-  useFocusEffect(
-    useCallback(() => {
-      const update = () => setDays(daysTo2030());
-      update();
-      const id = setInterval(update, 1000);
-      const subscription = AppState.addEventListener("change", (state) => {
-        if (state === "active") update();
-      });
-      return () => {
-        clearInterval(id);
-        subscription.remove();
-      };
-    }, [])
-  );
-  const gap = 6;
-  const cell = Math.floor((width - 40 - gap * 5) / 6);
-  const counts = new Map<number, number>();
-  posts.forEach((p) => ACTIONS[p.action].sdgs.forEach((g) => counts.set(g, (counts.get(g) ?? 0) + 1)));
-
-  return (
-    <View style={{ gap: 14 }}>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap }}>
-        {SDG_LIST.map((g, i) => {
-          const on = touched.has(g);
-          const active = sel === g;
-          return (
-            <Animated.View key={g} entering={FadeIn.delay(i * 25)}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`${t("me.sdg", { n: g, title: sdgTitle(t, g) })}${on ? t("common.sdgMoved") : ""}`}
-                onPress={() => {
-                  haptic.tap();
-                  setSel(active ? null : g);
-                }}
-                style={{
-                  width: cell,
-                  height: cell,
-                  borderRadius: 12,
-                  borderCurve: "continuous",
-                  backgroundColor: on ? C.leaf : C.mint,
-                  borderWidth: active ? 2 : 0,
-                  borderColor: on ? C.forest : C.leaf,
-                  padding: 8,
-                  justifyContent: "space-between",
-                }}
-              >
-                <Text style={{ fontFamily: F.medium, fontSize: 20, letterSpacing: -0.8, color: on ? C.onLeaf : C.forestMute }}>{g}</Text>
-                {on && <Text style={{ fontFamily: F.monoMedium, fontSize: 9, color: C.mint, alignSelf: "flex-end" }}>×{counts.get(g)}</Text>}
-              </Pressable>
-            </Animated.View>
-          );
-        })}
-        <View style={{ width: cell, height: cell, borderRadius: 12, backgroundColor: C.forest, padding: 7, justifyContent: "space-between" }}>
-          <Text numberOfLines={1} style={{ fontFamily: F.medium, fontSize: 15, letterSpacing: -0.7, color: C.lime }}>
-            {days}
-          </Text>
-          <Text style={{ fontFamily: F.monoMedium, fontSize: 8, color: C.forestMute, lineHeight: 10 }}>{t("me.daysTo")}</Text>
-        </View>
-      </View>
-      <Text style={[T.callout, { minHeight: 42 }]}>
-        {sel ? (
-          <>
-            <Text style={{ fontFamily: F.medium, color: C.ink }}>
-              SDG {sel} · {sdgTitle(t, sel)}.
-            </Text>{" "}
-            {touched.has(sel)
-              ? t(counts.get(sel) === 1 ? "me.movedOnce" : "me.movedMany", { count: counts.get(sel) ?? 0 })
-              : t("me.notYet")}
-          </>
-        ) : (
-          <>
-            {t("me.touched", { count: touched.size })}
-          </>
-        )}
-      </Text>
-    </View>
-  );
-}
-
-function Calendar({ posts }: { posts: Post[] }) {
-  const { C } = useTheme();
-  const { t, language } = useI18n();
-  const { width } = useWindowDimensions();
-  const cell = Math.floor((width - 40) / 7);
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  const first = new Date(year, month, 1);
-  const lead = (first.getDay() + 6) % 7; // Monday first
-  const days = new Date(year, month + 1, 0).getDate();
-  const byDay = new Map<number, Post>();
-  posts.forEach((p) => {
-    const d = new Date(p.createdAt);
-    if (d.getMonth() === month && d.getFullYear() === year && !byDay.has(d.getDate())) byDay.set(d.getDate(), p);
-  });
-  const cells: (number | null)[] = [...Array(lead).fill(null), ...Array.from({ length: days }, (_, i) => i + 1)];
-
-  return (
-    <View style={{ gap: 8 }}>
-      <View style={{ flexDirection: "row" }}>
-        {weekdayInitials(language).map((d, i) => (
-          <Mono key={i} style={{ flex: 1, textAlign: "center" }}>
-            {d}
-          </Mono>
-        ))}
-      </View>
-      <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-        {cells.map((d, i) => {
-          const p = d ? byDay.get(d) : undefined;
-          const today = d === now.getDate();
-          return (
-            <View key={i} style={{ width: cell, height: cell * 1.25, padding: 2 }}>
-              {d && (
-                <Pressable
-                  disabled={!p}
-                  onPress={() => p && router.push({ pathname: "/post/[id]", params: { id: p.id } })}
-                  accessibilityLabel={p ? t("post.dayAct", { act: t(`actions.${p.action}.label`), day: d }) : t("post.day", { day: d })}
-                  style={{
-                    flex: 1,
-                    borderRadius: 9,
-                    overflow: "hidden",
-                    backgroundColor: p ? C.card2 : "transparent",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderWidth: today ? 1.5 : 0,
-                    borderColor: C.leaf,
-                  }}
-                >
-                  {p ? (
-                    <>
-                      <Image source={p.photo} style={{ position: "absolute", width: "100%", height: "100%" }} contentFit="cover" priority="low" />
-                      <Text style={{ color: C.white, fontFamily: F.medium, fontSize: 12, textShadowColor: "rgba(0,0,0,0.5)", textShadowRadius: 4 }}>{d}</Text>
-                    </>
-                  ) : (
-                    <Text style={{ color: d > now.getDate() ? C.faint : C.mute, fontFamily: F.regular, fontSize: 12 }}>{d}</Text>
-                  )}
-                </Pressable>
-              )}
-            </View>
-          );
-        })}
-      </View>
-    </View>
-  );
-}
-
-function Stat({ value, label, first }: { value: number; label: string; first?: boolean }) {
-  const { C } = useTheme();
-  const n = useCountUp(value);
-  const { language } = useI18n();
-  return (
-    <View style={{ flex: 1, gap: 4, paddingLeft: first ? 0 : 14, borderLeftWidth: first ? 0 : 1, borderLeftColor: C.line }}>
-      <Text style={{ fontFamily: F.medium, fontSize: 34, lineHeight: 38, letterSpacing: -1.6, color: C.ink, fontVariant: ["tabular-nums"] }}>
-        {formatNumber(n, language)}
-      </Text>
-      <Mono>{label}</Mono>
-    </View>
-  );
-}
-
+import { cleanProfile, validProfile } from "@/utils/profile";
+type ProfileTab = "impact" | "memories" | "map";
+const TABS = [
+  { id: "impact", label: "me.impact", icon: "leaf" },
+  { id: "memories", label: "me.memories", icon: "calendar" },
+  { id: "map", label: "profile.map", icon: "map" },
+] as const;
+const ROLE_ICON: Record<Role, IconName> = { student: "school", teacher: "book", association: "people", comune: "building" };
 export default function Me() {
-  const { C, T } = useTheme();
+  const { C } = useTheme();
+  const s = styles(C);
+  const { t } = useI18n();
   const { top } = useSafeAreaInsets();
   const profile = useApp((s) => s.profile);
-  const themePref = useApp((s) => s.theme);
-  const setTheme = useApp((s) => s.setTheme);
   const posts = useMyPosts();
-  const verifiedCount = useApp((s) => s.verifiedCount);
+  const verifications = useApp((s) => s.verifiedCount);
   const comune = useApp((s) => s.comune);
-  const explain = useApp((s) => s.explain);
-  const setExplain = useApp((s) => s.setExplain);
-  const reset = useApp((s) => s.reset);
-  const userId = useApp((s) => s.userId);
-  const savedCount = useCommunity((s) => Object.keys(s.saved).length);
-  const equipBadge = useApp((s) => s.equipBadge);
-  const [selected, setSelected] = useState<BadgeId | null>(null);
-  const selectedBadge = BADGES.find((b) => b.id === selected);
-  const { t, language } = useI18n();
-  const pulse = useApp((s) => s.pulse);
-  const comuneView = useComune();
-  const league = useLeague();
-  const rank = league.findIndex((r) => r.me) + 1;
-
-  const { width } = useWindowDimensions();
-  const badgeSize = Math.floor((width - 40 - 16) / 3);
+  const [tab, setTab] = useState<ProfileTab>("impact");
+  const [sheet, setSheet] = useState<"edit" | "settings" | null>(null);
+  const [badgeOpen, setBadgeOpen] = useState(false);
   const streak = streakOf(posts);
-  const seeds = seedsOf(posts, verifiedCount);
+  const verified = posts.filter((p) => p.verifiedBy.length >= 3).length;
+  const rank = useLeague().findIndex((r) => r.me) + 1;
   const place = comune?.name ?? t("comune.yours");
-  const imp = impact(posts);
-  const goals = sdgsOf(posts);
-  const stats = badgeStatsOf(posts, verifiedCount);
-  const earned = earnedBadges(stats);
-  const earnedKey = earned.join();
-
+  const earnedKey = earnedBadges(badgeStatsOf(posts, verifications)).join();
   useEffect(() => {
     dropStaleBadge();
   }, [profile.badgeId, earnedKey]);
-
+  const share = async () => {
+    try {
+      await Share.share({ message: t("me.shareTextIn", { streak, rank, place }) });
+    } catch {
+      toast(t("profile.shareFailed"));
+    }
+  };
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg }}>
-      <ScrollView aria-hidden={!!selected} accessibilityElementsHidden={!!selected} importantForAccessibility={selected ? "no-hide-descendants" : "auto"} style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ paddingTop: top + 10, paddingHorizontal: 20, paddingBottom: 140, gap: 40 }}>
-        <View style={{ gap: 20 }}>
-          <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" }}>
-            <Avatar name={profileName(profile.name, t)} size={76} ring={C.lime} />
-            <IconButton
-              icon="share"
-              label={t("me.share")}
-              onPress={() => Share.share({ message: t("me.shareTextIn", { streak, rank, place }) })}
+    <View style={s.root}>
+      <ScrollView
+        aria-hidden={sheet !== null || badgeOpen}
+        accessibilityElementsHidden={sheet !== null || badgeOpen}
+        importantForAccessibility={sheet !== null || badgeOpen ? "no-hide-descendants" : "auto"}
+        contentContainerStyle={{ paddingTop: top + 12, paddingBottom: 140 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={s.page}>
+          <View style={s.cover}>
+            <Image
+              source={require("../../../assets/demo/forest.jpg")}
+              style={StyleSheet.absoluteFill}
+              contentFit="cover"
+              accessible={false}
             />
+            <View style={s.coverActions}>
+              <IconButton
+                icon="gear"
+                label={t("profile.settings")}
+                bg={C.forest}
+                color={C.white}
+                size={44}
+                onPress={() => setSheet("settings")}
+              />
+              <IconButton icon="share" label={t("me.share")} bg={C.forest} color={C.white} size={44} onPress={share} />
+            </View>
           </View>
-          <View style={{ gap: 6 }}>
-            <TitledName name={profileName(profile.name, t)} badgeId={profile.badgeId} lines={2} style={[T.hero, { fontSize: 40, lineHeight: 42 }]} />
-            <Mono>
-              @{profile.handle || t("common.youInline")} · {t(ROLE_LABEL[profile.role])} · {t("me.rankIn", { rank, place })}
-            </Mono>
+          <View style={s.identity}>
+            <View style={s.avatarFrame}>
+              <Avatar name={profileName(profile.name, t)} size={80} />
+            </View>
+            <View style={s.nameBlock}>
+              <TitledName name={profileName(profile.name, t)} badgeId={profile.badgeId} align="center" lines={2} style={s.name} />
+              <Text style={s.subline}>
+                @{profile.handle} · {t("me.rankIn", { rank, place })}
+              </Text>
+            </View>
+            <View style={s.identityTags}>
+              <View style={s.role}>
+                <Icon name={ROLE_ICON[profile.role]} size={14} color={C.forestInk} />
+                <Text style={s.roleText}>{t(`roles.${profile.role}`)}</Text>
+              </View>
+              <View style={s.city}>
+                <Icon name="location" size={13} color={C.mute} />
+                <Text numberOfLines={1} style={s.subline}>
+                  {place}
+                </Text>
+              </View>
+            </View>
           </View>
-          <View style={{ flexDirection: "row" }}>
-            <Stat value={streak} label={t("me.streak")} first />
-            <Stat value={seeds} label={t("common.seeds")} />
-            <Stat value={posts.filter((p) => p.verifiedBy.length >= 3).length} label={t("me.verified")} />
+          <View style={s.stats}>
+            <Stat value={streak} label={t("me.streak")} />
+            <Stat value={seedsOf(posts, verifications)} label={t("common.seeds")} middle />
+            <Stat value={verified} label={t("me.verified")} />
           </View>
-        </View>
-
-        <Animated.View entering={FadeInDown.delay(80)} style={{ gap: 16 }}>
-          <SectionHeader index="01" title={t("me.agenda")} action={`${goals.size}/17`} />
-          <Agenda posts={posts} />
-        </Animated.View>
-
-        <Animated.View entering={FadeInDown.delay(120)} style={{ gap: 16 }}>
-          <SectionHeader index="02" title={t("myComune.title")} action={t("myComune.sources")} onAction={() => router.push("/sources")} />
-          <ComuneSection view={comuneView} pulse={pulse} />
-        </Animated.View>
-
-        <View style={{ gap: 16 }}>
-          <SectionHeader index="03" title={t("me.impact")} action={t("me.howCount")} onAction={() => router.push("/sources")} />
-          <View style={{ flexDirection: "row", flexWrap: "wrap", borderTopWidth: 1, borderTopColor: C.line }}>
-            <Imp value={formatDecimal(imp.co2, language, 1)} label={t("me.co2")} />
-            <Imp value={formatNumber(imp.items, language)} label={t("me.items")} right />
-            <Imp value={formatNumber(imp.litres, language)} label={t("me.litres")} />
-            <Imp value={formatNumber(imp.records, language)} label={t("me.records")} right />
-          </View>
-          <Text style={T.caption}>{t("me.estimates")}</Text>
-        </View>
-
-        <View style={{ gap: 16 }}>
-          <SectionHeader index="04" title={t("me.memories")} action={monthName(new Date(), language)} />
-          <Calendar posts={posts} />
-        </View>
-
-        <View style={{ gap: 16 }}>
-          <SectionHeader index="05" title={t("me.badges")} action={`${earned.length}/${BADGES.length}`} />
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-            {BADGES.map((b) => (
-              <BadgeTile key={b.id} badge={b} stats={stats} equipped={profile.badgeId === b.id} size={badgeSize} onOpen={() => setSelected(b.id)} />
+          <View accessibilityRole="tablist" style={s.tabs}>
+            {TABS.map((item) => (
+              <Pressable
+                key={item.id}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: tab === item.id }}
+                aria-selected={tab === item.id}
+                accessibilityLabel={t(item.label)}
+                onPress={() => {
+                  haptic.tap();
+                  setTab(item.id);
+                }}
+                style={[s.tab, tab === item.id && s.activeTab]}
+              >
+                <Icon name={item.icon} size={17} color={tab === item.id ? C.leaf : C.mute} />
+                <Text style={[s.tabText, tab === item.id && { color: C.leaf, fontFamily: F.semibold }]}>{t(item.label)}</Text>
+              </Pressable>
             ))}
           </View>
-        </View>
-
-        <View style={{ gap: 12 }}>
-          <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-            <Mono color={C.ink}>{t("me.appearance")}</Mono>
+          <View style={s.panel}>
+            {tab === "impact" && <ImpactPanel posts={posts} verifications={verifications} onBadgeOpen={setBadgeOpen} />}
+            {tab === "memories" && <MemoriesPanel posts={posts} />}
+            {tab === "map" && <ProfileMap posts={posts} />}
           </View>
-          <Segmented<ThemePref>
-            label={t("me.appearance")}
-            value={themePref}
-            onChange={setTheme}
-            options={[
-              { value: "system", label: t("me.themeSystem") },
-              { value: "light", label: t("me.themeLight") },
-              { value: "dark", label: t("me.themeDark") },
-            ]}
-          />
-        </View>
-
-        <View style={{ borderTopWidth: 1, borderTopColor: C.line }}>
-          <View style={{ gap: 10, paddingBottom: 14 }}>
-            <Mono color={C.ink}>{t("common.explainFor")}</Mono>
-            <Segmented<Explain>
-              value={explain}
-              onChange={setExplain}
-              options={[
-                { value: "me", label: t("common.me") },
-                { value: "class", label: t("common.myClass") },
-                { value: "comune", label: t("common.comune") },
-              ]}
-            />
-            <Text style={T.caption}>{t("me.explainHint")}</Text>
-          </View>
-          <Row icon="location" label={t("common.comune")} value={comune?.name} onPress={() => router.push("/comune")} />
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 14, minHeight: 56, borderBottomWidth: 1, borderBottomColor: C.line }}>
-            <Icon name="globe" size={16} color={C.ink} />
-            <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2, color: C.ink }}>{t("language.row")}</Text>
-            <LanguageSwitch />
-          </View>
-          <Row icon="bookmarkFill" label={t("community.me.saved")} value={savedCount ? String(savedCount) : undefined} onPress={() => router.push("/saved")} />
-          <Row
-            icon="pin"
-            label={t("community.me.contributions")}
-            onPress={() => router.push({ pathname: "/member/[id]", params: { id: userId } })}
-          />
-          <Row icon="book" label={t("me.guide")} onPress={() => router.push("/guide")} />
-          <Row icon="shield" label={t("me.sources")} onPress={() => router.push("/sources")} />
-          <Row icon="sparkle" label={t("common.askLeaf")} onPress={() => router.push("/leaf")} />
-          <Row
-            icon="refresh"
-            label={t("me.signOut")}
-            onPress={() =>
-              Alert.alert(t("me.signOutTitle"), supabase ? t("me.signOutBody") : t("me.signOutLocal"), [
-                { text: t("common.cancel"), style: "cancel" },
-                {
-                  text: t("me.signOutConfirm"),
-                  style: "destructive",
-                  onPress: async () => {
-                    await supabase?.auth.signOut().catch(() => {});
-                    reset();
-                    useCommunity.getState().reset();
-                    router.replace("/onboarding");
-                  },
-                },
-              ])
-            }
-          />
-        </View>
-
-        <View style={{ alignItems: "center", gap: 6, paddingTop: 8 }}>
-          <Logo size={19} color={C.faint} />
-          <Mono color={C.faint}>{t("me.tagline")}</Mono>
         </View>
       </ScrollView>
-      {selectedBadge && <BadgeSheet badge={selectedBadge} stats={stats} equipped={profile.badgeId === selectedBadge.id}
-        onEquip={() => equipBadge(selectedBadge.id)} onUnequip={() => equipBadge(null)} onClose={() => setSelected(null)} />}
-      <TopCover />
+      {sheet !== null && (
+        <Sheet key={sheet} title={t(sheet === "edit" ? "profile.edit" : "profile.settings")} onClose={() => setSheet(null)}>
+          {sheet === "edit" ? (
+            <EditProfile onClose={() => setSheet(null)} />
+          ) : (
+            <Settings onClose={() => setSheet(null)} onEdit={() => setSheet("edit")} />
+          )}
+        </Sheet>
+      )}
     </View>
   );
 }
 
-function Imp({ value, label, right }: { value: string; label: string; right?: boolean }) {
+function Stat({ value, label, middle }: { value: number; label: string; middle?: boolean }) {
   const { C } = useTheme();
+  const s = styles(C);
+  const { language } = useI18n();
   return (
-    <View
-      style={{
-        width: "50%",
-        gap: 4,
-        paddingVertical: 16,
-        paddingLeft: right ? 16 : 0,
-        borderLeftWidth: right ? 1 : 0,
-        borderLeftColor: C.line,
-        borderBottomWidth: 1,
-        borderBottomColor: C.line,
+    <View style={[s.stat, middle && s.middleStat]}>
+      <Text style={s.statValue}>{formatNumber(value, language)}</Text>
+      <Text style={s.statLabel}>{label}</Text>
+    </View>
+  );
+}
+function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+  const { C } = useTheme();
+  const s = styles(C);
+  const { top, bottom } = useSafeAreaInsets();
+  const { t } = useI18n();
+  const ref = useRef<ComponentRef<typeof View>>(null);
+  return (
+    <Modal
+      visible
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+      onShow={() => {
+        if (ref.current) {
+          if (Platform.OS === "web") ref.current.focus();
+          else AccessibilityInfo.sendAccessibilityEvent(ref.current, "focus");
+        }
       }}
     >
-      <Text style={{ fontFamily: F.medium, fontSize: 32, letterSpacing: -1.4, color: C.ink, fontVariant: ["tabular-nums"] }}>{value}</Text>
-      <Text style={{ fontFamily: F.regular, fontSize: 13, color: C.mute }}>{label}</Text>
-    </View>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={[s.modalRoot, { paddingTop: top + 12 }]}>
+        <View accessible={false} style={StyleSheet.absoluteFill} onStartShouldSetResponder={() => true} onResponderRelease={onClose} />
+        <View
+          role="dialog"
+          aria-modal
+          accessibilityViewIsModal
+          accessibilityLabel={title}
+          style={[s.sheet, { maxHeight: "94%", paddingBottom: Math.max(bottom, 20) }]}
+        >
+          <View style={s.sheetHandle} />
+          <View style={s.sheetHeader}>
+            <View ref={ref} accessible tabIndex={-1} accessibilityRole="header" accessibilityLabel={title} style={{ flex: 1 }}>
+              <Text style={s.sheetTitle}>{title}</Text>
+            </View>
+            <IconButton icon="close" label={t("common.close")} onPress={onClose} />
+          </View>
+          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 24, gap: 20, paddingBottom: 8 }}>
+            {children}
+          </ScrollView>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
   );
 }
-
-function Row({ icon, label, value, onPress }: { icon: IconName; label: string; value?: string; onPress: () => void }) {
+function EditProfile({ onClose }: { onClose: () => void }) {
   const { C } = useTheme();
+  const s = styles(C);
+  const { t } = useI18n();
+  const profile = useApp((s) => s.profile);
+  const update = useApp((s) => s.updateProfile);
+  const [name, setName] = useState(profile.name);
+  const [handle, setHandle] = useState(profile.handle);
+  const [role, setRole] = useState(profile.role);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+  const save = async () => {
+    if (busy) return;
+    const next = cleanProfile(name, handle, role);
+    if (!validProfile(next)) {
+      setError(t("profile.invalid"));
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      await update(next);
+      if (mounted.current) {
+        haptic.success();
+        onClose();
+        toast(t("profile.saved"));
+      }
+    } catch (e) {
+      if (mounted.current)
+        setError(e instanceof HandleTaken ? t("onboarding.handleTaken", { handle: next.handle }) : t("onboarding.offline"));
+    } finally {
+      if (mounted.current) setBusy(false);
+    }
+  };
   return (
-    <Press
-      scale={0.99}
-      onPress={onPress}
-      accessibilityLabel={label}
-      style={{ flexDirection: "row", alignItems: "center", gap: 14, height: 56, borderBottomWidth: 1, borderBottomColor: C.line }}
-    >
-      <Icon name={icon} size={16} color={C.leaf} />
-      <Text numberOfLines={2} style={{ flex: 1, fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2, color: C.ink }}>
-        {label}
-      </Text>
-      {value && (
-        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ flexShrink: 1, fontFamily: F.monoMedium, fontSize: 11, letterSpacing: 0.4, color: C.ink }}>
-          {value}
+    <>
+      <View style={{ alignItems: "center" }}>
+        <Avatar name={name || t("common.you")} size={72} />
+      </View>
+      <View style={s.field}>
+        <Text style={s.fieldLabel}>{t("onboarding.name")}</Text>
+        <TextInput
+          accessibilityLabel={t("onboarding.name")}
+          value={name}
+          onChangeText={setName}
+          editable={!busy}
+          maxLength={50}
+          autoCapitalize="words"
+          style={s.input}
+        />
+      </View>
+      <View style={s.field}>
+        <Text style={s.fieldLabel}>{t("onboarding.handle")}</Text>
+        <TextInput
+          accessibilityLabel={t("onboarding.handleA11y")}
+          value={handle}
+          onChangeText={setHandle}
+          editable={!busy}
+          maxLength={25}
+          autoCapitalize="none"
+          autoCorrect={false}
+          style={s.input}
+        />
+        <Text style={s.subline}>{t("onboarding.handleHint")}</Text>
+      </View>
+      <View style={s.field}>
+        <Text style={s.fieldLabel}>{t("onboarding.joining")}</Text>
+        <View role="radiogroup" accessibilityLabel={t("onboarding.joining")} style={s.roles}>
+          {(Object.keys(ROLE_ICON) as Role[]).map((r) => (
+            <Pressable
+              key={r}
+              disabled={busy}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: role === r, disabled: busy }}
+              aria-checked={role === r}
+              accessibilityLabel={t(`roles.${r}`)}
+              onPress={() => setRole(r)}
+              style={[s.roleOption, role === r && { backgroundColor: C.mint, borderColor: C.leaf }]}
+            >
+              <Icon name={ROLE_ICON[r]} size={18} color={C.leaf} />
+              <Text style={s.fieldLabel}>{t(`roles.${r}`)}</Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+      {!!error && (
+        <Text accessibilityRole="alert" style={[s.subline, { color: C.red }]}>
+          {error}
         </Text>
       )}
-      <Icon name="chevron" size={12} color={C.faint} />
+      <Button label={t(busy ? "profile.saving" : "profile.save")} kind="green" disabled={busy} onPress={save} />
+    </>
+  );
+}
+function Settings({ onClose, onEdit }: { onClose: () => void; onEdit: () => void }) {
+  const { C, T } = useTheme();
+  const s = styles(C);
+  const { t } = useI18n();
+  const theme = useApp((s) => s.theme);
+  const setTheme = useApp((s) => s.setTheme);
+  const explain = useApp((s) => s.explain);
+  const setExplain = useApp((s) => s.setExplain);
+  const comune = useApp((s) => s.comune);
+  const reset = useApp((s) => s.reset);
+  const userId = useApp((s) => s.userId);
+  const savedCount = useCommunity((s) => Object.keys(s.saved).length);
+  const [confirm, setConfirm] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(false);
+  const go = (path: Href) => {
+    onClose();
+    router.push(path);
+  };
+  return (
+    <>
+      <SettingRow icon="me" label={t("profile.edit")} onPress={onEdit} />
+      <View style={{ gap: 10 }}>
+        <Text style={s.fieldLabel}>{t("me.appearance")}</Text>
+        <Segmented<ThemePref>
+          label={t("me.appearance")}
+          value={theme}
+          onChange={setTheme}
+          options={[
+            { value: "system", label: t("me.themeSystem") },
+            { value: "light", label: t("me.themeLight") },
+            { value: "dark", label: t("me.themeDark") },
+          ]}
+        />
+      </View>
+      <View style={{ gap: 10 }}>
+        <Text style={s.fieldLabel}>{t("common.explainFor")}</Text>
+        <Segmented<Explain>
+          label={t("common.explainFor")}
+          value={explain}
+          onChange={setExplain}
+          options={[
+            { value: "me", label: t("common.me") },
+            { value: "class", label: t("common.myClass") },
+            { value: "comune", label: t("common.comune") },
+          ]}
+        />
+        <Text style={T.caption}>{t("me.explainHint")}</Text>
+      </View>
+      <SettingRow icon="location" label={`${t("common.comune")}${comune ? ` · ${comune.name}` : ""}`} onPress={() => go("/comune")} />
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+        <Text style={s.fieldLabel}>{t("language.row")}</Text>
+        <LanguageSwitch />
+      </View>
+      <View>
+        <SettingRow icon="bookmarkFill" label={`${t("community.me.saved")}${savedCount ? ` · ${savedCount}` : ""}`} onPress={() => go("/saved")} />
+        <SettingRow icon="pin" label={t("community.me.contributions")} onPress={() => go({ pathname: "/member/[id]", params: { id: userId } })} />
+        <SettingRow icon="book" label={t("me.guide")} onPress={() => go("/guide")} />
+        <SettingRow icon="shield" label={t("me.sources")} onPress={() => go("/sources")} />
+        <SettingRow icon="sparkle" label={t("common.askLeaf")} onPress={() => go("/leaf")} />
+      </View>
+      {confirm ? (
+        <View style={{ gap: 12 }}>
+          <Text accessibilityRole="header" style={s.fieldLabel}>
+            {t("me.signOutTitle")}
+          </Text>
+          <Text style={T.callout}>{t(supabase ? "me.signOutBody" : "me.signOutLocal")}</Text>
+          {error && (
+            <Text accessibilityRole="alert" style={{ color: C.red }}>
+              {t("onboarding.offline")}
+            </Text>
+          )}
+          <Button
+            label={t("me.signOutConfirm")}
+            disabled={busy}
+            onPress={async () => {
+              if (busy) return;
+              setBusy(true);
+              try {
+                const result = await supabase?.auth.signOut();
+                if (result?.error) throw result.error;
+                reset();
+                useCommunity.getState().reset();
+                onClose();
+                router.replace("/onboarding");
+              } catch {
+                setError(true);
+                setBusy(false);
+              }
+            }}
+          />
+          <Button label={t("common.cancel")} onPress={() => setConfirm(false)} disabled={busy} />
+        </View>
+      ) : (
+        <SettingRow icon="refresh" label={t("me.signOut")} onPress={() => setConfirm(true)} />
+      )}
+      <Text style={T.caption}>{t("me.tagline")}</Text>
+    </>
+  );
+}
+function SettingRow({ icon, label, onPress }: { icon: IconName; label: string; onPress: () => void }) {
+  const { C } = useTheme();
+  const s = styles(C);
+  return (
+    <Press onPress={onPress} accessibilityLabel={label} style={s.settingRow}>
+      <Icon name={icon} size={19} color={C.mute} />
+      <Text style={[s.fieldLabel, { flex: 1 }]}>{label}</Text>
+      <Icon name="chevron" size={14} color={C.mute} />
     </Press>
   );
 }
+const styles = (C: Palette) =>
+  StyleSheet.create({
+    root: { flex: 1, backgroundColor: C.bg },
+    page: { width: "100%", maxWidth: 620, alignSelf: "center" },
+    cover: { height: 132, marginHorizontal: 16, borderRadius: 24, overflow: "hidden", backgroundColor: C.forest },
+    coverActions: { position: "absolute", right: 12, top: 12, flexDirection: "row", alignItems: "center", gap: 8 },
+    identity: { alignItems: "center", marginTop: -44, paddingHorizontal: 20, gap: 10 },
+    avatarFrame: { borderRadius: 60, padding: 5, backgroundColor: C.bg },
+    nameBlock: { width: "100%", alignItems: "center", gap: 4 },
+    name: { fontFamily: F.semibold, fontSize: 28, lineHeight: 33, letterSpacing: -1, color: C.ink, textAlign: "center" },
+    identityTags: { flexDirection: "row", justifyContent: "center", flexWrap: "wrap", alignItems: "center", gap: 12 },
+    role: {
+      backgroundColor: C.mint,
+      borderRadius: 20,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+    },
+    roleText: { fontFamily: F.medium, fontSize: 12, color: C.forestInk },
+    city: { flexDirection: "row", alignItems: "center", gap: 4, maxWidth: "55%" },
+    subline: { fontFamily: F.regular, fontSize: 13, lineHeight: 19, color: C.mute },
+    stats: { flexDirection: "row", paddingVertical: 16, marginHorizontal: 20, marginTop: 16, backgroundColor: C.card, borderRadius: 20 },
+    stat: { flex: 1, alignItems: "center", gap: 4 },
+    middleStat: { borderLeftWidth: 1, borderRightWidth: 1, borderColor: C.line },
+    statValue: { fontFamily: F.medium, fontSize: 28, letterSpacing: -0.8, color: C.ink, fontVariant: ["tabular-nums"] },
+    statLabel: { fontFamily: F.regular, fontSize: 12, color: C.mute },
+    tabs: { flexDirection: "row", marginHorizontal: 20, marginTop: 12, borderBottomWidth: 1, borderBottomColor: C.line },
+    tab: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 7,
+      height: 52,
+      borderBottomWidth: 2,
+      borderBottomColor: "transparent",
+    },
+    activeTab: { borderBottomColor: C.leaf, backgroundColor: C.mint, borderTopLeftRadius: 12, borderTopRightRadius: 12 },
+    tabText: { fontFamily: F.medium, fontSize: 14, color: C.mute },
+    panel: { paddingHorizontal: 20, paddingTop: 24 },
+    modalRoot: { flex: 1, justifyContent: "flex-end", backgroundColor: C.scrim },
+    sheet: {
+      width: "100%",
+      maxWidth: 620,
+      alignSelf: "center",
+      backgroundColor: C.bg,
+      borderTopLeftRadius: 28,
+      borderTopRightRadius: 28,
+      flexShrink: 1,
+    },
+    sheetHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: C.line, alignSelf: "center", marginTop: 10 },
+    sheetHeader: {
+      paddingHorizontal: 24,
+      paddingVertical: 14,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 12,
+    },
+    sheetTitle: { fontFamily: F.semibold, fontSize: 23, letterSpacing: -0.6, color: C.ink },
+    field: { gap: 9 },
+    fieldLabel: { fontFamily: F.medium, fontSize: 15, color: C.ink },
+    input: {
+      backgroundColor: C.card,
+      borderRadius: 14,
+      paddingHorizontal: 16,
+      height: 50,
+      fontFamily: F.regular,
+      fontSize: 16,
+      color: C.ink,
+      borderWidth: 1,
+      borderColor: C.line,
+    },
+    roles: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+    roleOption: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      flexBasis: "46%",
+      flexGrow: 1,
+      paddingHorizontal: 12,
+      minHeight: 50,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: C.line,
+    },
+    settingRow: { flexDirection: "row", gap: 12, alignItems: "center", minHeight: 58, borderBottomWidth: 1, borderBottomColor: C.line },
+  });
