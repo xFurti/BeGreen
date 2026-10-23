@@ -7,6 +7,7 @@ import {
   composerInset,
   focusedScrollOffset,
   keyboardCover,
+  keyboardFrameBottom,
   resolveKeyboardTop,
   scrollPaddingBottom,
 } from "../src/services/keyboard-inset.ts";
@@ -45,6 +46,16 @@ test("su Android quando screenY resta sul fondo del frame usa l'altezza reale de
   assert.equal(keyboardCover(96, 740, 520, 316, 836), 316);
   // E se la vista si è già ridotta sopra la tastiera, la copertura resta zero.
   assert.equal(keyboardCover(96, 424, 520, 316, 836), 0);
+});
+
+test("finestra e root già ridotte restano sul fondo del display", () => {
+  // Display 836, IME 316, window and root already resized to 520, screenY already the keyboard top.
+  const frame = keyboardFrameBottom(836, 520, 520);
+  assert.equal(frame, 836);
+  assert.equal(resolveKeyboardTop(520, 316, frame), 520);
+  assert.equal(keyboardCover(0, 520, resolveKeyboardTop(520, 316, frame)), 0);
+  // The unreduced display bottom still corrects a screenY stuck on the full frame.
+  assert.equal(resolveKeyboardTop(836, 316, frame), 520);
 });
 
 test("a tastiera aperta l'inset sicuro non si somma alla copertura", () => {

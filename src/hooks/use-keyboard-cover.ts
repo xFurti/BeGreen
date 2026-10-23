@@ -13,7 +13,7 @@ import {
   type ScrollViewInstance,
 } from "react-native";
 
-import { focusedScrollOffset, keyboardCover, resolveKeyboardTop } from "@/services/keyboard-inset";
+import { focusedScrollOffset, keyboardCover, keyboardFrameBottom, resolveKeyboardTop } from "@/services/keyboard-inset";
 
 type Measurable = {
   measureInWindow?: (cb: (x: number, y: number, width: number, height: number) => void) => void;
@@ -132,7 +132,8 @@ export function useKeyboardCover() {
       const winHeight = Dimensions.get("window").height;
       root.current?.measureInWindow((_x, y, _width, height) => {
         if (!alive || !(height > 0)) return;
-        const top = resolveKeyboardTop(metrics.screenY, metrics.height, Math.max(winHeight, y + height));
+        const frameBottom = keyboardFrameBottom(Dimensions.get("screen").height, winHeight, y + height);
+        const top = resolveKeyboardTop(metrics.screenY, metrics.height, frameBottom);
         const nextCover = keyboardCover(y, height, top);
         keyboardTopRef.current = top;
         setKeyboardTop((prev) => (Math.abs(prev - top) < 1 ? prev : top));

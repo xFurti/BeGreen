@@ -4,6 +4,14 @@
 // A fixed vertical offset is also wrong: it has to match this view's real top
 // (stack header, or the top of a sheet), which changes per screen.
 
+// Screen height stays at the display bottom when Android resizes the window for the IME.
+// Window and root can both already sit on the keyboard; using only those makes a correct
+// screenY look like the unreduced frame and the height gets subtracted twice.
+export function keyboardFrameBottom(screenHeight: number, windowHeight: number, rootBottom: number): number {
+  const candidates = [screenHeight, windowHeight, rootBottom].filter((n) => Number.isFinite(n) && n > 0);
+  return candidates.length ? Math.max(...candidates) : 0;
+}
+
 export function resolveKeyboardTop(
   keyboardTop: number,
   keyboardHeight = 0,
