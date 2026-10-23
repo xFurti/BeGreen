@@ -120,10 +120,9 @@ test("ogni schermata con TextInput usa useKeyboardCover e nessuna lascia Keyboar
     if (file.includes(`${path.sep}legacy-`)) continue;
     const content = readFileSync(file, "utf8");
     const rel = path.relative(root, file).replaceAll("\\", "/");
-    // I passi di onboarding stanno in onboarding.tsx; i campi data/ora in add-spot.tsx.
-    // Entrambi gli schermi usano useKeyboardCover. Il controllo sotto tiene i campi evento su add-spot.
+    // Onboarding, event fields and sorting inherit the enclosing screen's scroller.
     const coveredByParent =
-      rel.startsWith("src/components/onboarding/") || rel === "src/components/event-schedule-fields.tsx";
+      rel.startsWith("src/components/onboarding/") || rel === "src/components/event-schedule-fields.tsx" || rel === "src/components/guide/sorting.tsx";
     if (/<TextInput\b/.test(content) && !coveredByParent && !/\buseKeyboardCover\b/.test(content)) {
       missingCover.push(rel);
     }
@@ -138,4 +137,8 @@ test("ogni schermata con TextInput usa useKeyboardCover e nessuna lascia Keyboar
   const addSpot = readFileSync(path.join(root, "src/app/add-spot.tsx"), "utf8");
   assert.match(addSpot, /useKeyboardCover/);
   assert.match(addSpot, /<EventScheduleFields\b/);
+  const guide = readFileSync(path.join(root, "src/app/guide.tsx"), "utf8");
+  assert.match(guide, /useKeyboardCover/);
+  assert.match(guide, /ref=\{scrollerRef\}/);
+  assert.match(guide, /<GuideSorting\b/);
 });
