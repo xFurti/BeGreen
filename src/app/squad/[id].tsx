@@ -1,6 +1,6 @@
 import { Image } from "expo-image";
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import { ScrollView, Share, Text, useWindowDimensions, View } from "react-native";
+import { Alert, ScrollView, Share, Text, useWindowDimensions, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import Svg, { Circle } from "react-native-svg";
 
@@ -8,9 +8,11 @@ import { Icon } from "@/components/icon";
 import { AvatarStack, Bar, Button, Mono, Press, SdgTags, SourceBadge } from "@/components/ui";
 import { KIND } from "@/data/squad-kinds";
 import { ACTIONS, DOMAINS, type ActionId, type Domain } from "@/data/actions";
-import { USERS } from "@/data/seed";
+import { actionCopy, domainLabel, questTitle, squadKindLabel } from "@/i18n/content";
+import { formatNumber } from "@/i18n/format";
+import { useI18n } from "@/i18n/use-i18n";
 import { usePulse } from "@/hooks/use-pulse";
-import { useAllPosts, useApp } from "@/store/app-store";
+import { useApp, useAuthor } from "@/store/app-store";
 import { C, F, R, T } from "@/theme/tokens";
 
 function Ring({ value, size = 112 }: { value: number; size?: number }) {
@@ -36,21 +38,26 @@ function Ring({ value, size = 112 }: { value: number; size?: number }) {
 
 export default function SquadDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const squad = useApp((s) => s.squads.find((x) => x.id === id));
-  const posts = useAllPosts().filter((p) => p.squadId === id);
+  const squad = useApp((s) => s.squads.find((x) => x.id === id) ?? s.localSquads.find((x) => x.id === id));
+  const member = useApp((s) => s.squads.some((x) => x.id === id));
+  const join = useApp((s) => s.joinSquad);
+  const allPosts = useApp((s) => s.posts);
+  const posts = allPosts.filter((p) => p.squadId === id);
+  const author = useAuthor();
   const { insights, pulse } = usePulse();
+  const { t, language } = useI18n();
   const { width } = useWindowDimensions();
   const tile = Math.floor((width - 40 - 8) / 3);
 
   if (!squad) {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-        <Text style={T.body}>Squad not found.</Text>
+        <Text style={T.body}>{t("squad.missing")}</Text>
       </View>
     );
   }
 
-  const pct = squad.quest.progress / squad.quest.goal;
+  const pct = Math.min(1, squad.quest.progress / squad.quest.goal);
   const monthly = (Object.entries(squad.monthly) as [ActionId, number][]).sort((a, b) => b[1] - a[1]);
   const total = monthly.reduce((a, [, n]) => a + n, 0);
   const maxN = Math.max(1, ...monthly.map(([, n]) => n));
@@ -62,14 +69,19 @@ export default function SquadDetail() {
   const goals = Array.from(new Set(monthly.flatMap(([k]) => ACTIONS[k].sdgs))).sort((a, b) => a - b);
   const bad = insights.filter((i) => i.level === "bad");
 
-  const report =
-    `BeGreen Community Report · ${squad.name} (${squad.place})\n` +
-    `Month to date: ${total.toLocaleString("en")} verified acts by ${squad.memberCount.toLocaleString("en")} members.\n` +
-    monthly.map(([k, n]) => `• ${ACTIONS[k].label}: ${n}`).join("\n") +
-    `\nEstimated: ≈${Math.round(co2).toLocaleString("en")} kg CO₂e avoided, ≈${Math.round(items).toLocaleString("en")} items diverted, ${records} species records.\n` +
-    `Agenda 2030 goals touched: ${goals.map((g) => `SDG ${g}`).join(", ")}.\n` +
-    `Local context (${pulse.place.name}): ${insights.map((i) => `${i.label} ${i.value}${i.unit ? " " + i.unit : ""} (${i.status})`).join("; ")}.\n` +
-    `Sources: CAMS/Open-Meteo (model), iNaturalist (citizen science), OpenStreetMap (map), BeGreen (community, anonymised). Estimates are indicative.`;
+  const report = t("squad.report", {
+    name: squad.name,
+    place: squad.place,
+    total: formatNumber(total, language),
+    members: formatNumber(squad.memberCount, language),
+    lines: monthly.map(([k, n]) => `• ${actionCopy(t, k).label}: ${formatNumber(n, language)}`).join("\n"),
+    co2: formatNumber(Math.round(co2), language),
+    items: formatNumber(Math.round(items), language),
+    records: formatNumber(records, language),
+    goals: goals.map((g) => `SDG ${g}`).join(", "),
+    city: pulse.place.name,
+    context: insights.map((i) => `${i.label} ${i.value}${i.unit ? " " + i.unit : ""} (${i.status})`).join("; "),
+  });
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: 20, paddingBottom: 60, gap: 32 }} contentInsetAdjustmentBehavior="automatic">
@@ -79,17 +91,19 @@ export default function SquadDetail() {
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
           <Icon name={KIND[squad.kind].icon} size={12} color={C.mute} />
           <Mono>
-            {KIND[squad.kind].label} · {squad.place}
+            {squadKindLabel(t, squad.kind)} · {squad.place}
           </Mono>
         </View>
         <Text style={[T.hero, { fontSize: 38, lineHeight: 40 }]}>{squad.name}</Text>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingTop: 4 }}>
-          <AvatarStack people={squad.memberIds.slice(0, 5).map((m) => ({ avatar: USERS[m]?.avatar, name: USERS[m]?.name ?? "You" }))} size={28} />
-          <Text style={{ flex: 1, fontFamily: F.regular, color: C.ink2 }}>{squad.memberCount.toLocaleString("en")} members</Text>
+          <AvatarStack people={squad.memberIds.slice(0, 5).map(author)} size={28} />
+          <Text style={{ flex: 1, fontFamily: F.regular, color: C.ink2 }}>
+            {squad.memberCount === 1 ? t("league.member") : t("league.members", { count: formatNumber(squad.memberCount, language) })}
+          </Text>
           <Press
-            onPress={() => Share.share({ message: `Join my BeGreen squad “${squad.name}” with code ${squad.code}` })}
+            onPress={() => Share.share({ message: t("squad.invite", { name: squad.name, code: squad.code }) })}
             style={{ flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: C.line, paddingHorizontal: 12, height: 34, borderRadius: R.pill }}
-            accessibilityLabel="Share invite code"
+            accessibilityLabel={t("squad.shareCode")}
           >
             <Text style={{ fontFamily: F.monoMedium, fontSize: 13, letterSpacing: 1 }}>{squad.code}</Text>
             <Icon name="share" size={13} />
@@ -103,35 +117,41 @@ export default function SquadDetail() {
           <Text style={{ position: "absolute", fontFamily: F.medium, fontSize: 26, letterSpacing: -1.2 }}>{Math.round(pct * 100)}%</Text>
         </View>
         <View style={{ flex: 1, gap: 6 }}>
-          <Mono>Weekly quest · {squad.quest.endsInDays}d left</Mono>
-          <Text style={{ fontFamily: F.medium, fontSize: 20, lineHeight: 23, letterSpacing: -0.6 }}>{squad.quest.title}</Text>
+          <Mono>{t("squad.quest", { days: squad.quest.endsInDays })}</Mono>
+          <Text style={{ fontFamily: F.medium, fontSize: 20, lineHeight: 23, letterSpacing: -0.6 }}>{questTitle(t, squad.quest.title, squad.quest.action)}</Text>
           <Text style={{ fontFamily: F.regular, fontSize: 13, color: C.mute }}>
-            {squad.quest.progress.toLocaleString("en")} / {squad.quest.goal.toLocaleString("en")}
+            {formatNumber(squad.quest.progress, language)} / {formatNumber(squad.quest.goal, language)}
           </Text>
-          <Button
-            size="sm"
-            label="Add yours"
-            icon={ACTIONS[squad.quest.action].icon}
-            style={{ alignSelf: "flex-start", marginTop: 6 }}
-            onPress={() => router.push({ pathname: "/capture", params: { action: squad.quest.action } })}
-          />
+          {member ? (
+            <Button
+              size="sm"
+              label={t("squad.add")}
+              icon={ACTIONS[squad.quest.action].icon}
+              style={{ alignSelf: "flex-start", marginTop: 6 }}
+              onPress={() => router.push({ pathname: "/capture", params: { action: squad.quest.action } })}
+            />
+          ) : (
+            <Button
+              size="sm"
+              label={t("squad.join")}
+              icon="plus"
+              style={{ alignSelf: "flex-start", marginTop: 6 }}
+              onPress={() => join(squad.code).catch(() => Alert.alert(t("squad.joinFail"), t("shared.checkConnection")))}
+            />
+          )}
         </View>
       </View>
 
       <View style={{ gap: 16 }}>
         <View style={{ gap: 6 }}>
-          <Mono>Community report · this month</Mono>
-          <Text style={T.callout}>
-            {squad.kind === "comune"
-              ? "Aggregated and anonymised for the administration. No names, no exact locations."
-              : "What your squad did this month. Ready to send to your school or Comune."}
-          </Text>
+          <Mono>{t("squad.reportKicker")}</Mono>
+          <Text style={T.callout}>{squad.kind === "comune" ? t("squad.reportComune") : t("squad.reportOther")}</Text>
         </View>
 
         <View style={{ flexDirection: "row", borderTopWidth: 1, borderBottomWidth: 1, borderColor: C.line }}>
-          <Metric label="Verified acts" value={total.toLocaleString("en")} />
-          <Metric label="kg CO₂e (est.)" value={Math.round(co2).toLocaleString("en")} border />
-          <Metric label="Items (est.)" value={Math.round(items).toLocaleString("en")} border />
+          <Metric label={t("squad.acts")} value={formatNumber(total, language)} />
+          <Metric label={t("squad.co2")} value={formatNumber(Math.round(co2), language)} border />
+          <Metric label={t("squad.items")} value={formatNumber(Math.round(items), language)} border />
         </View>
 
         <View style={{ gap: 14, paddingTop: 4 }}>
@@ -139,8 +159,8 @@ export default function SquadDetail() {
             <Animated.View key={k} entering={FadeInDown.delay(i * 40)} style={{ gap: 6 }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                 <Icon name={ACTIONS[k].icon} size={13} color={C.ink} />
-                <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 14 }}>{ACTIONS[k].label}</Text>
-                <Mono color={C.ink}>{n.toLocaleString("en")}</Mono>
+                <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 14 }}>{actionCopy(t, k).label}</Text>
+                <Mono color={C.ink}>{formatNumber(n, language)}</Mono>
               </View>
               <Bar value={n / maxN} color={i === 0 ? C.leaf : C.forestMute} height={3} />
             </Animated.View>
@@ -149,13 +169,12 @@ export default function SquadDetail() {
       </View>
 
       <View style={{ gap: 14 }}>
-        <Mono>Data meets action</Mono>
+        <Mono>{t("squad.meets")}</Mono>
         <Text style={[T.body, { fontSize: 15, lineHeight: 22, color: C.ink2 }]}>
           {bad.length
-            ? `Today in ${pulse.place.name}, ${bad.map((b) => `${b.label.toLowerCase()} is ${b.status.toLowerCase()}`).join(" and ")}. `
-            : `No red flags in today's local data for ${pulse.place.name}. `}
-          This squad’s acts cover <Text style={{ fontFamily: F.medium, color: C.ink }}>{domainHits.size} of 7</Text> sustainability areas and{" "}
-          <Text style={{ fontFamily: F.medium, color: C.ink }}>{goals.length} of 17</Text> UN goals.
+            ? t("squad.bad", { place: pulse.place.name, bits: bad.map((b) => t("squad.bit", { label: b.label.toLowerCase(), status: b.status.toLowerCase() })).join(", ") })
+            : t("squad.calm", { place: pulse.place.name })}{" "}
+          {t("squad.cover", { domains: domainHits.size, goals: goals.length })}
         </Text>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
           {(Object.keys(DOMAINS) as Domain[]).map((d) => {
@@ -174,7 +193,7 @@ export default function SquadDetail() {
                 }}
               >
                 <Icon name={DOMAINS[d].icon} size={11} color={on ? C.lime : C.faint} />
-                <Text style={{ fontFamily: F.medium, fontSize: 12, color: on ? C.white : C.mute }}>{DOMAINS[d].label}</Text>
+                <Text style={{ fontFamily: F.medium, fontSize: 12, color: on ? C.white : C.mute }}>{domainLabel(t, d)}</Text>
               </View>
             );
           })}
@@ -187,20 +206,20 @@ export default function SquadDetail() {
         </View>
       </View>
 
-      <Button label="Share report" icon="share" onPress={() => Share.share({ message: report })} />
+      <Button label={t("squad.share")} icon="share" onPress={() => Share.share({ message: report })} />
 
       {posts.length > 0 && (
         <View style={{ gap: 12 }}>
-          <Mono>Latest proofs</Mono>
+          <Mono>{t("squad.latest")}</Mono>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
             {posts.slice(0, 9).map((p) => (
               <Press
                 key={p.id}
                 onPress={() => router.push({ pathname: "/post/[id]", params: { id: p.id } })}
                 style={{ width: tile, height: tile * 1.25, borderRadius: 12, overflow: "hidden" }}
-                accessibilityLabel={ACTIONS[p.action].label}
+                accessibilityLabel={actionCopy(t, p.action).label}
               >
-                <Image source={p.photo} style={{ flex: 1 }} contentFit="cover" />
+                <Image source={p.photo} style={{ flex: 1 }} contentFit="cover" priority="low" />
               </Press>
             ))}
           </View>

@@ -6,21 +6,18 @@ import Animated, { FadeIn, FadeInDown, ZoomIn } from "react-native-reanimated";
 import { Icon } from "@/components/icon";
 import { LeafBurst } from "@/components/nature";
 import { ProofMedia } from "@/components/proof-media";
+import { TitledName } from "@/components/titled-name";
 import { Avatar, Mono, Press, SdgTags, Tag } from "@/components/ui";
-import { ACTIONS } from "@/data/actions";
-import { ME_ID, USERS } from "@/data/seed";
 import type { Post } from "@/data/types";
-import { useApp } from "@/store/app-store";
+import { actionCopy, placeLabel, textOf } from "@/i18n/content";
+import { compact, timeAgo } from "@/i18n/format";
+import { useI18n } from "@/i18n/use-i18n";
+import { useApp, useAuthor } from "@/store/app-store";
 import { C, F, R, shadow } from "@/theme/tokens";
-import { compact, haptic, timeAgo } from "@/utils/format";
+import { haptic } from "@/utils/format";
 
 export const VERIFY_GOAL = 3;
 export const REACTIONS = ["💚", "🔥", "😂", "😮", "🌍"];
-
-export function author(id: string, meName: string) {
-  if (id === ME_ID) return { id, name: meName || "You", handle: "you", avatar: undefined, tag: "You" };
-  return USERS[id];
-}
 
 function Dots({ n, dark }: { n: number; dark?: boolean }) {
   return (
@@ -37,11 +34,13 @@ function Dots({ n, dark }: { n: number; dark?: boolean }) {
 
 export function VerifyBar({ post }: { post: Post }) {
   const verify = useApp((s) => s.verify);
-  const meName = useApp((s) => s.profile.name);
+  const me = useApp((s) => s.userId);
+  const author = useAuthor();
+  const { t } = useI18n();
   const n = post.verifiedBy.length;
   const done = n >= VERIFY_GOAL;
-  const mine = post.authorId === ME_ID;
-  const iVerified = post.verifiedBy.includes(ME_ID);
+  const mine = post.authorId === me;
+  const iVerified = post.verifiedBy.includes(me);
   // Survives the switch from the Verify button to the verified label, so the leaves finish flying.
   const [burst, setBurst] = useState(0);
   const leaves = burst > 0 && (
@@ -50,15 +49,32 @@ export function VerifyBar({ post }: { post: Post }) {
     </View>
   );
 
+  if (post.isDemo) {
+    return (
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+        <Icon name="info" size={14} color={C.mute} />
+        <Text style={{ fontFamily: F.regular, fontSize: 13, color: C.mute }}>{t("post.example")}</Text>
+      </View>
+    );
+  }
+
+  if (mine && post.pending) {
+    return (
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+        <Icon name="refresh" size={13} color={C.mute} />
+        <Text style={{ fontFamily: F.medium, fontSize: 13, color: C.ink2 }}>{t("post.notShared")}</Text>
+      </View>
+    );
+  }
+
   if (done) {
-    const names = post.verifiedBy.slice(0, 2).map((id) => author(id, meName)?.name ?? "?");
+    const names = post.verifiedBy.slice(0, 2).map((id) => author(id).name);
     return (
       <Animated.View entering={FadeIn} style={{ flexDirection: "row", alignItems: "center", gap: 6, flexShrink: 1 }}>
         {leaves}
         <Icon name="checkSeal" size={14} color={C.leaf} />
         <Text numberOfLines={1} style={{ fontFamily: F.regular, fontSize: 13, color: C.mute, flexShrink: 1 }}>
-          Verified by <Text style={{ color: C.ink, fontFamily: F.medium }}>{names.join(", ")}</Text>
-          {n > 2 ? ` +${n - 2}` : ""}
+          {t("post.verifiedBy", { names: names.join(", ") + (n > 2 ? ` +${n - 2}` : "") })}
         </Text>
       </Animated.View>
     );
@@ -74,7 +90,7 @@ export function VerifyBar({ post }: { post: Post }) {
             setBurst(Date.now());
             verify(post.id);
           }}
-          accessibilityLabel="Verify this proof"
+          accessibilityLabel={t("post.verifyA11y")}
           style={{
             flexDirection: "row",
             alignItems: "center",
@@ -86,10 +102,10 @@ export function VerifyBar({ post }: { post: Post }) {
           }}
         >
           <Icon name="check" size={12} color={C.lime} />
-          <Text style={{ color: C.white, fontFamily: F.medium, fontSize: 13 }}>Verify</Text>
+          <Text style={{ color: C.white, fontFamily: F.medium, fontSize: 13 }}>{t("post.verify")}</Text>
         </Press>
       ) : (
-        <Text style={{ fontFamily: F.medium, fontSize: 13, color: mine ? C.ink2 : C.leaf }}>{mine ? "Waiting for friends" : "You verified"}</Text>
+        <Text style={{ fontFamily: F.medium, fontSize: 13, color: mine ? C.ink2 : C.leaf }}>{mine ? t("post.waiting") : t("post.youVerified")}</Text>
       )}
       <Dots n={n} />
       <Mono>
@@ -102,6 +118,7 @@ export function VerifyBar({ post }: { post: Post }) {
 function Reactions({ post }: { post: Post }) {
   const react = useApp((s) => s.react);
   const mine = useApp((s) => s.reacted[post.id]);
+  const { t, language } = useI18n();
   const [open, setOpen] = useState(false);
   const entries = Object.entries(post.reactions).filter(([, n]) => n > 0);
   const total = entries.reduce((a, [, n]) => a + n, 0);
@@ -113,7 +130,7 @@ function Reactions({ post }: { post: Post }) {
   return (
     <View style={{ zIndex: 2 }}>
       <Pressable
-        accessibilityLabel="React"
+        accessibilityLabel={t("post.react")}
         onPress={() => {
           haptic.tap();
           setOpen((o) => !o);
@@ -123,7 +140,7 @@ function Reactions({ post }: { post: Post }) {
       >
         <Text style={{ fontSize: 14, letterSpacing: -3 }}>{top.length ? top.join(" ") : "🙂"}</Text>
         <Text style={{ fontFamily: F.medium, fontSize: 13, color: mine ? C.ink : C.mute, fontVariant: ["tabular-nums"] }}>
-          {total ? compact(total) : "React"}
+          {total ? compact(total, language) : t("post.react")}
         </Text>
       </Pressable>
       {open && (
@@ -144,7 +161,7 @@ function Reactions({ post }: { post: Post }) {
           {REACTIONS.map((e, i) => (
             <Animated.View key={e} entering={ZoomIn.delay(i * 22).springify().damping(14)}>
               <Pressable
-                accessibilityLabel={`React ${e}`}
+                accessibilityLabel={t("post.reactEmoji", { emoji: e })}
                 onPress={() => {
                   haptic.soft();
                   react(post.id, e);
@@ -182,11 +199,12 @@ export const PostCard = memo(function PostCard({
   lockHint?: boolean;
   index?: number;
 }) {
-  const meName = useApp((s) => s.profile.name);
   const react = useApp((s) => s.react);
   const mine = useApp((s) => s.reacted[post.id]);
-  const a = author(post.authorId, meName);
-  const action = ACTIONS[post.action];
+  const { t, language } = useI18n();
+  const a = useAuthor()(post.authorId);
+  const action = actionCopy(t, post.action);
+  const caption = textOf(post.caption, post.captionKey, language);
   const open = () => router.push({ pathname: "/post/[id]", params: { id: post.id } });
 
   return (
@@ -194,12 +212,13 @@ export const PostCard = memo(function PostCard({
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
         <Avatar src={a.avatar} name={a.name} size={34} />
         <View style={{ flex: 1, gap: 2 }}>
-          <Text style={{ fontFamily: F.semibold, fontSize: 15, letterSpacing: -0.2, color: C.ink }}>{a.name}</Text>
+          <TitledName name={a.name} badgeId={a.badgeId} style={{ fontFamily: F.semibold, fontSize: 15, letterSpacing: -0.2, color: C.ink }} />
           <Mono>
-            {post.place} · {timeAgo(post.createdAt)}
+            {placeLabel(post.place, t)} · {timeAgo(post.createdAt, language)}
           </Mono>
         </View>
-        {post.isDrop && <Tag label="DROP" solid />}
+        {post.isDemo && <Tag label={t("common.demo")} />}
+        {post.isDrop && <Tag label={t("common.drop")} solid />}
       </View>
 
       <ProofMedia
@@ -222,11 +241,11 @@ export const PostCard = memo(function PostCard({
             <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 15, letterSpacing: -0.2, color: C.ink }}>{action.label}</Text>
             <SdgTags goals={action.sdgs.slice(0, 2)} />
           </View>
-          {!!post.caption && (
+          {!!caption && (
             <Pressable onPress={open}>
               <Text style={{ fontFamily: F.regular, fontSize: 15, lineHeight: 21, letterSpacing: -0.1, color: C.ink }}>
                 <Text style={{ fontFamily: F.semibold }}>{a.handle} </Text>
-                {post.caption}
+                {caption}
               </Text>
             </Pressable>
           )}
@@ -234,11 +253,15 @@ export const PostCard = memo(function PostCard({
             <View style={{ flex: 1 }}>
               <VerifyBar post={post} />
             </View>
-            <Reactions post={post} />
-            <Pressable onPress={open} hitSlop={6} accessibilityLabel="Comments" style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-              <Icon name="chatOutline" size={14} color={C.mute} />
-              <Text style={{ fontFamily: F.medium, fontSize: 13, color: C.mute, fontVariant: ["tabular-nums"] }}>{post.comments.length}</Text>
-            </Pressable>
+            {!post.isDemo && (
+              <>
+                <Reactions post={post} />
+                <Pressable onPress={open} hitSlop={6} accessibilityLabel={t("post.comments")} style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+                  <Icon name="chatOutline" size={14} color={C.mute} />
+                  <Text style={{ fontFamily: F.medium, fontSize: 13, color: C.mute, fontVariant: ["tabular-nums"] }}>{post.comments.length}</Text>
+                </Pressable>
+              </>
+            )}
           </View>
         </View>
       )}
