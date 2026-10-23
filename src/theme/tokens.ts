@@ -22,7 +22,7 @@ export const C = {
   forest2: "#174D39",
   forestLine: "#24604A",
   forestMute: "#8FB5A2",
-  leaf: "#1F8A4C", // the brand green: icons, fills, progress (4.5:1 on white)
+  leaf: "#1B7D44", // the brand green: icons, fills, progress (5.2:1 on white, 4.6:1 on mint)
   lime: "#B6F23C", // new growth: accents on dark only
   mint: "#E6F6EC", // soft tint for cards and tracks
   mint2: "#CFE8D8",

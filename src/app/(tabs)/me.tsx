@@ -65,7 +65,7 @@ function Agenda({ posts }: { posts: Post[] }) {
                 }}
               >
                 <Text style={{ fontFamily: F.medium, fontSize: 20, letterSpacing: -0.8, color: on ? C.white : C.forestMute }}>{g}</Text>
-                {on && <Text style={{ fontFamily: F.monoMedium, fontSize: 9, color: C.mint2, alignSelf: "flex-end" }}>×{counts.get(g)}</Text>}
+                {on && <Text style={{ fontFamily: F.monoMedium, fontSize: 9, color: C.mint, alignSelf: "flex-end" }}>×{counts.get(g)}</Text>}
               </Pressable>
             </Animated.View>
           );
