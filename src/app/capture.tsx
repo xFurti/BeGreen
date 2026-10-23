@@ -12,10 +12,12 @@ import Animated, {
   FadeIn,
   FadeInDown,
   FadeOut,
+  LinearTransition,
   useAnimatedProps,
   useAnimatedStyle,
   useSharedValue,
   withDelay,
+  withRepeat,
   withSequence,
   withSpring,
   withTiming,
@@ -29,7 +31,7 @@ import { Icon, type IconName } from "@/components/icon";
 import { Blobs, LeafMark, LeafSwitch } from "@/components/nature";
 import { ProofMedia } from "@/components/proof-media";
 import { toast } from "@/components/toast";
-import { Button, Chip, IconButton, Mono, Press, SdgTags, Segmented, useCountUp } from "@/components/ui";
+import { Button, Chip, IconButton, LiveDot, Mono, Press, SdgTags, useCountUp } from "@/components/ui";
 import { CATEGORIES } from "@/data/community";
 import { ACTION_LIST, ACTIONS, type ActionId } from "@/data/actions";
 import { DEMO_BY_ACTION } from "@/data/demo";
@@ -41,7 +43,7 @@ import { HIDDEN_PLACE } from "@/i18n/persist";
 import { usePulse } from "@/hooks/use-pulse";
 import { persistMedia, proofWithinBudget } from "@/services/media";
 import { canStopProof, displaySeconds, noteProgress, outcomeFromRecording, PROOF_SECONDS } from "@/services/proof-recording.mjs";
-import { canClaimDrop, seedsFor } from "@/services/rewards";
+import { canClaimDrop, DROP_BONUS, seedsFor } from "@/services/rewards";
 import { hasBackend } from "@/services/supabase";
 import { leagueOf, mineOf, postedToday, sdgsOf, streakOf, useApp, useAuthor } from "@/store/app-store";
 import { linkableSpotId, useCommunity } from "@/store/community-store";
@@ -161,6 +163,7 @@ type Result = {
   unlocked: boolean;
   isDrop: boolean;
   action: ActionId;
+  photo: Media;
   rankBefore: number;
   rankAfter: number;
   passed: string[];
@@ -168,91 +171,376 @@ type Result = {
   newGoals: number[];
 };
 
-function Row({ icon, title, sub, right, delay }: { icon: IconName; title: string; sub?: string; right?: string; delay: number }) {
+function StatCard({
+  icon,
+  badge,
+  title,
+  sub,
+  delay,
+}: {
+  icon: IconName;
+  badge: string;
+  title: string;
+  sub: string;
+  delay: number;
+}) {
   const { C } = useTheme();
   return (
     <Animated.View
       entering={FadeInDown.delay(delay).springify().damping(18)}
-      style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 14, borderTopWidth: 1, borderTopColor: C.forestLine }}
+      style={{
+        flex: 1,
+        backgroundColor: C.forest2,
+        borderRadius: R.lg,
+        borderCurve: "continuous",
+        padding: 14,
+        gap: 10,
+        borderWidth: 1,
+        borderColor: C.forestLine,
+      }}
     >
-      <Icon name={icon} size={17} color={C.lime} />
-      <View style={{ flex: 1, gap: 2 }}>
-        <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3, color: C.white }}>{title}</Text>
-        {sub && <Text style={{ fontFamily: F.regular, fontSize: 13, color: C.forestMute }}>{sub}</Text>}
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+        <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: C.forest, alignItems: "center", justifyContent: "center" }}>
+          <Icon name={icon} size={16} color={C.lime} />
+        </View>
+        <View style={{ paddingHorizontal: 8, height: 22, borderRadius: R.pill, backgroundColor: C.forest, justifyContent: "center" }}>
+          <Mono color={C.lime}>{badge}</Mono>
+        </View>
       </View>
-      {right && <Mono color={C.lime}>{right}</Mono>}
+      <View style={{ gap: 3 }}>
+        <Text style={{ fontFamily: F.semibold, fontSize: 15, letterSpacing: -0.3, color: C.white }}>{title}</Text>
+        <Text style={{ fontFamily: F.regular, fontSize: 12.5, lineHeight: 17, color: C.forestMute }}>{sub}</Text>
+      </View>
+    </Animated.View>
+  );
+}
+
+function BannerRow({
+  icon,
+  title,
+  sub,
+  goals,
+  delay,
+}: {
+  icon: IconName;
+  title: string;
+  sub?: string;
+  goals?: number[];
+  delay: number;
+}) {
+  const { C } = useTheme();
+  return (
+    <Animated.View
+      entering={FadeInDown.delay(delay).springify().damping(18)}
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+        padding: 14,
+        borderRadius: R.lg,
+        borderCurve: "continuous",
+        backgroundColor: C.forest2,
+        borderWidth: 1,
+        borderColor: C.forestLine,
+      }}
+    >
+      <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: C.forest, alignItems: "center", justifyContent: "center" }}>
+        <Icon name={icon} size={17} color={C.lime} />
+      </View>
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={{ fontFamily: F.semibold, fontSize: 15, letterSpacing: -0.2, color: C.white }}>{title}</Text>
+        {sub && <Text style={{ fontFamily: F.regular, fontSize: 12.5, lineHeight: 17, color: C.forestMute }}>{sub}</Text>}
+      </View>
+      {goals && goals.length > 0 && <SdgTags goals={goals} dark />}
     </Animated.View>
   );
 }
 
 function Done(r: Result) {
-  const { C, T } = useTheme();
+  const { C } = useTheme();
   const { top, bottom } = useSafeAreaInsets();
-  const n = useCountUp(r.seeds, 900);
+  const n = useCountUp(r.seeds, 850);
   const { t } = useI18n();
   const a = actionCopy(t, r.action);
-  const scale = useSharedValue(0.6);
+  const scale = useSharedValue(0.75);
   useEffect(() => {
     haptic.success();
-    scale.set(withSpring(1, { damping: 9, stiffness: 140 }));
+    scale.set(withSpring(1, { damping: 12, stiffness: 160 }));
   }, [scale]);
   const big = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   const climbed = r.rankBefore - r.rankAfter;
+  const rankSub = r.passed.length
+    ? t("capture.passed", { names: `${r.passed.slice(0, 2).join(" & ")}${r.passed.length > 2 ? ` +${r.passed.length - 2}` : ""}` })
+    : r.next
+      ? t("capture.moreToPass", { gap: r.next.gap, name: r.next.name })
+      : t("capture.defend");
 
   return (
     <Animated.View
       entering={FadeIn.duration(220)}
-      style={{ flex: 1, backgroundColor: C.forest, paddingTop: top + 16, paddingBottom: bottom + 12, paddingHorizontal: 22, overflow: "hidden" }}
+      style={{ flex: 1, backgroundColor: C.forest, paddingTop: top + 12, paddingBottom: bottom + 12, paddingHorizontal: 20, overflow: "hidden" }}
     >
-      <Blobs colors={[C.leaf, C.lime]} opacity={0.2} size={360} />
+      <Blobs colors={[C.leaf, C.lime]} opacity={0.18} size={320} />
       <Burst />
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <Mono color={C.white} style={{ flex: 1 }}>
-          {r.isDrop ? t("capture.dropComplete") : t("capture.youDid")}
-        </Mono>
+
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingBottom: 12 }}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 6,
+            paddingHorizontal: 12,
+            height: 30,
+            borderRadius: R.pill,
+            backgroundColor: C.forest2,
+            borderWidth: 1,
+            borderColor: C.forestLine,
+          }}
+        >
+          <Icon name={r.isDrop ? "bolt" : "checkSeal"} size={13} color={C.lime} />
+          <Mono color={C.lime}>{r.isDrop ? t("capture.dropComplete") : t("capture.youDid")}</Mono>
+        </View>
         <SdgTags goals={a.sdgs} dark />
       </View>
 
-      <View style={{ flex: 1, justifyContent: "center" }}>
-        <Animated.Text style={[T.mega, { color: C.lime, fontSize: 128, lineHeight: 128, fontVariant: ["tabular-nums"] }, big]}>
-          +{n}
-        </Animated.Text>
-        <Animated.Text entering={FadeIn.delay(300)} style={{ fontFamily: F.medium, fontSize: 22, letterSpacing: -0.6, color: C.white }}>
-          {r.isDrop ? t("capture.seedsDrop") : t("capture.seedsPlain")}
-        </Animated.Text>
-      </View>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ flexGrow: 1, justifyContent: "center", gap: 12, paddingVertical: 6 }}
+      >
+        <Animated.View
+          entering={ZoomIn.springify().damping(16)}
+          style={{
+            backgroundColor: C.forest2,
+            borderRadius: R.xl,
+            borderCurve: "continuous",
+            padding: 20,
+            gap: 16,
+            borderWidth: 1,
+            borderColor: C.forestLine,
+            overflow: "hidden",
+          }}
+        >
+          <View pointerEvents="none" style={{ position: "absolute", right: -22, top: -22, opacity: 0.1 }}>
+            <LeafMark size={140} color={C.lime} vein={C.forest2} rotate={-18} />
+          </View>
 
-      <View>
-        <Row icon="flame" title={t("capture.streak", { count: r.streak })} sub={r.streak > 1 ? t("capture.streakKeep") : t("capture.streakOne")} right="+1" delay={250} />
-        <Row
-          icon="league"
-          title={t("capture.rank", { rank: r.rankAfter })}
-          sub={
-            r.passed.length
-              ? t("capture.passed", { names: `${r.passed.slice(0, 2).join(" & ")}${r.passed.length > 2 ? ` +${r.passed.length - 2}` : ""}` })
-              : r.next
-                ? t("capture.moreToPass", { gap: r.next.gap, name: r.next.name })
-                : t("capture.defend")
-          }
-          right={climbed > 0 ? `↑${climbed}` : "—"}
-          delay={380}
-        />
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
+            <View style={{ flex: 1, gap: 4 }}>
+              <Animated.View style={[{ alignSelf: "flex-start" }, big]}>
+                <Text
+                  style={{
+                    fontFamily: F.semibold,
+                    fontSize: 72,
+                    lineHeight: 84,
+                    letterSpacing: -3.5,
+                    color: C.lime,
+                    fontVariant: ["tabular-nums"],
+                  }}
+                >
+                  +{n}
+                </Text>
+              </Animated.View>
+              <Text style={{ fontFamily: F.semibold, fontSize: 19, letterSpacing: -0.4, color: C.white }}>
+                {t("capture.seedsEarned")}
+              </Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingTop: 2 }}>
+                {r.isDrop && <Icon name="bolt" size={12} color={C.lime} />}
+                <Text style={{ fontFamily: F.regular, fontSize: 13, color: r.isDrop ? C.lime : C.forestMute }}>
+                  {r.isDrop ? t("capture.basePlusDrop", { base: ACTIONS[r.action].seeds, bonus: DROP_BONUS }) : t("capture.baseSeeds")}
+                </Text>
+              </View>
+            </View>
+
+            <View
+              style={{
+                width: 88,
+                aspectRatio: 4 / 5,
+                borderRadius: R.md,
+                borderCurve: "continuous",
+                overflow: "hidden",
+                borderWidth: 2,
+                borderColor: C.white,
+                backgroundColor: C.forest,
+                transform: [{ rotate: "2deg" }],
+                boxShadow: "0 10px 24px rgba(0,0,0,0.28)",
+              }}
+            >
+              <Image source={r.photo} style={{ flex: 1 }} contentFit="cover" />
+              <View
+                style={{
+                  position: "absolute",
+                  bottom: 6,
+                  right: 6,
+                  width: 22,
+                  height: 22,
+                  borderRadius: 11,
+                  backgroundColor: C.lime,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Icon name="check" size={12} color={C.forest} />
+              </View>
+            </View>
+          </View>
+
+          <View style={{ height: 1, backgroundColor: C.forestLine }} />
+
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+            <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: C.forest, alignItems: "center", justifyContent: "center" }}>
+              <Icon name={a.icon} size={18} color={C.lime} />
+            </View>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={{ fontFamily: F.semibold, fontSize: 15, letterSpacing: -0.2, color: C.white }}>{a.label}</Text>
+              <Text numberOfLines={2} style={{ fontFamily: F.regular, fontSize: 12.5, lineHeight: 17, color: C.forestMute }}>
+                {a.impact.note}
+              </Text>
+            </View>
+          </View>
+        </Animated.View>
+
+        <View style={{ flexDirection: "row", gap: 10 }}>
+          <StatCard
+            icon="flame"
+            badge="+1"
+            title={t("capture.streak", { count: r.streak })}
+            sub={r.streak > 1 ? t("capture.streakKeep") : t("capture.streakOne")}
+            delay={180}
+          />
+          <StatCard
+            icon="league"
+            badge={climbed > 0 ? `↑${climbed}` : `#${r.rankAfter}`}
+            title={t("capture.rank", { rank: r.rankAfter })}
+            sub={rankSub}
+            delay={260}
+          />
+        </View>
+
         {r.newGoals.length > 0 && (
-          <Row icon="globe" title={t("capture.newGoals")} sub={r.newGoals.map((g) => `SDG ${g}`).join(" · ")} delay={510} />
+          <BannerRow icon="globe" title={t("capture.newGoals")} goals={r.newGoals} delay={340} />
         )}
-        {r.unlocked && <Row icon="lock" title={t("capture.unlocked")} sub={t("capture.unlockedSub")} delay={640} />}
-      </View>
+        {r.unlocked && (
+          <BannerRow icon="lock" title={t("capture.unlocked")} sub={t("capture.unlockedSub")} delay={420} />
+        )}
+      </ScrollView>
 
-      <View style={{ flexDirection: "row", gap: 10, paddingTop: 16 }}>
+      <View style={{ flexDirection: "row", gap: 10, paddingTop: 12 }}>
         <Button
           label={t("common.share")}
           icon="share"
           kind="glass"
           onPress={() => Share.share({ message: t("capture.shareText", { verb: a.verb }) })}
         />
-        <Button label={t("capture.seeFeed")} kind="inverse" onPress={() => router.back()} style={{ flex: 1 }} />
+        <Button label={t("capture.seeFeed")} icon="arrowRight" kind="inverse" onPress={() => router.back()} style={{ flex: 1 }} />
       </View>
     </Animated.View>
+  );
+}
+
+function PublishBar({
+  seeds,
+  isDrop,
+  posting,
+  onPress,
+}: {
+  seeds: number;
+  isDrop: boolean;
+  posting: boolean;
+  onPress: () => void;
+}) {
+  const { C } = useTheme();
+  const { t } = useI18n();
+  const badgeScale = useSharedValue(1);
+  const spin = useSharedValue(0);
+  const sweep = useSharedValue(0);
+
+  useEffect(() => {
+    badgeScale.set(withSequence(withTiming(1.16, { duration: 110 }), withSpring(1, { damping: 12, stiffness: 240 })));
+  }, [seeds, badgeScale]);
+
+  useEffect(() => {
+    if (posting) {
+      spin.set(withRepeat(withSequence(withTiming(1, { duration: 650, easing: Easing.inOut(Easing.sin) }), withTiming(0, { duration: 650, easing: Easing.inOut(Easing.sin) })), -1, true));
+      sweep.set(withRepeat(withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.cubic) }), -1, true));
+    } else {
+      spin.set(0);
+      sweep.set(0);
+    }
+  }, [posting, spin, sweep]);
+
+  const badgeStyle = useAnimatedStyle(() => ({ transform: [{ scale: badgeScale.value }] }));
+  const leafStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${-10 + spin.value * 24}deg` }, { scale: 1 + spin.value * 0.12 }],
+  }));
+  const barStyle = useAnimatedStyle(() => ({
+    width: "42%",
+    transform: [{ translateX: sweep.value * 190 }],
+  }));
+
+  return (
+    <Press
+      onPress={onPress}
+      disabled={posting}
+      scale={0.98}
+      accessibilityLabel={`${t("capture.post")} +${seeds}`}
+      style={{
+        height: 58,
+        borderRadius: R.pill,
+        borderCurve: "continuous",
+        backgroundColor: C.forest,
+        paddingLeft: 20,
+        paddingRight: 12,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        overflow: "hidden",
+        boxShadow: "0 10px 26px rgba(0,0,0,0.16)",
+      }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
+        <Animated.View style={leafStyle}>
+          <LeafMark size={20} color={C.lime} vein={C.forest} />
+        </Animated.View>
+        <View style={{ flex: 1 }}>
+          <Text numberOfLines={1} style={{ color: C.white, fontFamily: F.semibold, fontSize: 16, letterSpacing: -0.2 }}>
+            {posting ? t("capture.posting") : t("capture.post")}
+          </Text>
+          {posting && (
+            <Text numberOfLines={1} style={{ color: C.forestMute, fontFamily: F.regular, fontSize: 12 }}>
+              {t("capture.postingSub")}
+            </Text>
+          )}
+        </View>
+      </View>
+
+      <Animated.View
+        style={[
+          {
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 4,
+            height: 34,
+            paddingHorizontal: 12,
+            borderRadius: R.pill,
+            backgroundColor: C.forest2,
+            borderWidth: 1,
+            borderColor: C.forestLine,
+          },
+          badgeStyle,
+        ]}
+      >
+        {isDrop && <Icon name="bolt" size={12} color={C.lime} />}
+        <Text style={{ fontFamily: F.monoMedium, fontSize: 13.5, color: C.lime, fontVariant: ["tabular-nums"] }}>
+          +{seeds}
+        </Text>
+      </Animated.View>
+
+      {posting && (
+        <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 3, backgroundColor: C.forest2 }}>
+          <Animated.View style={[{ height: "100%", borderRadius: 2, backgroundColor: C.lime }, barStyle]} />
+        </View>
+      )}
+    </Press>
   );
 }
 
@@ -287,7 +575,7 @@ export default function Capture() {
 
   const [picked, setPicked] = useState<ActionId | undefined>(params.action);
   const action: ActionId = picked ?? drop.action;
-  // The suggested act leads the chip row, so it's visible without scrolling.
+  const [actsOpen, setActsOpen] = useState(false);
   const [order] = useState(() => [ACTIONS[action], ...ACTION_LIST.filter((x) => x.id !== action)]);
   const [caption, setCaption] = useState("");
   const [audience, setAudience] = useState<Audience>("comune");
@@ -477,6 +765,7 @@ export default function Capture() {
         unlocked: !wasUnlocked,
         isDrop: !!posted.isDrop,
         action,
+        photo,
         rankBefore,
         rankAfter,
         passed: leagueAfter.slice(rankAfter, rankBefore).map((r) => r.name),
@@ -503,6 +792,12 @@ export default function Capture() {
   if (step === "review" && photo && proof) {
     const a = actionCopy(t, action);
     const isDropAct = action === drop.action && dropOpen;
+    const totalSeeds = seedsFor({ action, isDrop: isDropAct });
+    const audienceOptions: { value: Audience; icon: IconName; label: string }[] = [
+      { value: "comune", icon: "building", label: t("common.comune") },
+      { value: "squad", icon: "people", label: t("common.squad") },
+      { value: "public", icon: "globe", label: t("common.everyone") },
+    ];
     return (
       <View ref={keyboardRoot} collapsable={false} style={{ flex: 1, backgroundColor: C.bg, paddingBottom: cover }}>
         <StatusBar style={scheme === "dark" ? "light" : "dark"} />
@@ -510,7 +805,7 @@ export default function Capture() {
           style={{
             paddingTop: top + 6,
             paddingHorizontal: 16,
-            paddingBottom: 6,
+            paddingBottom: 8,
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
@@ -520,138 +815,437 @@ export default function Capture() {
             icon="back"
             label={t("capture.retake")}
             onPress={() => {
+              if (posting) return;
               setProof(null);
               setStep("proof");
             }}
           />
-          <Text style={{ fontFamily: F.medium, fontSize: 17, letterSpacing: -0.3, color: C.ink }}>{t("capture.your")}</Text>
-          <IconButton icon="close" label={t("capture.discard")} onPress={() => router.back()} />
+          <Text style={{ fontFamily: F.semibold, fontSize: 17, letterSpacing: -0.3, color: C.ink }}>{t("capture.your")}</Text>
+          <IconButton icon="close" label={t("capture.discard")} onPress={() => !posting && router.back()} />
         </View>
-        <ScrollView contentContainerStyle={{ padding: 16, gap: 26, paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
-          <Animated.View entering={ZoomIn.springify().damping(15)} style={{ paddingHorizontal: 44, paddingTop: 6, transform: [{ rotate: "-1.5deg" }] }}>
+
+        <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, gap: 22, paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
+          <Animated.View
+            entering={ZoomIn.springify().damping(15)}
+            style={{ paddingHorizontal: 40, paddingTop: 4, transform: [{ rotate: posting ? "0deg" : "-1.2deg" }] }}
+          >
             <View style={{ boxShadow: "0 18px 40px rgba(0,0,0,0.16)", borderRadius: R.lg }}>
               <ProofMedia photo={photo} proof={proof} active />
-            </View>
-          </Animated.View>
-
-          <View style={{ gap: 12 }}>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Mono color={C.ink} style={{ flex: 1 }}>
-                {t("capture.what")}
-              </Mono>
-              <Press onPress={() => router.push({ pathname: "/guide", params: { action, from: "capture" } })} accessibilityLabel={t("common.howTo")}>
-                <Mono color={C.mute}>{t("capture.howTo")}</Mono>
-              </Press>
-            </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }} style={{ marginHorizontal: -16 }}>
-              <View style={{ width: 10 }} />
-              {order.map((x) => (
-                <Chip key={x.id} label={actionCopy(t, x.id).label} icon={x.icon} active={x.id === action} onPress={() => setPicked(x.id)} />
-              ))}
-              <View style={{ width: 10 }} />
-            </ScrollView>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <SdgTags goals={a.sdgs} />
-              {isDropAct && (
-                <Animated.View entering={FadeIn} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                  <Icon name="bolt" size={11} color={C.ink} />
-                  <Mono color={C.ink}>{t("capture.dropBonus")}</Mono>
+              {posting && (
+                <Animated.View
+                  entering={FadeIn.duration(180)}
+                  exiting={FadeOut.duration(150)}
+                  pointerEvents="none"
+                  style={{
+                    position: "absolute",
+                    bottom: 12,
+                    right: 12,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 6,
+                    paddingHorizontal: 10,
+                    height: 26,
+                    borderRadius: R.pill,
+                    backgroundColor: C.forest,
+                    borderWidth: 1,
+                    borderColor: C.forestLine,
+                  }}
+                >
+                  <LiveDot color={C.lime} size={6} />
+                  <Text style={{ fontFamily: F.monoMedium, fontSize: 10.5, color: C.white, letterSpacing: 0.3 }}>
+                    {t("capture.postingSub")}
+                  </Text>
                 </Animated.View>
               )}
             </View>
-          </View>
+          </Animated.View>
 
-          <View style={{ gap: 12 }}>
-            <View style={{ flexDirection: "row" }}>
-              <Mono color={C.ink} style={{ flex: 1 }}>
-                {t("capture.caption")}
-              </Mono>
-              <Mono>{caption.length}/180</Mono>
-            </View>
-            <TextInput
-              value={caption}
-              onChangeText={setCaption}
-              placeholder={t("capture.captionPh", { verb: a.verb })}
-              placeholderTextColor={C.faint}
-              multiline
-              maxLength={180}
-              style={{
-                minHeight: 64,
-                borderRadius: R.md,
-                backgroundColor: C.card,
-                padding: 16,
-                paddingTop: 15,
-                fontSize: 16,
-                fontFamily: F.regular,
-                color: C.ink,
-              }}
-            />
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }} style={{ marginHorizontal: -16 }}>
-              <View style={{ width: 10 }} />
-              {a.captions.map((c) => (
+          <View style={[{ gap: 22 }, posting && { opacity: 0.55 }]} pointerEvents={posting ? "none" : "auto"}>
+            {/* What did you do — Active gesture card + expandable 2-col grid */}
+            <Animated.View layout={LinearTransition.springify().damping(19)} style={{ gap: 10 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                <Mono color={C.ink}>{t("capture.what")}</Mono>
+                <Press
+                  onPress={() => router.push({ pathname: "/guide", params: { action, from: "capture" } })}
+                  accessibilityLabel={t("common.howTo")}
+                  hitSlop={8}
+                  style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
+                >
+                  <Icon name="book" size={12} color={C.forestInk} />
+                  <Mono color={C.forestInk}>{t("capture.howTo")}</Mono>
+                </Press>
+              </View>
+
+              <View
+                style={{
+                  backgroundColor: isDropAct ? C.mint : C.card,
+                  borderRadius: R.lg,
+                  borderCurve: "continuous",
+                  padding: 14,
+                  gap: 12,
+                  borderWidth: 1,
+                  borderColor: isDropAct ? C.band : C.line,
+                }}
+              >
                 <Pressable
-                  key={c}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${a.label}. ${actsOpen ? t("capture.hideActs") : t("capture.changeAct")}`}
                   onPress={() => {
                     haptic.tap();
-                    setCaption(c);
+                    setActsOpen((o) => !o);
                   }}
-                  accessibilityRole="button"
-                  style={{ paddingHorizontal: 12, height: 32, justifyContent: "center", borderRadius: R.pill, borderWidth: 1, borderColor: C.line }}
+                  style={{ flexDirection: "row", alignItems: "center", gap: 12 }}
                 >
-                  <Text style={{ fontFamily: F.regular, fontSize: 13, color: C.ink2 }}>“{c}”</Text>
+                  <View
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 22,
+                      backgroundColor: isDropAct ? C.forest : C.mint,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Icon name={a.icon} size={20} color={isDropAct ? C.lime : C.forestInk} />
+                  </View>
+
+                  <View style={{ flex: 1, gap: 5 }}>
+                    <Text numberOfLines={1} style={{ fontFamily: F.semibold, fontSize: 16, letterSpacing: -0.3, color: C.ink }}>
+                      {a.label}
+                    </Text>
+                    <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 6 }}>
+                      {isDropAct && (
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 4,
+                            paddingHorizontal: 7,
+                            height: 20,
+                            borderRadius: R.pill,
+                            backgroundColor: C.forest,
+                          }}
+                        >
+                          <Icon name="bolt" size={10} color={C.lime} />
+                          <Text style={{ fontFamily: F.monoMedium, fontSize: 10, color: C.lime, letterSpacing: 0.3 }}>
+                            {t("capture.dropTag")}
+                          </Text>
+                        </View>
+                      )}
+                      <SdgTags goals={a.sdgs} />
+                    </View>
+                  </View>
+
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 5,
+                      height: 32,
+                      paddingHorizontal: 11,
+                      borderRadius: R.pill,
+                      backgroundColor: C.bg,
+                      borderWidth: 1,
+                      borderColor: C.line,
+                    }}
+                  >
+                    <Text style={{ fontFamily: F.medium, fontSize: 13, color: C.forestInk }}>
+                      {actsOpen ? t("capture.hideActs") : t("capture.changeAct")}
+                    </Text>
+                    <View style={{ transform: [{ rotate: actsOpen ? "-90deg" : "90deg" }] }}>
+                      <Icon name="chevron" size={11} color={C.forestInk} />
+                    </View>
+                  </View>
                 </Pressable>
-              ))}
-              <View style={{ width: 10 }} />
-            </ScrollView>
-          </View>
 
-          <View style={{ gap: 12 }}>
-            <Mono color={C.ink}>{t("capture.who")}</Mono>
-            <Segmented<Audience>
-              value={audience}
-              onChange={setAudience}
-              options={[
-                { value: "comune", label: place },
-                { value: "squad", label: t("common.squad") },
-                { value: "public", label: t("common.everyone") },
-              ]}
-            />
-            {audience === "squad" &&
-              (squads.length ? (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-                  {squads.map((s) => (
-                    <Chip key={s.id} label={s.name} active={s.id === squadId} onPress={() => setSquadId(s.id)} />
+                {actsOpen && (
+                  <Animated.View entering={FadeInDown.springify().damping(18)} style={{ gap: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: isDropAct ? C.band : C.line }}>
+                    <Mono color={C.mute}>{t("capture.allActs")}</Mono>
+                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                      {order.map((x) => {
+                        const selected = x.id === action;
+                        const xDrop = x.id === drop.action && dropOpen;
+                        const xSeeds = seedsFor({ action: x.id, isDrop: xDrop });
+                        const copy = actionCopy(t, x.id);
+                        return (
+                          <View key={x.id} style={{ width: "48%", flexGrow: 1 }}>
+                            <Press
+                              scale={0.97}
+                              accessibilityLabel={`${copy.label} +${xSeeds}`}
+                              onPress={() => {
+                                setPicked(x.id);
+                                setActsOpen(false);
+                              }}
+                              style={{
+                                flexDirection: "row",
+                                alignItems: "center",
+                                gap: 8,
+                                paddingHorizontal: 11,
+                                paddingVertical: 10,
+                                minHeight: 54,
+                                borderRadius: R.md,
+                                borderCurve: "continuous",
+                                backgroundColor: selected ? C.forest : C.bg,
+                                borderWidth: 1,
+                                borderColor: selected ? C.forest : C.line,
+                              }}
+                            >
+                              <Icon name={x.icon} size={15} color={selected ? C.lime : C.forestInk} />
+                              <Text
+                                numberOfLines={2}
+                                style={{
+                                  flex: 1,
+                                  fontFamily: F.medium,
+                                  fontSize: 13,
+                                  lineHeight: 16,
+                                  letterSpacing: -0.2,
+                                  color: selected ? C.white : C.ink,
+                                }}
+                              >
+                                {copy.label}
+                              </Text>
+                              <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
+                                {xDrop && <Icon name="bolt" size={10} color={selected ? C.lime : C.forestInk} />}
+                                <Text style={{ fontFamily: F.monoMedium, fontSize: 11, color: selected ? C.lime : C.mute }}>
+                                  +{xSeeds}
+                                </Text>
+                              </View>
+                            </Press>
+                          </View>
+                        );
+                      })}
+                    </View>
+                  </Animated.View>
+                )}
+              </View>
+            </Animated.View>
+
+            {/* Caption + wrapped suggestion pills */}
+            <View style={{ gap: 10 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                <Mono color={C.ink}>{t("capture.caption")}</Mono>
+                <Mono color={caption.length > 160 ? C.amber : C.mute}>{caption.length}/180</Mono>
+              </View>
+              <TextInput
+                value={caption}
+                onChangeText={setCaption}
+                placeholder={t("capture.captionPh", { verb: a.verb })}
+                placeholderTextColor={C.faint}
+                multiline
+                maxLength={180}
+                style={{
+                  minHeight: 68,
+                  borderRadius: R.md,
+                  borderCurve: "continuous",
+                  backgroundColor: C.card,
+                  borderWidth: 1,
+                  borderColor: C.line,
+                  padding: 15,
+                  paddingTop: 14,
+                  fontSize: 16,
+                  fontFamily: F.regular,
+                  color: C.ink,
+                }}
+              />
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                {a.captions.map((c) => {
+                  const chosen = caption === c;
+                  return (
+                    <Press
+                      key={c}
+                      scale={0.97}
+                      accessibilityLabel={c}
+                      onPress={() => setCaption(chosen ? "" : c)}
+                      style={{
+                        paddingHorizontal: 11,
+                        paddingVertical: 7,
+                        borderRadius: R.pill,
+                        backgroundColor: chosen ? C.mint : C.bg,
+                        borderWidth: 1,
+                        borderColor: chosen ? C.band : C.line,
+                        maxWidth: "100%",
+                      }}
+                    >
+                      <Text
+                        numberOfLines={1}
+                        style={{
+                          fontFamily: chosen ? F.medium : F.regular,
+                          fontSize: 13,
+                          color: chosen ? C.forestInk : C.ink2,
+                        }}
+                      >
+                        “{c}”
+                      </Text>
+                    </Press>
+                  );
+                })}
+              </View>
+            </View>
+
+            {spotChoices.length > 0 && (
+              <View style={{ gap: 10 }}>
+                <Mono color={C.ink}>{t("community.capture.where")}</Mono>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                  <Chip label={t("community.capture.none")} active={!spotId} onPress={() => setSpotId(undefined)} />
+                  {spotChoices.map((x) => (
+                    <Chip key={x.id} label={x.title} icon={CATEGORIES[x.category].icon} active={x.id === spotId} onPress={() => setSpotId(x.id)} />
                   ))}
-                </ScrollView>
-              ) : (
-                <Text style={T.caption}>{t("capture.noSquad", { place })}</Text>
-              ))}
-          </View>
+                </View>
+                <Text style={T.caption}>{t("community.capture.hint")}</Text>
+              </View>
+            )}
 
-          {spotChoices.length > 0 && (
-            <View style={{ gap: 12 }}>
-              <Mono color={C.ink}>{t("community.capture.where")}</Mono>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-                <Chip label={t("community.capture.none")} active={!spotId} onPress={() => setSpotId(undefined)} />
-                {spotChoices.map((x) => (
-                  <Chip key={x.id} label={x.title} icon={CATEGORIES[x.category].icon} active={x.id === spotId} onPress={() => setSpotId(x.id)} />
-                ))}
-              </ScrollView>
-              <Text style={T.caption}>{t("community.capture.hint")}</Text>
-            </View>
-          )}
+            {/* Who sees it + Location privacy in a unified card */}
+            <View style={{ gap: 10 }}>
+              <Mono color={C.ink}>{t("capture.who")}</Mono>
+              <View
+                style={{
+                  backgroundColor: C.card,
+                  borderRadius: R.lg,
+                  borderCurve: "continuous",
+                  padding: 14,
+                  gap: 14,
+                  borderWidth: 1,
+                  borderColor: C.line,
+                }}
+              >
+                <View style={{ gap: 10 }}>
+                  <View
+                    accessibilityRole="tablist"
+                    accessibilityLabel={t("capture.who")}
+                    style={{ flexDirection: "row", backgroundColor: C.card2, borderRadius: R.pill, padding: 3, gap: 3 }}
+                  >
+                    {audienceOptions.map((o) => {
+                      const on = o.value === audience;
+                      return (
+                        <Pressable
+                          key={o.value}
+                          accessibilityRole="tab"
+                          accessibilityLabel={o.label}
+                          accessibilityState={{ selected: on }}
+                          aria-selected={process.env.EXPO_OS === "web" ? on : undefined}
+                          onPress={() => {
+                            if (on) return;
+                            haptic.tap();
+                            setAudience(o.value);
+                          }}
+                          style={{
+                            flex: 1,
+                            height: 36,
+                            paddingHorizontal: 8,
+                            borderRadius: R.pill,
+                            flexDirection: "row",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 5,
+                            backgroundColor: on ? C.raised : "transparent",
+                            boxShadow: on ? "0 1px 3px rgba(0,0,0,0.08), 0 1px 1px rgba(0,0,0,0.04)" : undefined,
+                          }}
+                        >
+                          <Icon name={o.icon} size={13} color={on ? C.forestInk : C.mute} />
+                          <Text
+                            numberOfLines={1}
+                            adjustsFontSizeToFit
+                            minimumFontScale={0.8}
+                            style={{
+                              fontFamily: F.medium,
+                              fontSize: 13.5,
+                              letterSpacing: -0.15,
+                              color: on ? C.forestInk : C.mute,
+                            }}
+                          >
+                            {o.label}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
 
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 12, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 16 }}>
-            <Icon name="location" size={16} />
-            <View style={{ flex: 1, gap: 2 }}>
-              <Text style={{ fontFamily: F.medium, fontSize: 15, color: C.ink }}>{t("capture.showArea", { place: place || t("common.yourArea") })}</Text>
-              <Text style={{ fontFamily: F.regular, fontSize: 13, color: C.mute }}>{t("capture.neighbourhood")}</Text>
+                  <Animated.View key={audience} entering={FadeIn.duration(160)} style={{ gap: 8 }}>
+                    {audience === "comune" && (
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 4 }}>
+                        <Icon name="building" size={13} color={C.forestInk} />
+                        <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.regular, fontSize: 13, color: C.ink2 }}>
+                          {t("capture.audienceComune", { place })}
+                        </Text>
+                      </View>
+                    )}
+
+                    {audience === "public" && (
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 4 }}>
+                        <Icon name="globe" size={13} color={C.forestInk} />
+                        <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.regular, fontSize: 13, color: C.ink2 }}>
+                          {t("capture.audiencePublic")}
+                        </Text>
+                      </View>
+                    )}
+
+                    {audience === "squad" &&
+                      (squads.length ? (
+                        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                          {squads.map((s) => (
+                            <Chip key={s.id} label={s.name} icon="people" active={s.id === squadId} onPress={() => setSquadId(s.id)} />
+                          ))}
+                        </View>
+                      ) : (
+                        <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 8, paddingHorizontal: 4 }}>
+                          <Icon name="info" size={14} color={C.mute} />
+                          <Text style={[T.caption, { flex: 1 }]}>{t("capture.noSquad", { place })}</Text>
+                        </View>
+                      ))}
+                  </Animated.View>
+                </View>
+
+                <View style={{ height: 1, backgroundColor: C.line }} />
+
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                  <View
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 18,
+                      backgroundColor: shareSpot ? C.mint : C.card2,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Icon name={shareSpot ? "location" : "lock"} size={16} color={shareSpot ? C.forestInk : C.mute} />
+                  </View>
+                  <View style={{ flex: 1, gap: 2 }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                      <Text numberOfLines={1} style={{ fontFamily: F.medium, fontSize: 15, color: C.ink }}>
+                        {t("capture.showMine")}
+                      </Text>
+                      {shareSpot && (
+                        <View
+                          style={{
+                            paddingHorizontal: 7,
+                            height: 20,
+                            borderRadius: R.pill,
+                            backgroundColor: C.mint,
+                            justifyContent: "center",
+                            flexShrink: 1,
+                          }}
+                        >
+                          <Text numberOfLines={1} style={{ fontFamily: F.medium, fontSize: 11.5, color: C.forestInk }}>
+                            {place || t("common.yourArea")}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={{ fontFamily: F.regular, fontSize: 12.5, lineHeight: 17, color: C.mute }}>
+                      {shareSpot ? t("capture.neighbourhood") : t("capture.hiddenSpot")}
+                    </Text>
+                  </View>
+                  <LeafSwitch value={shareSpot} onValueChange={setShareSpot} label={t("capture.showMine")} />
+                </View>
+              </View>
             </View>
-            <LeafSwitch value={shareSpot} onValueChange={setShareSpot} label={t("capture.showMine")} />
           </View>
         </ScrollView>
+
         <View style={{ paddingHorizontal: 16, paddingBottom: cover > 0 ? 10 : bottom + 10, paddingTop: 8 }}>
-          <Button label={t("capture.post")} kind="green" trailing={`+${seedsFor({ action, isDrop: isDropAct })}`} onPress={post} loading={posting} />
+          <PublishBar seeds={totalSeeds} isDrop={isDropAct} posting={posting} onPress={post} />
         </View>
       </View>
     );
