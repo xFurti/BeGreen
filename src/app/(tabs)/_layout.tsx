@@ -4,12 +4,15 @@ import { View } from "react-native";
 
 import { TabBar } from "@/components/tab-bar";
 import { Toaster } from "@/components/ui";
+import { useSocialSync } from "@/hooks/use-social";
 import { useApp } from "@/store/app-store";
 import { C } from "@/theme/tokens";
 
 export default function TabsLayout() {
   const onboarded = useApp((s) => s.onboarded);
-  if (!onboarded) return <Redirect href="/onboarding" />;
+  const hasComune = useApp((s) => !!s.comune);
+  useSocialSync();
+  if (!onboarded || !hasComune) return <Redirect href="/onboarding" />;
 
   return (
     <View style={{ flex: 1 }}>

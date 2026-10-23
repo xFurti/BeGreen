@@ -15,7 +15,7 @@
     "android": {
       "package": "app.begreen.android",
       "adaptiveIcon": {
-        "backgroundColor": "#FFFFFF",
+        "backgroundColor": "#C8E61A",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -36,9 +36,9 @@
         "expo-splash-screen",
         {
           "image": "./assets/splash-icon.png",
-          "imageWidth": 220,
+          "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#FFFFFF"
+          "backgroundColor": "#C8E61A"
         }
       ],
       [
@@ -52,7 +52,7 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "BeGreen uses your approximate location to show local air, water, soil and nature data and to build today's Drop."
+          "locationWhenInUsePermission": "BeGreen uses your approximate location to suggest your Comune, whose live air, water, soil and nature data build today's Drop."
         }
       ],
       [
@@ -60,7 +60,8 @@
         {
           "photosPermission": "Pick a photo or clip from your library when the camera is not available."
         }
-      ]
+      ],
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": true
