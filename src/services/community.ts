@@ -14,7 +14,9 @@ import {
   type Visibility,
 } from "@/data/community";
 import type { Comment, Post, User } from "@/data/types";
-import { db, POST, PROFILE, toFeed, toUser, uploadPhoto, type PostRow, type ProfileRow } from "@/services/social";
+import { db, POST, PROFILE, readFeed, toUser, uploadPhoto, type PostRow, type ProfileRow } from "@/services/social";
+import type { GroupProgress } from "@/services/groups";
+import { signedMedia } from "@/services/storage-media";
 
 // Community data on Supabase. Pure data access, like social.ts: the store decides what to keep.
 
@@ -181,10 +183,17 @@ function toChallenges(rows: ChallengeRow[]): { challenges: CommunityChallenge[];
 
 // ---------- reads ----------
 
-export async function fetchCommunities(): Promise<Community[]> {
+export async function fetchCommunities(ids: string[] = []): Promise<Community[]> {
   const { data, error } = await db().from("communities").select("*, community_members(count)").order("created_at").limit(100);
   if (error) throw error;
-  return (data as CommunityRow[]).map(toCommunity);
+  const rows = data as CommunityRow[];
+  const missing = ids.filter((id) => !rows.some((r) => r.id === id));
+  if (missing.length) {
+    const more = await db().from("communities").select("*, community_members(count)").in("id", missing);
+    if (more.error) throw more.error;
+    rows.push(...more.data as CommunityRow[]);
+  }
+  return rows.map(toCommunity);
 }
 
 export async function fetchMemberships(me: string): Promise<Record<string, Member["role"]>> {
@@ -201,12 +210,13 @@ export type CommunityData = {
   posts: Post[];
   profiles: Record<string, User>;
   myFlags: Record<string, FlagReason[]>;
+  progress?: GroupProgress;
 } & Omit<SpotState, "profiles">;
 
 // Everything a community page needs: its map, challenges, members and the proofs taken in it.
 export async function fetchCommunity(me: string, c: Community): Promise<CommunityData> {
   const s = db();
-  const [spotsRes, challengesRes, membersRes, flagsRes, comuniRes] = await Promise.all([
+  const [spotsRes, challengesRes, membersRes, flagsRes, comuniRes, progressRes] = await Promise.all([
     s.from("spots").select(SPOT).eq("community_id", c.id).order("created_at", { ascending: false }).limit(300),
     s
       .from("community_challenges")
@@ -217,10 +227,13 @@ export async function fetchCommunity(me: string, c: Community): Promise<Communit
     s.from("community_members").select(`user_id, role, profile:profiles!community_members_user_id_fkey(${PROFILE})`).eq("community_id", c.id).limit(500),
     s.from("spot_flags").select("spot_id, reason").eq("user_id", me),
     c.comuni.length ? s.from("comuni").select("id").in("name", c.comuni) : Promise.resolve({ data: [], error: null }),
+    s.from("group_progress").select("points, quest, months").eq("community_id", c.id).maybeSingle(),
   ]);
-  for (const r of [spotsRes, challengesRes, membersRes, flagsRes, comuniRes]) if (r.error) throw r.error;
+  for (const r of [spotsRes, challengesRes, membersRes, flagsRes, comuniRes, progressRes]) if (r.error) throw r.error;
 
-  const spotData = toSpots(spotsRes.data as unknown as SpotRow[], me);
+  const spotRows = spotsRes.data as unknown as SpotRow[];
+  const media = await signedMedia(spotRows.flatMap((r) => r.photo ? [r.photo] : []));
+  const spotData = toSpots(spotRows.map((r) => ({ ...r, photo: r.photo ? media.get(r.photo) as string : null })), me);
   const { challenges, entries } = toChallenges(challengesRes.data as unknown as ChallengeRow[]);
   const memberRows = membersRes.data as unknown as { user_id: string; role: Member["role"]; profile: ProfileRow | null }[];
   const profiles = { ...spotData.profiles };
@@ -232,17 +245,18 @@ export async function fetchCommunity(me: string, c: Community): Promise<Communit
   const comuneIds = (comuniRes.data as { id: string }[]).map((x) => x.id);
   const since = new Date(Date.now() - 8 * D).toISOString();
   const linked = `${POST}, spot:spots!inner(community_id)`;
-  const postQueries: PromiseLike<{ data: unknown; error: unknown }>[] = [s.from("posts").select(linked).eq("spot.community_id", c.id).limit(120)];
+  const postQueries: PromiseLike<{ data: unknown; error: unknown }>[] = c.kind === "territory"
+    ? [s.from("posts").select(linked).eq("spot.community_id", c.id).in("audience", ["comune", "public"]).limit(120)]
+    : [];
   if (comuneIds.length && c.kind === "territory") {
     postQueries.push(
-      s.from("posts").select(POST).in("comune_id", comuneIds).neq("audience", "squad").gte("created_at", since).order("created_at", { ascending: false }).limit(120),
+      s.from("posts").select(POST).in("comune_id", comuneIds).in("audience", ["comune", "public"]).gte("created_at", since).order("created_at", { ascending: false }).limit(120),
     );
   }
   // A group's leaderboard and feed: what its members posted this week, wherever they are.
-  const memberIds = (membersRes.data as { user_id: string }[]).map((m) => m.user_id);
-  if (c.kind !== "territory" && memberIds.length) {
+  if (c.kind !== "territory") {
     postQueries.push(
-      s.from("posts").select(POST).in("author_id", memberIds.slice(0, 200)).neq("audience", "squad").gte("created_at", since).order("created_at", { ascending: false }).limit(200),
+      s.from("posts").select(POST).eq("group_id", c.id).order("created_at", { ascending: false }).limit(200),
     );
   }
   const rows: PostRow[] = [];
@@ -250,7 +264,7 @@ export async function fetchCommunity(me: string, c: Community): Promise<Communit
     if (r.error) throw r.error;
     rows.push(...(r.data as PostRow[]));
   }
-  const feed = toFeed(rows, me);
+  const feed = await readFeed(rows, me);
 
   return {
     spots: spotData.spots,
@@ -263,6 +277,7 @@ export async function fetchCommunity(me: string, c: Community): Promise<Communit
     posts: feed.posts,
     profiles: { ...feed.profiles, ...profiles },
     myFlags,
+    progress: progressRes.data as GroupProgress | undefined,
   };
 }
 
@@ -287,10 +302,16 @@ export async function joinCommunity(id: string, invite?: string): Promise<boolea
 }
 
 // Join with an invite code alone: the id of the community it opens, or null.
-export async function joinByCode(code: string): Promise<string | null> {
-  const { data, error } = await db().rpc("join_by_code", { invite: code });
+export async function joinByCode(code: string, target?: string): Promise<string | null> {
+  const { data, error } = await db().rpc("join_group_by_code", { invite: code, target: target ?? null });
   if (error) throw error;
   return (data as string | null) ?? null;
+}
+
+export async function resolveGroupInvite(code: string): Promise<{ id: string; name: string }[]> {
+  const { data, error } = await db().rpc("resolve_group_invite", { invite: code });
+  if (error) throw error;
+  return data ?? [];
 }
 
 export async function leaveCommunity(me: string, id: string) {

@@ -18,12 +18,15 @@ import { saveComune } from "@/services/comuni";
 import type { Drop } from "@/services/drop";
 import { DEFAULT_PLACE, type Place, type Pulse } from "@/services/env";
 import { existingLocal, preferLocal } from "@/services/media";
+import { assertDestination, isGroupPost } from "@/services/groups";
+import { mediaAccessVersion } from "@/services/storage-media";
 import {
   addComment,
   addVerification,
   countMyVerifications,
   fetchSeeds,
   fetchFeed,
+  fetchGroupIds,
   fetchProfiles,
   fetchSquads,
   HandleTaken,
@@ -84,6 +87,7 @@ type NewPost = {
   location?: Post["location"];
   challengeId?: string;
   squadId?: string;
+  groupId?: string;
   spotId?: string;
 };
 
@@ -200,6 +204,9 @@ export const useApp = create<State & Actions>()(
       setPulse: (pulse) => set({ pulse }),
       setChallenge: (challenge) => set({ challenge }),
       addPost: async (input) => {
+        const community = await import("@/store/community-store");
+        const groups = community.useCommunity.getState();
+        assertDestination(input.audience, input.groupId, groups.catalog.filter((c) => c.kind !== "territory" && groups.roles[c.id]).map((c) => c.id));
         const s = get();
         const eligible = s.challenge && input.challengeId === s.challenge.id && input.action === s.challenge.action &&
           canClaimDrop(s.challenge, s.posts, s.userId, hasBackend);
@@ -231,7 +238,10 @@ export const useApp = create<State & Actions>()(
               )
             : s.squads,
         });
-        return hasBackend ? await publish(post) : post;
+        if (!hasBackend) community.recordGroupPost(post);
+        const result = hasBackend ? await publish(post) : post;
+        if (hasBackend && !result.pending && input.groupId) void community.syncCommunity(input.groupId);
+        return result;
       },
       verify: (postId) => {
         const s = get();
@@ -335,7 +345,7 @@ export const useApp = create<State & Actions>()(
         place: s.place,
         pulse: s.pulse,
         challenge: s.challenge,
-        posts: s.posts,
+        posts: hasBackend ? s.posts.filter((p) => p.authorId === s.userId || !isGroupPost(p)) : s.posts,
         profiles: s.profiles,
         reacted: s.reacted,
         flagged: s.flagged,
@@ -434,12 +444,13 @@ export function syncSocial(): Promise<void> {
     }
     for (const p of useApp.getState().posts.filter((x) => x.pending)) await publish(p);
 
-    const { mine, local } = await fetchSquads(uid, s.comune.id);
+    const [{ mine, local }, groupIds] = await Promise.all([fetchSquads(uid, s.comune.id), fetchGroupIds(uid)]);
+    const access = mediaAccessVersion();
     const [feed, verifiedCount] = await Promise.all([
       fetchFeed(
         uid,
         s.comune.id,
-        mine.map((q) => q.id),
+        groupIds,
       ),
       countMyVerifications(uid),
     ]);
@@ -459,6 +470,7 @@ export function syncSocial(): Promise<void> {
         })
         .filter((entry): entry is [string, { photo?: string; proof?: string }] => entry !== null),
     );
+    if (uid !== useApp.getState().userId || access !== mediaAccessVersion()) return;
     useApp.setState({
       posts: [...keep, ...preferLocal(feed.posts, localMedia).map((p) => ({ ...p, location: useApp.getState().localAreas[p.id] }))],
       profiles: { ...known, ...members },
