@@ -371,10 +371,9 @@ export default function Capture() {
     if (!photo || !proof) return;
     const s = useApp.getState();
     const before = mineOf(s.posts, s.userId);
-    const name = (id: string) => author(id).name;
     const wasUnlocked = postedToday(before);
     const goalsBefore = sdgsOf(before);
-    const leagueBefore = leagueOf(s.posts, s.userId, s.comune?.id, name);
+    const leagueBefore = leagueOf(s.posts, s.userId, s.comune?.id, author);
     const isDrop = action === drop.action && dropOpen;
     const toSquad = audience === "squad" && squadId ? squadId : undefined;
     addPost({
@@ -389,7 +388,7 @@ export default function Capture() {
     });
     const now = useApp.getState();
     const after = mineOf(now.posts, now.userId);
-    const leagueAfter = leagueOf(now.posts, now.userId, now.comune?.id, name);
+    const leagueAfter = leagueOf(now.posts, now.userId, now.comune?.id, author);
     const rankBefore = leagueBefore.findIndex((r) => r.me) + 1;
     const rankAfter = leagueAfter.findIndex((r) => r.me) + 1;
     setResult({

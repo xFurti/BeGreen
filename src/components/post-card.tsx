@@ -6,6 +6,7 @@ import Animated, { FadeIn, FadeInDown, ZoomIn } from "react-native-reanimated";
 import { Icon } from "@/components/icon";
 import { LeafBurst } from "@/components/nature";
 import { ProofMedia } from "@/components/proof-media";
+import { TitledName } from "@/components/titled-name";
 import { Avatar, Mono, Press, SdgTags, Tag } from "@/components/ui";
 import type { Post } from "@/data/types";
 import { actionCopy, placeLabel, textOf } from "@/i18n/content";
@@ -211,7 +212,7 @@ export const PostCard = memo(function PostCard({
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
         <Avatar src={a.avatar} name={a.name} size={34} />
         <View style={{ flex: 1, gap: 2 }}>
-          <Text style={{ fontFamily: F.semibold, fontSize: 15, letterSpacing: -0.2, color: C.ink }}>{a.name}</Text>
+          <TitledName name={a.name} badgeId={a.badgeId} style={{ fontFamily: F.semibold, fontSize: 15, letterSpacing: -0.2, color: C.ink }} />
           <Mono>
             {placeLabel(post.place, t)} · {timeAgo(post.createdAt, language)}
           </Mono>

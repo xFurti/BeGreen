@@ -5,6 +5,7 @@ import { createJSONStorage, persist } from "zustand/middleware";
 
 import { toast } from "@/components/toast";
 import { ACTIONS, type ActionId } from "@/data/actions";
+import { badgeById, isBadgeId, type BadgeId, type BadgeStats } from "@/data/badges";
 import { DEMO_AUTHOR } from "@/data/demo";
 import type { Audience, Comune, Explain, Post, Role, Squad, User } from "@/data/types";
 import { translate, type MessageKey } from "@/i18n/catalog";
@@ -30,7 +31,7 @@ import {
 } from "@/services/social";
 import { ensureSession, hasBackend } from "@/services/supabase";
 
-export type Profile = { name: string; handle: string; role: Role };
+export type Profile = { name: string; handle: string; role: Role; badgeId: BadgeId | null };
 
 type State = {
   language: Language;
@@ -66,7 +67,7 @@ type NewPost = {
 };
 
 type Actions = {
-  finishOnboarding: (p: Profile) => void;
+  finishOnboarding: (p: Omit<Profile, "badgeId"> & { badgeId?: BadgeId | null }) => void;
   setExplain: (e: Explain) => void;
   setComune: (c: Comune) => void;
   setPulse: (p: Pulse) => void;
@@ -78,6 +79,7 @@ type Actions = {
   createSquad: (s: Pick<Squad, "name" | "kind" | "place" | "quest">) => Promise<Squad>;
   joinSquad: (code: string) => Promise<Squad | null>;
   nudge: (userId: string) => void;
+  equipBadge: (id: BadgeId | null) => void;
   setLanguage: (language: Language) => void;
   reset: () => void;
 };
@@ -88,7 +90,7 @@ const initial: State = {
   language: deviceLanguage(),
   onboarded: false,
   userId: "",
-  profile: { name: "", handle: "", role: "student" },
+  profile: { name: "", handle: "", role: "student", badgeId: null },
   explain: "me",
   comune: null,
   place: DEFAULT_PLACE,
@@ -119,13 +121,15 @@ export const useApp = create<State & Actions>()(
   persist(
     (set, get) => ({
       ...initial,
-      finishOnboarding: (profile) =>
+      finishOnboarding: (p) => {
+        const profile = { ...p, badgeId: p.badgeId ?? null };
         set({
           onboarded: true,
           profile,
           userId: get().userId || localId(),
           explain: profile.role === "student" ? "me" : profile.role === "comune" ? "comune" : "class",
-        }),
+        });
+      },
       setExplain: (explain) => set({ explain }),
       setComune: (comune) => {
         const same = get().comune?.id === comune.id;
@@ -247,6 +251,14 @@ export const useApp = create<State & Actions>()(
         return squad;
       },
       nudge: (userId) => set({ nudged: { ...get().nudged, [userId]: Date.now() } }),
+      equipBadge: (id) => {
+        const s = get();
+        const stats = badgeStatsOf(mineOf(s.posts, s.userId), s.verifiedCount);
+        if (id && !badgeById(id).earned(stats)) return;
+        const profile = { ...s.profile, badgeId: id };
+        set({ profile });
+        if (hasBackend && s.onboarded && s.userId) saveProfile(s.userId, profile, s.comune).catch(fail);
+      },
       setLanguage: (language) => set({ language }),
       reset: () => set({ ...initial, language: get().language }),
     }),
@@ -275,7 +287,16 @@ export const useApp = create<State & Actions>()(
       }),
       merge: (persisted, current) => {
         const raw = (persisted ?? {}) as Record<string, unknown>;
-        return { ...current, ...applyPersisted(raw, deviceLanguage()) };
+        const merged = applyPersisted(raw, deviceLanguage()) as Partial<State>;
+        return {
+          ...current,
+          ...merged,
+          profile: {
+            ...current.profile,
+            ...merged.profile,
+            badgeId: isBadgeId(merged.profile?.badgeId) ? merged.profile.badgeId : null,
+          },
+        };
       },
     },
   ),
@@ -354,6 +375,7 @@ export function syncSocial(): Promise<void> {
       verifiedCount,
       syncedAt: Date.now(),
     });
+    dropStaleBadge();
   })()
     .catch((e) => {
       if (__DEV__) console.warn(e);
@@ -365,8 +387,9 @@ export function syncSocial(): Promise<void> {
 }
 
 // Creates (or updates) your public profile. Throws HandleTaken if someone has your handle.
-export async function registerProfile(profile: Profile, comune: Comune | null) {
+export async function registerProfile(p: Omit<Profile, "badgeId"> & { badgeId?: BadgeId | null }, comune: Comune | null) {
   if (!hasBackend) return;
+  const profile = { ...p, badgeId: p.badgeId ?? null };
   const uid = await ensureSession();
   if (!uid) return;
   useApp.setState({ userId: uid });
@@ -404,6 +427,23 @@ export function streakOf(posts: Post[]) {
   return n;
 }
 
+export function badgeStatsOf(posts: Post[], verified: number): BadgeStats {
+  return {
+    posts: posts.length,
+    streak: streakOf(posts),
+    carFree: posts.filter((p) => p.action === "move").length,
+    spotted: posts.some((p) => p.action === "spot"),
+    verified,
+    goals: sdgsOf(posts).size,
+  };
+}
+
+// A title expires when its requirement is no longer met.
+export function dropStaleBadge() {
+  const s = useApp.getState();
+  if (s.profile.badgeId && !badgeById(s.profile.badgeId).earned(badgeStatsOf(mineOf(s.posts, s.userId), s.verifiedCount))) useApp.getState().equipBadge(null);
+}
+
 const seedsFor = (p: Post) => ACTIONS[p.action].seeds + (p.isDrop ? 10 : 0);
 
 // Two seeds for every proof you verify.
@@ -429,7 +469,7 @@ export function useAuthor() {
   return (id: string): User => {
     const t = (key: MessageKey) => translate(language, key);
     if (id === DEMO_AUTHOR.id) return { ...DEMO_AUTHOR, name: t("demo.author"), tag: t("demo.tag") };
-    if (id === me) return { id, name: profile.name || t("common.you"), handle: profile.handle || t("common.youInline"), role: profile.role, tag: t("common.you") };
+    if (id === me) return { id, name: profile.name || t("common.you"), handle: profile.handle || t("common.youInline"), role: profile.role, badgeId: profile.badgeId, tag: t("common.you") };
     return profiles[id] ?? { id, name: t("shared.someone"), handle: "someone" };
   };
 }
@@ -443,10 +483,10 @@ export function weeklyOf(posts: Post[]) {
   return posts.filter((p) => p.createdAt > since).reduce((a, p) => a + seedsFor(p), 0);
 }
 
-export type Racer = { id: string; name: string; avatar?: number | string; points: number; me: boolean; postedToday: boolean };
+export type Racer = { id: string; name: string; badgeId?: BadgeId | null; avatar?: number | string; points: number; me: boolean; postedToday: boolean };
 
 // This week's race between everyone posting in your Comune, from real proofs.
-export function leagueOf(posts: Post[], me: string, comuneId: string | undefined, name: (id: string) => string): Racer[] {
+export function leagueOf(posts: Post[], me: string, comuneId: string | undefined, who: (id: string) => Pick<User, "name" | "badgeId">): Racer[] {
   const since = Date.now() - WEEK;
   const byAuthor = new Map<string, Post[]>();
   byAuthor.set(me, []);
@@ -457,7 +497,8 @@ export function leagueOf(posts: Post[], me: string, comuneId: string | undefined
   }
   const racers = [...byAuthor].map(([id, ps]) => ({
     id,
-    name: name(id),
+    name: who(id).name,
+    badgeId: who(id).badgeId,
     points: ps.reduce((a, p) => a + seedsFor(p), 0),
     me: id === me,
     postedToday: postedToday(ps),
@@ -471,7 +512,7 @@ export function useLeague() {
   const me = useApp((s) => s.userId);
   const comuneId = useApp((s) => s.comune?.id);
   const author = useAuthor();
-  return leagueOf(posts, me, comuneId, (id) => author(id).name);
+  return leagueOf(posts, me, comuneId, author);
 }
 
 export function sdgsOf(posts: Post[]) {
