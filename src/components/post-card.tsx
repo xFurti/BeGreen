@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { memo, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Alert, Platform, Pressable, Text, View } from "react-native";
 import Animated, { FadeIn, FadeInDown, ZoomIn } from "react-native-reanimated";
 
 import { DropTag } from "@/components/drop-tag";
@@ -191,6 +191,80 @@ function Reactions({ post }: { post: Post }) {
   );
 }
 
+// Owner-only "⋯": the one dangerous thing you can do to your own proof.
+export function PostMenu({ post, onDeleted }: { post: Post; onDeleted?: () => void }) {
+  const { C } = useTheme();
+  const { t } = useI18n();
+  const me = useApp((s) => s.userId);
+  const removePost = useApp((s) => s.removePost);
+  const [open, setOpen] = useState(false);
+  if (post.isDemo || post.authorId !== me) return null;
+  const del = () => {
+    removePost(post.id);
+    haptic.success();
+    onDeleted?.();
+  };
+  const ask = () => {
+    setOpen(false);
+    if (Platform.OS === "web") {
+      if (window.confirm(`${t("post.deleteTitle")}\n\n${t("post.deleteBody")}`)) del();
+    } else {
+      Alert.alert(t("post.deleteTitle"), t("post.deleteBody"), [
+        { text: t("common.cancel"), style: "cancel" },
+        { text: t("post.delete"), style: "destructive", onPress: del },
+      ]);
+    }
+  };
+  return (
+    <View style={{ zIndex: 3 }}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={t("post.menu")}
+        onPress={() => {
+          haptic.tap();
+          setOpen((o) => !o);
+        }}
+        hitSlop={8}
+        style={{ width: 30, height: 30, alignItems: "center", justifyContent: "center" }}
+      >
+        <Icon name="ellipsis" size={17} color={C.mute} />
+      </Pressable>
+      {open && (
+        <Animated.View
+          entering={FadeIn.duration(140)}
+          style={{
+            position: "absolute",
+            top: 32,
+            right: 0,
+            backgroundColor: C.raised,
+            borderRadius: R.md,
+            padding: 4,
+            minWidth: 148,
+            boxShadow: shadow.lift,
+          }}
+        >
+          <Pressable
+            accessibilityRole="button"
+            onPress={ask}
+            style={({ pressed }) => ({
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 9,
+              paddingHorizontal: 12,
+              paddingVertical: 10,
+              borderRadius: R.sm,
+              backgroundColor: pressed ? C.card : "transparent",
+            })}
+          >
+            <Icon name="trash" size={15} color={C.red} />
+            <Text style={{ fontFamily: F.medium, fontSize: 14, color: C.red }}>{t("post.delete")}</Text>
+          </Pressable>
+        </Animated.View>
+      )}
+    </View>
+  );
+}
+
 export const PostCard = memo(function PostCard({
   post,
   active,
@@ -216,7 +290,7 @@ export const PostCard = memo(function PostCard({
 
   return (
     <Animated.View entering={FadeInDown.delay(Math.min(index, 4) * 60).springify().damping(20)} style={{ gap: 12 }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 10, zIndex: 3 }}>
         <Press
           scale={0.98}
           disabled={post.isDemo}
@@ -235,6 +309,7 @@ export const PostCard = memo(function PostCard({
         {post.isDemo && <Tag label={t("common.demo")} />}
         {post.isDrop && <DropTag post={post} />}
         {flagged && <Tag label={t("post.flaggedTag")} />}
+        <PostMenu post={post} />
       </View>
 
       <ProofMedia

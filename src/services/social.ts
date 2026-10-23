@@ -446,6 +446,12 @@ export async function publishPost(me: string, p: Post): Promise<Post> {
   return (await readFeed([data as unknown as PostRow], me)).posts[0];
 }
 
+// Only your own proofs: RLS refuses anyone else's. Row media stays in the bucket.
+export async function deletePost(postId: string) {
+  const { error } = await db().from("posts").delete().eq("id", postId);
+  if (error) throw error;
+}
+
 export async function addVerification(postId: string) {
   const { error } = await db().from("verifications").insert({ post_id: postId });
   if (error && error.code !== "23505") throw error;
