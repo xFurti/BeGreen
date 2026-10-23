@@ -33,7 +33,7 @@ export default function CommunityTab() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    try { await syncCommunity(section === "rankings" ? rankingCommunity : undefined); }
+    try { await syncCommunity(section === "rankings" ? rankingCommunity : undefined, { throwOnError: true }); }
     catch { toast(t("shared.offline"), "refresh"); }
     finally { setRefreshing(false); }
   }, [section, rankingCommunity, t]);
