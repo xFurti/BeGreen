@@ -1,6 +1,6 @@
 # Community · revisione 3
 
-Branch: `design/community-restyle`. Anteprima direttamente nell’app Expo; nessuna PR aperta e nessuna modifica pubblicata su main.
+Branch: `design/community-restyle`. Anteprima direttamente nell’app Expo; destinazione della PR: `main`. Il merge richiede l’approvazione umana.
 
 ## Riscontro recepito
 
@@ -59,4 +59,4 @@ Controllati nel browser:
 - scelta della classifica del gruppo lasciando Verona come Comune, apertura dell’elenco completo con lo stesso ID e assenza di piazzamenti fittizi nello stato vuoto;
 - tema scuro italiano a 430 px e tema chiaro inglese a 320 px, senza scorrimento orizzontale della pagina.
 
-Verifica visiva web; nessuna prova su dispositivo nativo iOS/Android in questa fase. Storage, permessi e schermate dei dettagli mantengono il comportamento esistente. PR e merge attendono il nuovo riscontro sul design.
+Verifica visiva web; nessuna prova su dispositivo nativo iOS/Android in questa fase. Storage, permessi e schermate dei dettagli mantengono il comportamento esistente. L’utente ha richiesto l’apertura della PR dopo aver esaminato la proposta; merge e deploy richiedono una richiesta separata.

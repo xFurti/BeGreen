@@ -55,7 +55,7 @@
 - Ulteriore richiesta: rendere di nuovo accessibili le classifiche nella Community. Si aggiunge una terza sezione facoltativa **Classifiche**, con scelta tra il Comune selezionato e i gruppi di cui si è membri. I collegamenti dai dettagli restano disponibili.
 - La scelta della classifica non cambia Comune o iscrizioni. Il confronto resta fra persone della singola community, con i punteggi esistenti sulle prove caricate degli ultimi sette giorni, esclusi gli esempi e mantenendo isolate le prove riservate ai gruppi. Il limite del campione resta visibile.
 - Nessuna prova recente: stato vuoto, senza assegnare un primo posto a zero punti. La proposta non ripristina piazzamenti in Feed, profilo o completamento.
-- Stato: revisione locale su `design/community-restyle`, da valutare prima di aprire la PR; nessun merge o deploy autorizzato in questa fase.
+- Stato: revisione su `design/community-restyle`; l’utente ha richiesto la pubblicazione tramite PR verso `main`. Nessun merge o deploy autorizzato in questa fase.
 
 ## Come registrare una nuova decisione
 
