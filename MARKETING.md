@@ -35,7 +35,7 @@ Teens are the users; schools and Comuni are the distribution and, later, the rev
 - **Short, dry, a little funny.** “told mom no lift today. the 90 bus is lowkey a vibe.” Never “Save the planet! 🌍”.
 - **Never guilt-trip.** We celebrate doing, never shame not-doing. No CO₂ doom counters.
 - **Honest about data.** We say “model”, “estimate”, “citizen science”. Being transparent is part of being cool for this audience.
-- **Visual identity:** black on white, Geist Medium wordmark, Geist Mono for the details. Looks like a fashion brand, not an NGO. No leaves-on-gradients, no stock earth globes.
+- **Visual identity:** black on white, the leaf "B" logo in Canopy on Proof Lime, Geist Mono for the details. Looks like a fashion brand, not an NGO. No leaves-on-gradients, no stock earth globes.
 
 ## 5. Go-to-market: city by city, school by school
 

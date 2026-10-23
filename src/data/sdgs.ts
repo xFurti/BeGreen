@@ -1,30 +1,25 @@
 // UN Agenda 2030 — the 17 Sustainable Development Goals.
-// BeGreen tags every act with the goals it moves, so small daily proofs add up to a bigger map.
+// Titles live in the language catalog. BeGreen tags every act with the goals it moves.
 
-export const SDGS: Record<number, string> = {
-  1: "No poverty",
-  2: "Zero hunger",
-  3: "Good health",
-  4: "Quality education",
-  5: "Gender equality",
-  6: "Clean water",
-  7: "Clean energy",
-  8: "Decent work",
-  9: "Industry & innovation",
-  10: "Reduced inequalities",
-  11: "Sustainable cities",
-  12: "Responsible consumption",
-  13: "Climate action",
-  14: "Life below water",
-  15: "Life on land",
-  16: "Peace & justice",
-  17: "Partnerships",
-};
+export const SDG_LIST = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
 
-export const SDG_LIST = Object.keys(SDGS).map(Number);
+// The Agenda ends at the close of 31 December 2030: the first instant of 2031.
+const END_DAY = civilDayNumber(2031, 1, 1);
 
-const END = new Date(2030, 11, 31).getTime();
+// Days between two civil dates, independent of time zones and DST.
+function civilDayNumber(year: number, month: number, day: number): number {
+  const y = month <= 2 ? year - 1 : year;
+  const era = (y >= 0 ? y : y - 399) / 400 | 0;
+  const yearOfEra = y - era * 400;
+  const monthPrime = month > 2 ? month - 3 : month + 9;
+  const dayOfYear = Math.floor((153 * monthPrime + 2) / 5) + day - 1;
+  const dayOfEra = yearOfEra * 365 + Math.floor(yearOfEra / 4) - Math.floor(yearOfEra / 100) + dayOfYear;
+  return era * 146097 + dayOfEra - 719468;
+}
 
 export function daysTo2030(now = Date.now()) {
-  return Math.max(0, Math.ceil((END - now) / 864e5));
+  const date = new Date(now);
+  const remaining = END_DAY
+    - civilDayNumber(date.getFullYear(), date.getMonth() + 1, date.getDate());
+  return Math.max(0, remaining);
 }
