@@ -1,7 +1,7 @@
 import { Image } from "expo-image";
-import { router } from "expo-router";
-import { useState } from "react";
-import { Alert, Pressable, ScrollView, Share, Text, useWindowDimensions, View } from "react-native";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
+import { Alert, AppState, Pressable, ScrollView, Share, Text, useWindowDimensions, View } from "react-native";
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -41,6 +41,21 @@ function Agenda({ posts }: { posts: Post[] }) {
   const { width } = useWindowDimensions();
   const touched = sdgsOf(posts);
   const [sel, setSel] = useState<number | null>(null);
+  const [days, setDays] = useState(() => daysTo2030());
+  useFocusEffect(
+    useCallback(() => {
+      const update = () => setDays(daysTo2030());
+      update();
+      const id = setInterval(update, 1000);
+      const subscription = AppState.addEventListener("change", (state) => {
+        if (state === "active") update();
+      });
+      return () => {
+        clearInterval(id);
+        subscription.remove();
+      };
+    }, [])
+  );
   const gap = 6;
   const cell = Math.floor((width - 40 - gap * 5) / 6);
   const counts = new Map<number, number>();
@@ -81,7 +96,7 @@ function Agenda({ posts }: { posts: Post[] }) {
         })}
         <View style={{ width: cell, height: cell, borderRadius: 12, backgroundColor: C.forest, padding: 7, justifyContent: "space-between" }}>
           <Text numberOfLines={1} style={{ fontFamily: F.medium, fontSize: 15, letterSpacing: -0.7, color: C.lime }}>
-            {daysTo2030()}
+            {days}
           </Text>
           <Text style={{ fontFamily: F.monoMedium, fontSize: 8, color: C.forestMute, lineHeight: 10 }}>{t("me.daysTo")}</Text>
         </View>
