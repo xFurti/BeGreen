@@ -1,6 +1,6 @@
 # Idee e backlog
 
-Il prodotto scelto è BeGreen (vedi `README.md` e `decisions.md`). Registra qui le proposte di nuove funzionalità oppure apri una issue con il template Idea.
+Il prodotto scelto è BeGreen sulla traccia FESAV «La mia sostenibilità» (vedi `docs/traccia.md`, `README.md`, `decisions.md`). Registra qui le proposte fuori dallo scope corrente oppure apri una issue con il template Idea.
 
 Per ogni proposta indica:
 

@@ -22,6 +22,12 @@
 - Scelta (concordata con Leonardo): Supabase (Postgres, Storage, Realtime) con account anonimi (nome e handle pubblici). L'utente sceglie il Comune; ogni giorno c'è una sola sfida per Comune, generata dai dati live di quel Comune e salvata sul backend, con una sola prova per persona. I profili demo sono stati rimossi; restano post d'esempio etichettati DEMO per la sfida del giorno, esclusi da verifiche e conteggi.
 - Conseguenza: servono un progetto Supabase con accesso anonimo attivo, la migrazione in `supabase/migrations` e le variabili `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. Senza queste variabili l'app resta utilizzabile in locale. `npm test` verifica anche RLS e vincoli della migrazione su PGlite.
 
+## 2026-10-23 — Skill agenti e traccia ufficiale
+
+- Problema: le skill di bootstrap (ideazione generica, GitButler, `/PI review` obbligatorio in chat, istruzioni Pi Action nella skill di review) confondevano gli agenti; mancava in repo il testo della traccia FESAV scelta.
+- Scelta: `AGENTS.md` come regola predefinita; skill opzionali `hackathon-track` (allineamento a traccia/regolamento), `hackathon-feature`, `hackathon-review`, `hackathon-pitch`. Rimossa `hackathon-ideas`. Documenti: `docs/traccia.md`, `docs/regolamento.md`, PDF `docs/regolamento-fesav-2026.pdf`. Runtime Pi solo in `.github/pi/review-runtime.md`. VCS: `git` + `gh`, niente GitButler.
+- Conseguenza: gli agenti restano sulla traccia «La mia sostenibilità» e sui criteri di giuria; non chiedono `/PI review` in chat né usano `but`.
+
 ## Come registrare una nuova decisione
 
 Indica data, problema, opzioni considerate, scelta, motivo e conseguenza pratica. Collega issue o PR e indica chi ha concordato la scelta. Non usare questo registro come elenco di idee non ancora decise.

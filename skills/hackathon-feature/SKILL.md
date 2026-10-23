@@ -1,14 +1,16 @@
 ---
 name: hackathon-feature
-description: Implementa funzionalità, bug fix e aggiunte future in BeGreen, coordinando il lavoro del team e consegnando una modifica verificata per una PR verso main.
+description: Implementa una funzionalità o un bug fix in BeGreen (Expo/React Native) e consegna una modifica verificata, con PR verso main solo se richiesta.
 ---
 
 # Sviluppo in BeGreen
 
-Leggi `AGENTS.md`, l'issue e i documenti pertinenti. Ricava il comportamento atteso e una condizione osservabile di completamento; se la richiesta amplia l'MVP, rendi esplicita la scelta prima di includere il lavoro aggiuntivo.
+Usa `AGENTS.md` come regole di base. Per lo scope rispetto all'hackathon, leggi `skills/hackathon-track/SKILL.md` (o almeno `docs/traccia.md`) se la richiesta rischia di uscire dalla traccia.
 
-Controlla chi sta lavorando sugli stessi file. Parti da `main` aggiornato su un branch dedicato e riusa struttura e dipendenze già presenti. In un workspace gestito da GitButler usa `but`. Non spostare o includere modifiche di altri partecipanti nel tuo commit.
+Ricava comportamento atteso e criterio osservabile di completamento; se amplia l'MVP o la traccia, rendilo esplicito prima di procedere.
 
-Implementa la più piccola modifica che completa il comportamento richiesto. Verifica il percorso interessato e gli errori significativi; aggiungi test quando proteggono un comportamento reale. Esegui `npm run verify`, oppure il comando sostitutivo documentato se il team ha cambiato stack.
+Parti da `main` aggiornato su un branch dedicato. Strumenti: `git` e `gh`. Non usare GitButler. Non dire che manca l'accesso a GitHub senza un comando `gh` fallito. Non includere modifiche di altri nel tuo commit.
 
-Aggiorna la documentazione che cambia per l'utente. Consegna un riepilogo di risultato, controlli e limiti, con PR verso `main` quando richiesta. La review Pi e l'approvazione umana precedono il merge; non eseguire pubblicazione o deploy fuori dall'autorizzazione del compito.
+Implementa la modifica più piccola che completa il comportamento. Test solo se proteggono un comportamento reale. Esegui `npm run verify` prima di consegnare.
+
+Documenta ciò che cambia per l'utente. Riepiloga risultato, controlli e limiti. Apri o aggiorna una PR verso `main` solo se richiesta. Non chiedere `/PI review` in chat.
