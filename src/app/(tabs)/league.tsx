@@ -1,5 +1,5 @@
-import { router } from "expo-router";
-import { useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useRef, useState } from "react";
 import { Alert, ScrollView, Text, TextInput, View } from "react-native";
 import Animated, { FadeInDown, LinearTransition } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -175,6 +175,13 @@ export default function League() {
   const place = useApp((s) => s.comune?.name ?? s.place.name);
   const join = useApp((s) => s.joinSquad);
   const league = useLeague();
+  const openingSquad = useRef(false);
+  useFocusEffect(useCallback(() => { openingSquad.current = false; }, []));
+  const openSquad = () => {
+    if (openingSquad.current) return;
+    openingSquad.current = true;
+    router.navigate("/new-squad");
+  };
   const [code, setCode] = useState("");
   const [joining, setJoining] = useState(false);
   const [tab, setTab] = useState<View_>("people");
@@ -198,7 +205,7 @@ export default function League() {
             <Text style={T.display}>{t("league.title")}</Text>
             <Mono>{t("league.week", { week: weekNumber(), days: weekResetIn() })}</Mono>
           </View>
-          <IconButton icon="plus" label={t("league.newSquad")} bg={C.forest} color={C.lime} onPress={() => router.push("/new-squad")} />
+          <IconButton icon="plus" label={t("league.newSquad")} bg={C.forest} color={C.lime} onPress={openSquad} />
         </View>
 
         <TextTabs<View_>
