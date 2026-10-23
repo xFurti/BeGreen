@@ -1,19 +1,18 @@
 import { Geist_400Regular, Geist_500Medium, Geist_600SemiBold } from "@expo-google-fonts/geist";
 import { GeistMono_400Regular, GeistMono_500Medium } from "@expo-google-fonts/geist-mono";
 import { useFonts } from "expo-font";
-import { DefaultTheme, Stack, ThemeProvider } from "expo-router";
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
+import * as SystemUI from "expo-system-ui";
+import { useEffect, useMemo } from "react";
+import { Appearance } from "react-native";
 
-import { C, F } from "@/theme/tokens";
+import { useApp } from "@/store/app-store";
+import { F } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 
 SplashScreen.preventAutoHideAsync();
-
-const theme = {
-  ...DefaultTheme,
-  colors: { ...DefaultTheme.colors, background: C.bg, card: C.bg, text: C.ink, primary: C.ink, border: C.line },
-};
 
 const sheet = {
   presentation: "formSheet",
@@ -24,16 +23,35 @@ const sheet = {
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({ Geist_400Regular, Geist_500Medium, Geist_600SemiBold, GeistMono_400Regular, GeistMono_500Medium });
+  const { C, scheme } = useTheme();
+  const themePref = useApp((s) => s.theme);
+  const theme = useMemo(() => {
+    const base = scheme === "dark" ? DarkTheme : DefaultTheme;
+    return { ...base, colors: { ...base.colors, background: C.bg, card: C.bg, text: C.ink, primary: C.ink, border: C.line } };
+  }, [C, scheme]);
 
   useEffect(() => {
     if (loaded || error) SplashScreen.hide();
   }, [loaded, error]);
 
+  // The root view shows behind sheets and during transitions; keep it on the page colour.
+  useEffect(() => {
+    SystemUI.setBackgroundColorAsync(C.bg);
+  }, [C.bg]);
+
+  // Light and Dark override the app windows, so sheets, the grabber and the keyboard follow.
+  // System clears the override and the phone's changes keep arriving through useColorScheme.
+  // Web's Appearance has no setter; matchMedia covers it there.
+  useEffect(() => {
+    if (typeof Appearance.setColorScheme !== "function") return;
+    Appearance.setColorScheme(themePref === "system" ? "auto" : themePref);
+  }, [themePref]);
+
   if (!loaded && !error) return null;
 
   return (
     <ThemeProvider value={theme}>
-      <StatusBar style="dark" />
+      <StatusBar style={scheme === "dark" ? "light" : "dark"} />
       <Stack
         screenOptions={{
           headerShadowVisible: false,
@@ -56,6 +74,7 @@ export default function RootLayout() {
         <Stack.Screen name="guide" options={{ ...sheet, sheetAllowedDetents: [0.92] }} />
         <Stack.Screen name="sources" options={{ ...sheet, sheetAllowedDetents: [0.8, 1] }} />
         <Stack.Screen name="new-squad" options={{ ...sheet, sheetAllowedDetents: [0.6] }} />
+        <Stack.Screen name="comune" options={{ ...sheet, sheetAllowedDetents: [0.92] }} />
       </Stack>
     </ThemeProvider>
   );

@@ -1,36 +1,29 @@
-# User profile
+# Profilo Mi
 
-> Draft UI concept for team feedback. The layout, milestones, demo history and sample map positions are illustrative. Before integration, reconcile this branch with the newer shared profiles/auth, badge/title and language work on `main`, and review open Me-related PRs (#25, #40, #41, #54). This proposal does not define the final data model or replace those implementations.
+Il profilo usa cover con avatar sovrapposto, identità centrata, statistiche compatte e tre schede. La cover riutilizza `assets/demo/forest.jpg`; la palette segue il tema dell’app.
 
-The Me screen follows the centre profile in the [Playora reference by Ryan Indra / Semusim Team](https://dribbble.com/shots/27457522-Playora-Sports-Mobile-App-Profile-Setting-Page): a photo cover, an overlapping avatar, centred identity, compact statistics and three content tabs. BeGreen keeps its existing Geist typography and green, white and black palette. The avatar has a white edge against the cover; the lime ring is removed.
+- **Impatto**: stessi conteggi di `main`, calcolati sulle proprie prove reali, con avvertenza sulle stime. Include Agenda 2030, conto alla rovescia, My Comune con fonti e dati aggiornati, badge e scelta esplicita del titolo. I badge usano il catalogo condiviso, senza traguardi paralleli.
+- **Ricordi**: calendario da lunedì, navigazione fra mesi, filtro per giorno e foto che aprono la prova originale. Più prove nello stesso giorno restano accessibili. Nomi, date e testi seguono italiano/inglese.
+- **Mappa**: aree delle prove salvate su questo dispositivo. Nessun segnaposto fittizio per le prove precedenti o con zona nascosta. Ogni nuova prova con «Mostra zona» attivo registra il **centro del Comune scelto**, non la posizione del gesto. Le coordinate restano sul dispositivo e sopravvivono alla pubblicazione e alla sincronizzazione del post. Il backend attuale continua a ricevere soltanto i campi già supportati: non servono migrazioni. Dopo un reset o su un altro telefono le vecchie aree non sono disponibili.
 
-- **Impact:** estimates from proofs with at least three friend verifications and milestones. Earned milestones have a green background; the others share the same neutral style. Status captions are omitted. An information icon beside the title opens the sources and counting explanation; there is no verified-count label or Agenda 2030 grid.
-- **Memories:** a Monday-first calendar with month navigation, day filtering and photo cards that open the original proof. Each photo carries its date at the bottom left and, once verified by three friends, a green check at the top right. The action name stays below the photo, without pending-verification captions. Multiple proofs on one day remain accessible.
-- **Map:** only a map, photo markers and an icon over the map to open it fullscreen. There are no headings, descriptions or places list. Tapping a photo opens its existing post; fullscreen has a close icon and retains the map camera. Native development builds use `expo-maps`: Apple Maps on iOS and Google Maps on Android. Web uses Leaflet with OpenStreetMap tiles and attribution.
+Più prove nello stesso Comune condividono la posizione. La striscia delle foto sotto la mappa permette di aprirle tutte, anche quando i segnaposto si sovrappongono. La vista a schermo intero conserva centro e zoom durante apertura/chiusura.
 
-The cover holds the settings and share icons. Settings include Edit profile, which saves name, username and role in the existing local persisted store. Usernames use 2–24 letters, digits or underscores; they are local demo identifiers, with no server-side uniqueness check. Settings also contain the explanation audience, guide, sources, Leaf and a confirmed reset of local demo data.
+Dalla cover si aprono condivisione e impostazioni: modifica nome/handle/ruolo, tema sistema/chiaro/scuro, pubblico delle spiegazioni, Comune, lingua, guida, fonti e Leaf. La modifica del profilo mantiene il titolo e usa il salvataggio Supabase esistente: errori di rete e handle occupati lasciano i dati precedenti e consentono di riprovare. Senza backend il salvataggio è locale. Gli handle seguono le regole dell’onboarding (2–24 lettere, numeri, punti o trattini bassi).
 
-The profile header displays the name and role without an @username tag. All three profile tabs omit the BeGreen slogan footer.
+Uscita e reset richiedono conferma, spiegano il limite degli account anonimi e mantengono lingua/tema. Un errore di uscita dal server non viene presentato come successo.
 
-New proofs save coordinates rounded to two decimal places (roughly 1 km) only when the existing Share area control is enabled. Historical posts without coordinates stay in Memories; the map does not infer coordinates from a city name or the user’s current location. Until there is a non-demo post with a shared area, four existing seed posts are shown at distinct sample positions in Milano. These demo positions are presentation data and are never saved as personal post locations. Expo Go shows a static compatibility preview with the same photo links and fullscreen control. Expo Maps requires a new native development build; annotation taps on iOS require iOS 18 or later. Android development/store builds also require a Google Maps SDK key via `android.config.googleMaps.apiKey` in the build configuration; no key is added to the repository.
+## Mappe e compatibilità
 
-The forest cover is the existing bundled `assets/demo/forest.jpg`. Profile and social data remain local prototype data.
+- Web: Leaflet e tile OpenStreetMap, con attribuzione e collegamenti accessibili alle prove.
+- Expo Go, iOS precedente al 18 o Android senza configurazione Google: anteprima statica a tile, fullscreen e foto apribili. Non richiede una chiave Google.
+- Development/store build: Expo Maps. Apple Maps da iOS 18 per usare i callback sui segnaposto; Android richiede Maps SDK for Android abilitato e una chiave limitata al package e certificato della build. Impostare `GOOGLE_MAPS_API_KEY` nell’ambiente di build: `app.config.ts` configura `android.config.googleMaps.apiKey` e abilita la mappa interattiva. Richiede una nuova build nativa; un aggiornamento JavaScript non aggiunge moduli nativi. Non inserire la chiave nel repository.
 
-## Concept preview
+Le tile online richiedono connessione. Se la mappa web non si carica, le foto sotto restano utilizzabili. Le build native e i servizi Google/Apple richiedono verifica su dispositivo; i controlli web non dimostrano il loro funzionamento.
 
-Mobile web captures (390 × 844), using the branch's demo history:
+## Prova
 
-| Impact | Memories | Map |
-| --- | --- | --- |
-| ![Impact concept](concepts/me-impact.png) | ![Memories concept](concepts/me-memories.png) | ![Map concept](concepts/me-map.png) |
+`npm ci`, `npm run web`, onboarding con Comune, poi `/me`. Le prove precedenti restano nei Ricordi. Per popolare la mappa pubblicare una nuova prova con zona visibile; con zona nascosta non compare alcun segnaposto.
 
-To try the concept: `npm ci`, `npm run web`, skip the onboarding story, enter a name and keep Demo history enabled, then open **Me**. The web route is `/me`. Native map builds have not been verified.
+`npm run verify` include la suite completa di main e i test del profilo: salvataggio/errore e conservazione del titolo, validazione degli handle, calendario e giorni con più prove, assenza di segnaposto inventati, coordinate valide, inquadratura e tile.
 
-Verification:
-
-```bash
-npm run verify
-node --test tests/profile.test.cjs
-```
-
-The targeted tests cover profile input validation, leap years and calendar boundaries, multiple proofs per day, missing/invalid coordinates, demo pin selection, map camera framing, tile coverage and date-line wrapping.
+Le immagini in `docs/concepts/` documentano il concept originale e i suoi vecchi dati dimostrativi; non rappresentano la versione integrata. Le prove visive attuali e gli esiti dei flussi sono collegati nella PR #56.

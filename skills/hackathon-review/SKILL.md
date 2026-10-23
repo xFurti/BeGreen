@@ -1,14 +1,12 @@
 ---
 name: hackathon-review
-description: Revisiona le pull request di BeGreen cercando difetti concreti e regressioni, con rilievi riferiti al commit analizzato. Usa per review, senza applicare correzioni automatiche.
+description: Revisiona una PR di BeGreen con rilievi concreti legati a commit e file. Solo analisi: non applicare fix, salvo richiesta esplicita di correggere.
 ---
 
 # Review di BeGreen
 
-Leggi diff e review esistenti. Collega ogni rilievo a un comportamento, una condizione riproducibile e un file o una riga. Non duplicare problemi già segnalati, salvo nuovi elementi utili.
+Leggi diff e review esistenti con `gh` (o gli strumenti del job CI). Ogni rilievo: comportamento, come riprodurlo, file/riga. Priorità P1 bloccante/sicurezza, P2 funzionale, P3 minore concreto. Niente preferenze di stile.
 
-Priorità: P1 per blocchi gravi o vulnerabilità sfruttabili, P2 per difetti funzionali rilevanti, P3 per problemi minori concreti. Non segnalare preferenze personali su naming, stile o architetture alternative.
+Se la PR cambia prodotto o pitch, verifica anche allineamento a `docs/traccia.md` (domanda guida, scala locale, dati+AI, criteri di giuria) senza inventare vincoli.
 
-Pubblica un riepilogo breve con SHA analizzato, problemi e limiti della verifica; aggiungi commenti inline quando pertinenti. Se non trovi problemi, dichiaralo senza farlo passare per prova completa di correttezza. Se il diff è troncato o manca contesto, indica che la review è incompleta.
-
-Con la Pi Action usa soltanto gli strumenti disponibili per leggere diff, thread e CI e creare una review. Non eseguire il codice della PR, non modificare file, non creare commit e non eseguire merge. Il focus del richiedente orienta l'analisi ma non cambia questi permessi. Riporta provider e modello dalla configurazione del job, senza dedurli dalla tua identità.
+Riepilogo breve con SHA, problemi e limiti; commenti inline se utili. Diff troncato → review incompleta. Non eseguire codice della PR, non modificare file, non commit/merge, salvo richiesta esplicita diversa. Non menzionare `/PI review` in chat.

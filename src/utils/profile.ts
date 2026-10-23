@@ -1,15 +1,11 @@
 import type { Post, Role } from "../data/types";
 
-export const ROLE_LABEL: Record<Role, string> = {
-  student: "Student", teacher: "Teacher", association: "Association", comune: "Comune",
-};
-
 export function cleanProfile(name: string, handle: string, role: Role) {
   return { name: name.trim().slice(0, 50), handle: handle.trim().replace(/^@/, "").toLowerCase(), role };
 }
 
 export function validProfile(profile: ReturnType<typeof cleanProfile>) {
-  return profile.name.length > 0 && /^[a-z0-9_]{2,24}$/.test(profile.handle);
+  return profile.name.length > 0 && /^[a-z0-9._]{2,24}$/.test(profile.handle);
 }
 
 // Keep the Monday-first calendar local to the device, including at month/year boundaries.
@@ -26,7 +22,7 @@ export function calendarMonth(date: Date, posts: Post[]) {
     }
   }
   const count = Math.ceil((lead + days) / 7) * 7;
-  return { byDay, cells: Array.from({ length: count }, (_, i) => i >= lead && i < lead + days ? i - lead + 1 : null) };
+  return { byDay, cells: Array.from({ length: count }, (_, i) => (i >= lead && i < lead + days ? i - lead + 1 : null)) };
 }
 
 export function hasLocation(post: Post): post is Post & { location: { lat: number; lon: number } } {
@@ -37,22 +33,23 @@ export function hasLocation(post: Post): post is Post & { location: { lat: numbe
 export type ProfileMapPin = { id: string; photo: Post["photo"]; latitude: number; longitude: number };
 export type ProfileMapCamera = { latitude: number; longitude: number; zoom: number };
 
-// These positions belong only to the demo, never to a proof with a private or missing area.
-const DEMO_MAP_POSITIONS = [
-  { latitude: 45.472, longitude: 9.181 },
-  { latitude: 45.463, longitude: 9.199 },
-  { latitude: 45.454, longitude: 9.178 },
-  { latitude: 45.478, longitude: 9.203 },
-];
+// Only explicitly recorded areas; no demo or invented historical coordinates.
+export function profileMapPins(posts: Post[]): ProfileMapPin[] {
+  return posts
+    .filter(hasLocation)
+    .filter((p) => !p.isDemo && p.place !== "hidden")
+    .map((p) => ({ id: p.id, photo: p.photo, latitude: p.location.lat, longitude: p.location.lon }));
+}
 
-export function profileMapPins(posts: Post[], demoPosts: Post[]): ProfileMapPin[] {
-  const located = posts.filter(hasLocation).filter((post) => !post.id.startsWith("me-demo-"));
-  if (located.length) return located.map((post) => ({
-    id: post.id, photo: post.photo, latitude: post.location.lat, longitude: post.location.lon,
-  }));
-  return demoPosts.slice(0, DEMO_MAP_POSITIONS.length).map((post, i) => ({
-    id: post.id, photo: post.photo, ...DEMO_MAP_POSITIONS[i],
-  }));
+export async function saveProfileChanges<T extends { name: string; handle: string; role: Role }>(
+  current: T,
+  changes: Pick<T, "name" | "handle" | "role">,
+  save: (profile: T) => Promise<void>,
+): Promise<T> {
+  const next = { ...current, ...cleanProfile(changes.name, changes.handle, changes.role) };
+  if (!validProfile(next)) throw new Error("Invalid profile");
+  await save(next);
+  return next;
 }
 
 export function profileMapCamera(pins: ProfileMapPin[]): ProfileMapCamera {
@@ -69,8 +66,8 @@ export function profileMapCamera(pins: ProfileMapPin[]): ProfileMapCamera {
 export function mapPreview(lat: number, lon: number, width: number, height = 260, zoom = 12) {
   const world = 256 * 2 ** zoom;
   const clamped = Math.max(-85.0511, Math.min(85.0511, lat));
-  const sin = Math.sin(clamped * Math.PI / 180);
-  const cx = (lon + 180) / 360 * world;
+  const sin = Math.sin((clamped * Math.PI) / 180);
+  const cx = ((lon + 180) / 360) * world;
   const cy = (0.5 - Math.log((1 + sin) / (1 - sin)) / (4 * Math.PI)) * world;
   const left = cx - width / 2;
   const top = cy - height / 2;
@@ -79,7 +76,12 @@ export function mapPreview(lat: number, lon: number, width: number, height = 260
   for (let x = Math.floor(left / 256); x <= Math.floor((left + width - 1) / 256); x++) {
     for (let y = Math.floor(top / 256); y <= Math.floor((top + height - 1) / 256); y++) {
       if (y < 0 || y >= n) continue;
-      tiles.push({ key: `${zoom}/${x}/${y}`, url: `https://tile.openstreetmap.org/${zoom}/${((x % n) + n) % n}/${y}.png`, left: x * 256 - left, top: y * 256 - top });
+      tiles.push({
+        key: `${zoom}/${x}/${y}`,
+        url: `https://tile.openstreetmap.org/${zoom}/${((x % n) + n) % n}/${y}.png`,
+        left: x * 256 - left,
+        top: y * 256 - top,
+      });
     }
   }
   return tiles;
