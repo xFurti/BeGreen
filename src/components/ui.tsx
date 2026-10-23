@@ -136,6 +136,7 @@ export function Button({
           borderWidth: kind === "ghost" ? 1 : 0,
           borderColor: C.line,
         },
+        loading && !disabled && { opacity: 0.9 },
         style,
       ]}
     >
@@ -369,6 +370,7 @@ export function Segmented<V extends string>({
             style={{
               flex: 1,
               height: 34,
+              paddingHorizontal: 8,
               borderRadius: R.pill,
               alignItems: "center",
               justifyContent: "center",
