@@ -119,7 +119,6 @@ export function VerifyBar({ post }: { post: Post }) {
 function Reactions({ post }: { post: Post }) {
   const react = useApp((s) => s.react);
   const mine = useApp((s) => s.reacted[post.id]);
-  const flagged = useApp((s) => !!s.flagged[post.id]);
   const { t, language } = useI18n();
   const [open, setOpen] = useState(false);
   const entries = Object.entries(post.reactions).filter(([, n]) => n > 0);
@@ -203,6 +202,7 @@ export const PostCard = memo(function PostCard({
 }) {
   const react = useApp((s) => s.react);
   const mine = useApp((s) => s.reacted[post.id]);
+  const flagged = useApp((s) => !!s.flagged[post.id]);
   const { t, language } = useI18n();
   const a = useAuthor()(post.authorId);
   const action = actionCopy(t, post.action);
