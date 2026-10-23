@@ -1,11 +1,11 @@
 import { router } from "expo-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Alert, ScrollView, Share, Text, TextInput, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 
 import { Icon } from "@/components/icon";
-import { Button, Segmented } from "@/components/ui";
-import type { Community, Visibility } from "@/data/community";
+import { Button, Chip, Segmented } from "@/components/ui";
+import type { Community, CommunityKind, Visibility } from "@/data/community";
 import { useKeyboardCover } from "@/hooks/use-keyboard-cover";
 import { useI18n } from "@/i18n/use-i18n";
 import { bboxAround } from "@/services/geo";
@@ -25,18 +25,22 @@ export default function NewGroup() {
   const { ref: keyboardRoot, cover, scrollerRef, scrollProps } = useKeyboardCover();
   const [name, setName] = useState("");
   const [visibility, setVisibility] = useState<Visibility>("private");
+  const [kind, setKind] = useState<CommunityKind>("friends");
   const [busy, setBusy] = useState(false);
+  const submitting = useRef(false);
   const [made, setMade] = useState<Community | null>(null);
   const code = useCommunity((s) => (made ? s.invites[made.id] : undefined));
 
   if (!comune) return null;
 
   const submit = async () => {
+    if (submitting.current || name.trim().length < 3) return;
+    submitting.current = true;
     setBusy(true);
     try {
       const c = await create({
         name: name.trim(),
-        kind: "friends",
+        kind,
         description: "",
         area: comune.name,
         visibility,
@@ -50,6 +54,7 @@ export default function NewGroup() {
     } catch {
       Alert.alert(t("community.newGroup.fail"), t("shared.checkConnection"));
     } finally {
+      submitting.current = false;
       setBusy(false);
     }
   };
@@ -101,6 +106,11 @@ export default function NewGroup() {
           accessibilityLabel={t("community.newGroup.name")}
         />
         <View style={{ gap: 8 }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            {(["friends", "school", "association", "neighbourhood"] as const).map((value) => (
+              <Chip key={value} label={t(`community.kinds2.${value}`)} active={kind === value} onPress={() => setKind(value)} />
+            ))}
+          </View>
           <Segmented<Visibility>
             value={visibility}
             onChange={setVisibility}

@@ -4,7 +4,7 @@ import { Alert, Pressable, ScrollView, Share, Text, TextInput, View } from "reac
 
 import { ChallengeCard, CommunityCover, communityDescription, ProofRow, PromptCard, SpotRow } from "@/components/community-ui";
 import { Icon } from "@/components/icon";
-import { Leaderboard } from "@/components/leaderboard";
+import { GroupImpact } from "@/components/group-impact";
 import { AvatarStack, Button, Mono, Press } from "@/components/ui";
 import { eventPhase, isCity, type Community } from "@/data/community";
 import { useCommunityFeed } from "@/hooks/use-community-feed";
@@ -75,11 +75,16 @@ function Latest({ c, limit = 6, empty }: { c: Community; limit?: number; empty: 
   const proofs = useCommunityFeed(c).filter((it) => it.kind === "post");
   return (
     <View style={{ gap: 10 }}>
-      <Heading title={t("community.page.latest")} />
+      <Heading title={isCity(c) ? t("community.page.latest") : t("groups.groupActivity")} />
       {proofs.slice(0, limit).map((it) => (it.kind === "post" ? <ProofRow key={it.post.id} post={it.post} /> : null))}
       {proofs.length === 0 && <Text style={T.caption}>{empty}</Text>}
     </View>
   );
+}
+
+function BoardLink({ c }: { c: Community }) {
+  const { t } = useI18n();
+  return <Button label={t("groups.board")} kind="ghost" size="md" icon="league" onPress={() => router.push({ pathname: "/community-ranking", params: { id: c.id } })} />;
 }
 
 function LeaveButton({ c }: { c: Community }) {
@@ -176,9 +181,9 @@ function CityPage({ c }: { c: Community }) {
 
       <Challenges c={c} member={!!role} />
 
-      <Leaderboard community={c} limit={5} title={t("community.city.board", { name: c.name })} />
-
       <Latest c={c} limit={5} empty={t("community.city.noProofs")} />
+
+      <BoardLink c={c} />
 
       {role && <LeaveButton c={c} />}
     </>
@@ -274,10 +279,21 @@ function GroupPage({ c }: { c: Community }) {
 
       {canSee ? (
         <>
-          <Leaderboard community={c} title={t("community.group.board")} />
-          {role && invite && <InviteCard c={c} code={invite} />}
-          <Latest c={c} empty={t("community.group.noProofs")} />
+          {role && <Button label={t("groups.post")} kind="green" icon="camera" onPress={() => router.push({ pathname: "/capture", params: { group: c.id } })} />}
           <Challenges c={c} member={!!role} />
+          <Latest c={c} empty={t("groups.noProofs")} />
+          <GroupImpact community={c} />
+          {role && invite && <InviteCard c={c} code={invite} />}
+          <View style={{ gap: 10 }}>
+            <Heading title={t("groups.members")} />
+            {(members ?? []).slice(0, 30).map((m) => (
+              <Press key={m.userId} onPress={() => router.push({ pathname: "/member/[id]", params: { id: m.userId } })}>
+                <Text style={T.body}>{author(m.userId).name}</Text>
+              </Press>
+            ))}
+            {(members?.length ?? 0) > 30 && <Text style={T.caption}>{t("groups.moreMembers", { count: 30 })}</Text>}
+          </View>
+          <BoardLink c={c} />
         </>
       ) : (
         <View style={{ alignItems: "center", gap: 10, paddingVertical: 20 }}>

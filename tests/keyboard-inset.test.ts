@@ -116,6 +116,8 @@ test("ogni schermata con TextInput usa useKeyboardCover e nessuna lascia Keyboar
 
   for (const file of walk(path.join(root, "src"))) {
     if (file.endsWith("use-keyboard-cover.ts")) continue;
+    // Archived squad screens stay in the repo and are not mounted by the router.
+    if (file.includes(`${path.sep}legacy-`)) continue;
     const content = readFileSync(file, "utf8");
     const rel = path.relative(root, file).replaceAll("\\", "/");
     // I sotto-passi di onboarding vivono dentro lo ScrollView di src/app/onboarding.tsx, che usa useKeyboardCover.

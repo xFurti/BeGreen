@@ -5,7 +5,9 @@ import { ScrollView, Text, TextInput, View } from "react-native";
 import { Button } from "@/components/ui";
 import { useKeyboardCover } from "@/hooks/use-keyboard-cover";
 import { useI18n } from "@/i18n/use-i18n";
+import { resolveGroupInvite } from "@/services/community";
 import { scrollPaddingBottom } from "@/services/keyboard-inset";
+import { hasBackend } from "@/services/supabase";
 import { useCommunity } from "@/store/community-store";
 import { F, R } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
@@ -20,12 +22,22 @@ export default function JoinWithCode() {
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [choices, setChoices] = useState<{ id: string; name: string }[]>([]);
 
-  const submit = async () => {
+  const submit = async (target?: string) => {
+    if (busy) return;
     setBusy(true);
     setError(null);
     try {
-      const id = await joinByCode(code);
+      if (!target) {
+        const s = useCommunity.getState();
+        const candidates = hasBackend ? await resolveGroupInvite(code) : s.catalog.filter((c) => s.invites[c.id] === code);
+        if (candidates.length > 1) {
+          setChoices(candidates);
+          return;
+        }
+      }
+      const id = await joinByCode(code, target);
       if (!id) {
         setError(t("community.joinCode.bad"));
         return;
@@ -57,6 +69,7 @@ export default function JoinWithCode() {
           onChangeText={(v) => {
             setCode(v.toUpperCase().replace(/[^A-Z0-9]/g, ""));
             setError(null);
+            setChoices([]);
           }}
           placeholder="ABC123"
           placeholderTextColor={C.faint}
@@ -70,7 +83,11 @@ export default function JoinWithCode() {
           accessibilityLabel={t("community.page.codePh")}
         />
         {error && <Text style={{ fontFamily: F.regular, fontSize: 14, color: C.red, textAlign: "center" }}>{error}</Text>}
-        <Button label={t("community.joinCode.cta")} kind="green" loading={busy} disabled={code.length < 4} onPress={submit} />
+        {choices.length > 1 && <Text style={T.callout}>{t("groups.inviteChoice")}</Text>}
+        {choices.map((c) => (
+          <Button key={c.id} label={c.name} kind="secondary" disabled={busy} onPress={() => submit(c.id)} />
+        ))}
+        {!choices.length && <Button label={t("community.joinCode.cta")} kind="green" loading={busy} disabled={code.length < 4} onPress={() => submit()} />}
       </ScrollView>
     </View>
   );

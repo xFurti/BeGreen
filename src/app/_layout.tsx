@@ -78,6 +78,7 @@ export default function RootLayout() {
           <Stack.Screen name="new-squad" options={{ ...sheet, sheetAllowedDetents: [0.92] }} />
           <Stack.Screen name="comune" options={{ ...sheet, sheetAllowedDetents: [0.92] }} />
           <Stack.Screen name="league" options={{ title: "" }} />
+          <Stack.Screen name="community-ranking" options={{ title: "" }} />
           <Stack.Screen name="community/[id]" options={{ title: "" }} />
           <Stack.Screen name="spot/[id]" options={{ title: "" }} />
           <Stack.Screen name="member/[id]" options={{ title: "" }} />

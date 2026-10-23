@@ -10,17 +10,19 @@ import { Icon } from "@/components/icon";
 import { Sprout } from "@/components/nature";
 import { PostCard, VerifyBar } from "@/components/post-card";
 import { SeedTip } from "@/components/seed-ui";
-import { Avatar, Bar, Button, Logo, Mono, Press, TextTabs } from "@/components/ui";
+import { Avatar, Button, Logo, Mono, Press, TextTabs } from "@/components/ui";
 import { demoPostsFor } from "@/data/demo";
 import type { Post, User } from "@/data/types";
 import { usePulse } from "@/hooks/use-pulse";
 import { actionCopy, profileName } from "@/i18n/content";
 import { useI18n } from "@/i18n/use-i18n";
-import { postedToday, streakOf, syncSocial, useApp, useAuthor, useLeague, useMyPosts } from "@/store/app-store";
+import { isGroupPost, postGroupId } from "@/services/groups";
+import { postedToday, streakOf, syncSocial, useApp, useAuthor, useMyPosts } from "@/store/app-store";
+import { useJoined } from "@/store/community-store";
 import { F, R } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
 
-type Lens = "comune" | "squads" | "everyone";
+type Lens = "comune" | "groups" | "everyone";
 
 // Below this many real proofs for today's challenge, example proofs fill the Comune feed.
 const DEMO_UNDER = 3;
@@ -88,43 +90,31 @@ function Mine({ post }: { post: Post }) {
   );
 }
 
-function Race({ place }: { place: string }) {
+function CommunityEntry({ place }: { place: string }) {
   const { C } = useTheme();
-  const league = useLeague();
   const { t } = useI18n();
-  const i = league.findIndex((r) => r.me);
-  const me = league[i];
-  const ahead = league[i - 1];
-  const gap = ahead ? ahead.points - me.points : 0;
-  const alone = league.length < 2;
   return (
     <Press
       scale={0.985}
-      onPress={() => router.push("/league")}
-      accessibilityLabel={t("feed.leagueA11y")}
+      onPress={() => router.navigate("/(tabs)/community")}
+      accessibilityLabel={t("community.title")}
       style={{ backgroundColor: C.card, borderRadius: R.xl, borderCurve: "continuous", padding: 18, gap: 14 }}
     >
       <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <Mono style={{ flex: 1 }}>{t("feed.weekIn", { place })}</Mono>
-        <Mono color={C.forestInk}>{t("feed.league")}</Mono>
+        <Mono style={{ flex: 1 }}>{t("community.title")}</Mono>
+        <Icon name="arrowRight" color={C.forestInk} size={18} />
       </View>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
-        <Text style={{ fontFamily: F.medium, fontSize: 44, lineHeight: 46, letterSpacing: -2, color: C.forestInk }}>#{i + 1}</Text>
+        <Icon name="map" color={C.forestInk} size={30} />
         <View style={{ flex: 1, gap: 4 }}>
           <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3, color: C.ink }} numberOfLines={1}>
-            {alone ? t("feed.firstOnBoard") : ahead ? t("feed.behind", { gap, name: ahead.name }) : t("feed.top")}
+            {t("groups.feedTitle", { place })}
           </Text>
-          <Text style={{ fontFamily: F.regular, fontSize: 13, color: C.mute }} numberOfLines={1}>
-            {alone
-              ? t("feed.alone", { place })
-              : ahead
-                ? t("feed.oneProof")
-                : t("feed.ahead", { gap: me.points - (league[1]?.points ?? 0), name: league[1]?.name ?? t("feed.everyone") })}
+          <Text style={{ fontFamily: F.regular, fontSize: 13, lineHeight: 18, color: C.mute }}>
+            {t("groups.feedBody")}
           </Text>
         </View>
-        {ahead && <Avatar src={ahead.avatar} name={ahead.name} seed={ahead.seed} seeds={ahead.seeds} size={36} />}
       </View>
-      {ahead && <Bar value={me.points / Math.max(1, ahead.points)} />}
     </Press>
   );
 }
@@ -136,7 +126,7 @@ export default function Feed() {
   const me = useApp((s) => s.userId);
   const myPosts = useMyPosts();
   const profile = useApp((s) => s.profile);
-  const squads = useApp((s) => s.squads);
+  const { groups } = useJoined();
   const comune = useApp((s) => s.comune);
   const author = useAuthor();
   const { drop, pulse, refresh, ready } = usePulse();
@@ -153,21 +143,21 @@ export default function Feed() {
   const mineToday = myPosts.find((p) => new Date(p.createdAt).toDateString() === today);
   const didDrop = myPosts.some((p) => p.challengeId === drop.id);
 
-  const challengePosts = useMemo(() => all.filter((p) => p.challengeId === drop.id && !p.isDemo), [all, drop.id]);
+  const challengePosts = useMemo(() => all.filter((p) => p.challengeId === drop.id && !p.isDemo && !isGroupPost(p)), [all, drop.id]);
   const crowd = useMemo(() => {
     const ids = [...new Set(challengePosts.map((p) => p.authorId))].sort((a, b) => Number(b === me) - Number(a === me));
     return ids.map((id): User => author(id));
   }, [challengePosts, me, author]);
 
-  const mySquadIds = useMemo(() => new Set(squads.map((s) => s.id)), [squads]);
+  const groupIds = useMemo(() => new Set(groups.map((s) => s.id)), [groups]);
   const posts = useMemo(() => {
     const others = all.filter((p) => p.authorId !== me && !p.isDemo);
-    if (lens === "squads") return others.filter((p) => p.squadId && mySquadIds.has(p.squadId));
+    if (lens === "groups") return others.filter((p) => groupIds.has(postGroupId(p) ?? ""));
     if (lens === "everyone") return others.filter((p) => p.audience === "public");
-    const local = others.filter((p) => p.comuneId === comune?.id && p.audience !== "squad");
+    const local = others.filter((p) => p.comuneId === comune?.id && !isGroupPost(p));
     if (!ready || challengePosts.length >= DEMO_UNDER) return local;
     return [...local, ...demoPostsFor(drop, place)];
-  }, [all, me, lens, mySquadIds, comune?.id, ready, challengePosts.length, drop, place]);
+  }, [all, me, lens, groupIds, comune?.id, ready, challengePosts.length, drop, place]);
 
   // FlatList forbids swapping this callback after mount, so keep one instance for the screen's lifetime.
   const [onViewable] = useState(() => ({ viewableItems }: { viewableItems: (ListViewToken & { item: Post })[] }) => {
@@ -192,14 +182,14 @@ export default function Feed() {
       ) : (
         <NotYet streak={streak} />
       )}
-      <Race place={place} />
+      <CommunityEntry place={place} />
       <View style={{ paddingTop: 18 }}>
         <TextTabs<Lens>
           value={lens}
           onChange={setLens}
           options={[
             { value: "comune", label: place },
-            { value: "squads", label: t("common.squads") },
+            { value: "groups", label: t("groups.groups") },
             { value: "everyone", label: t("common.everyone") },
           ]}
         />
@@ -253,9 +243,9 @@ export default function Feed() {
             <Sprout size={56} />
             <Text style={{ fontFamily: F.medium, fontSize: 20, letterSpacing: -0.6, color: C.ink }}>{t("feed.quiet")}</Text>
             <Text style={{ fontFamily: F.regular, color: C.mute, textAlign: "center" }}>
-              {lens === "squads" ? t("feed.quietBody") : lens === "everyone" ? t("feed.quietEveryone") : t("feed.quietComune", { place })}
+              {lens === "groups" ? t("groups.noProofs") : lens === "everyone" ? t("feed.quietEveryone") : t("feed.quietComune", { place })}
             </Text>
-            {lens === "squads" && <Button label={t("feed.findSquad")} size="md" onPress={() => router.push({ pathname: "/league", params: { tab: "squads" } })} style={{ marginTop: 6 }} />}
+            {lens === "groups" && <Button label={t("community.title")} size="md" onPress={() => router.navigate("/(tabs)/community")} style={{ marginTop: 6 }} />}
           </Animated.View>
         }
         showsVerticalScrollIndicator={false}

@@ -7,6 +7,7 @@ import { referenceMessages } from "@/i18n/messages/reference";
 import { profileMessages } from "@/i18n/messages/profile";
 import { seedMessages } from "@/i18n/messages/seed";
 import { uiMessages } from "@/i18n/messages/ui";
+import { groupMessages } from "@/i18n/messages/groups";
 
 const en = {
   ...uiMessages.en,
@@ -19,6 +20,7 @@ const en = {
   insights: generatedMessages.en.insights,
   answers: generatedMessages.en.leaf,
   community: communityMessages.en,
+  groups: groupMessages.en,
   seed: seedMessages.en,
 };
 
@@ -33,6 +35,7 @@ const it = {
   insights: generatedMessages.it.insights,
   answers: generatedMessages.it.leaf,
   community: communityMessages.it,
+  groups: groupMessages.it,
   seed: seedMessages.it,
 };
 

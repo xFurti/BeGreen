@@ -120,15 +120,15 @@ test("squads: points come from the server, squad posts stay in the squad", async
   assert.deepEqual(row, { points: 20, progress: 1, move: 1 });
 
   assert.equal((await as(B, `select id from posts where audience = 'squad'`)).length, 0);
-  await as(B, `insert into squad_members (squad_id) select id from squads where code = 'CLASSE10'`);
+  await as(B, `select join_group_by_code('CLASSE10', 'squad:${s.id}')`);
   assert.equal((await as(B, `select id from posts where audience = 'squad'`)).length, 1);
   await rejects(B, `update squads set points = 99999 where id = '${s.id}'`);
 });
 
-test("storage: uploads only into your own folder of a public bucket", async () => {
+test("storage: uploads only into your own folder of a private bucket", async () => {
   await rejects(B, `insert into storage.objects (bucket_id, name) values ('proofs', '${A}/x.jpg')`);
   await as(B, `insert into storage.objects (bucket_id, name) values ('proofs', '${B}/x.jpg')`);
-  assert.equal((await db.query(`select public from storage.buckets where id = 'proofs'`)).rows[0].public, true);
+  assert.equal((await db.query(`select public from storage.buckets where id = 'proofs'`)).rows[0].public, false);
 });
 
 test("challenge reward survives a database round trip and is credited once to the squad", async () => {

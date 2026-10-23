@@ -150,7 +150,7 @@ const ASK = {
     soil: () => "More land is sealed than in most comuni nearby. Ask that new projects reuse brownfield sites before building on fields.",
     emissions: (sector: string) => `CO₂ per resident is high, mainly from ${sector}. Ask for the Comune's climate plan (PAESC) and its progress.`,
     pm10: () => "PM10 is above the 2030 EU limit. Ask for safe cycling routes to schools and traffic limits on bad-air days.",
-    fine: () => "Indicators are in line with the province. Ask the Comune how it plans to meet the 2030 EU air limits, and join a local squad.",
+    fine: () => "Indicators are in line with the province. Ask the Comune how it plans to meet the 2030 EU air limits, and join a local group.",
   },
   it: {
     heating: (pct?: number) =>
@@ -159,7 +159,7 @@ const ASK = {
     soil: () => "Qui il suolo consumato è più che nella maggior parte dei comuni vicini. Chiedi che i nuovi progetti riusino aree dismesse prima di costruire sui campi.",
     emissions: (sector: string) => `La CO₂ per residente è alta, soprattutto da ${sector}. Chiedi il piano clima del Comune (PAESC) e a che punto è.`,
     pm10: () => "Il PM10 supera il limite UE del 2030. Chiedi percorsi ciclabili sicuri verso le scuole e limiti al traffico nei giorni di aria cattiva.",
-    fine: () => "Gli indicatori sono in linea con la provincia. Chiedi al Comune come pensa di rispettare i limiti UE sull'aria del 2030, e unisciti a una squad locale.",
+    fine: () => "Gli indicatori sono in linea con la provincia. Chiedi al Comune come pensa di rispettare i limiti UE sull'aria del 2030, e unisciti a un gruppo locale.",
   },
 };
 
