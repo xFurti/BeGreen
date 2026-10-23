@@ -40,6 +40,9 @@ export const fixed = {
   layerSwap: "#D9480F",
   layerEvents: "#C2255C",
   layerReports: "#B07800",
+  // Accessible chip fills; keep the map's category colours unchanged.
+  layerSwapStrong: "#C8400B",
+  layerReportsStrong: "#936400",
   layerMoments: "#0E7C86",
   past: "#9AA39A",
   mapLand: "#F2EFE9",

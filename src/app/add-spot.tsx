@@ -9,12 +9,13 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CommunityMap, type MapHandle } from "@/components/community-map";
 import { CategoryChip, whenText } from "@/components/community-ui";
 import { Icon } from "@/components/icon";
-import { Button, Chip, Mono, Press, Segmented } from "@/components/ui";
+import { EventScheduleFields, EMPTY_EVENT_SCHEDULE } from "@/components/event-schedule-fields";
+import { Button, Mono, Press, Segmented } from "@/components/ui";
 import { CATEGORY_LIST, KIND_LIST, KINDS, dayKey, promptOf, type SpotCategory, type SpotKind } from "@/data/community";
 import { useKeyboardCover } from "@/hooks/use-keyboard-cover";
 import { requestMyLocation } from "@/hooks/use-my-location";
-import { intlLocale } from "@/i18n/format";
 import { useI18n } from "@/i18n/use-i18n";
+import { parseEventSchedule, type EventScheduleInput } from "@/services/event-schedule";
 import { approximate, inBBox, type LatLon } from "@/services/geo";
 import { scrollPaddingBottom } from "@/services/keyboard-inset";
 import { useCommunity, useCommunityById } from "@/store/community-store";
@@ -24,10 +25,6 @@ import { haptic } from "@/utils/format";
 
 type Step = "what" | "photo" | "details" | "where" | "share";
 const STEPS: Step[] = ["what", "photo", "details", "where", "share"];
-
-const DAYS = 21;
-const TIMES = Array.from({ length: 29 }, (_, i) => 7 * 60 + i * 30); // 07:00 → 21:00
-const DURATIONS = [60, 120, 180, 0]; // 0: all day
 
 // Add a place or an experience to the community map. Quick and photo-first: what, a photo, a few words,
 // where (always confirmed by you), who sees it.
@@ -53,9 +50,8 @@ export default function AddSpot() {
   const [address, setAddress] = useState("");
   const [family, setFamily] = useState(false);
   const [done, setDone] = useState(false);
-  const [day, setDay] = useState(1);
-  const [time, setTime] = useState(10 * 60);
-  const [duration, setDuration] = useState(120);
+  const [scheduleInput, setScheduleInput] = useState<EventScheduleInput>({ ...EMPTY_EVENT_SCHEDULE });
+  const [showScheduleErrors, setShowScheduleErrors] = useState(false);
   const [point, setPoint] = useState<LatLon | null>(null);
   const [onMap, setOnMap] = useState(startKind !== "moment");
   const [precise, setPrecise] = useState(startKind !== "moment" && startKind !== "report");
@@ -101,13 +97,15 @@ export default function AddSpot() {
     }
   };
 
-  const startsAt = (() => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() + day);
-    return d.getTime() + time * 60e3;
-  })();
-  const endsAt = duration ? startsAt + duration * 60e3 : undefined;
+  const schedule = parseEventSchedule(scheduleInput);
+  const confirmDetails = () => {
+    if (kind === "event" && schedule.error) {
+      setShowScheduleErrors(true);
+      Alert.alert(t("community.add.when"), t(`community.add.${schedule.error}Error`));
+      return;
+    }
+    next();
+  };
 
   const useMine = async () => {
     setLocating(true);
@@ -119,6 +117,11 @@ export default function AddSpot() {
   };
 
   const publish = () => {
+    if (kind === "event" && schedule.error) {
+      setShowScheduleErrors(true);
+      setStep("details");
+      return;
+    }
     const where = onMap && point ? (precise ? point : approximate(point)) : null;
     const spot = addSpot({
       communityId: community.id,
@@ -132,8 +135,8 @@ export default function AddSpot() {
       precise: !!where && precise,
       address: address.trim(),
       status: kind === "challenge" && done ? "done" : "active",
-      startsAt: kind === "event" ? startsAt : undefined,
-      endsAt: kind === "event" ? endsAt : undefined,
+      startsAt: kind === "event" ? schedule.schedule?.startsAt : undefined,
+      endsAt: kind === "event" ? schedule.schedule?.endsAt : undefined,
       family,
       visibility,
       promptDay: params.prompt ? dayKey() : undefined,
@@ -288,25 +291,8 @@ export default function AddSpot() {
             {kind === "event" && (
               <View style={{ gap: 10 }}>
                 <Mono>{t("community.add.when")}</Mono>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-                  {Array.from({ length: DAYS }, (_, i) => {
-                    const d = new Date();
-                    d.setDate(d.getDate() + i);
-                    const label = i === 0 ? t("community.add.today") : i === 1 ? t("community.add.tomorrow") : new Intl.DateTimeFormat(intlLocale(language), { weekday: "short", day: "numeric" }).format(d);
-                    return <Chip key={i} label={label} active={day === i} onPress={() => setDay(i)} />;
-                  })}
-                </ScrollView>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-                  {TIMES.map((m) => (
-                    <Chip key={m} label={`${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`} active={time === m} onPress={() => setTime(m)} />
-                  ))}
-                </ScrollView>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-                  {DURATIONS.map((m) => (
-                    <Chip key={m} label={m ? t("community.add.hours", { n: m / 60 }) : t("community.add.allDay")} active={duration === m} onPress={() => setDuration(m)} />
-                  ))}
-                </View>
-                <Text style={T.caption}>{whenText(language, startsAt, endsAt)}</Text>
+                <EventScheduleFields value={scheduleInput} onChange={setScheduleInput} showErrors={showScheduleErrors} />
+                {schedule.schedule && <Text style={T.caption}>{whenText(language, schedule.schedule.startsAt, schedule.schedule.endsAt)}</Text>}
               </View>
             )}
 
@@ -335,7 +321,7 @@ export default function AddSpot() {
               </View>
             )}
             {kind === "useful" && <Text style={T.caption}>{t("community.add.usefulHint")}</Text>}
-            <Button label={t("common.next")} disabled={!canDetails} onPress={next} />
+            <Button label={t("common.next")} disabled={!canDetails} onPress={confirmDetails} />
           </Animated.View>
         )}
 
@@ -359,6 +345,9 @@ export default function AddSpot() {
                 </Text>
               </View>
             </View>
+            {kind === "event" && schedule.schedule && (
+              <Text style={T.callout}>{whenText(language, schedule.schedule.startsAt, schedule.schedule.endsAt)}</Text>
+            )}
             <Mono>{t("community.add.who")}</Mono>
             <Segmented<"public" | "community">
               value={visibility}
