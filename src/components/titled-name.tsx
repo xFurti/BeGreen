@@ -1,8 +1,7 @@
-import { Image } from "expo-image";
 import type { ReactNode } from "react";
 import { StyleSheet, Text, View, type StyleProp, type TextStyle } from "react-native";
 
-import { BADGE_ART } from "@/data/badge-art";
+import { BadgeArt } from "@/components/badge-art";
 import { badgeById, isBadgeId, type BadgeId } from "@/data/badges";
 import { useI18n } from "@/i18n/use-i18n";
 import { useTheme } from "@/theme/use-theme";
@@ -35,7 +34,7 @@ export function TitledName({
       accessibilityLabel={t("badges.titled", { name, badge: t(badge.name) })}
       style={{ flexDirection: "row", alignItems: "center", gap: fontSize * 0.3, justifyContent: align === "center" ? "center" : undefined }}
     >
-      <Image source={BADGE_ART[badgeId]} style={{ width: h, height: h, flexShrink: 0 }} accessible={false} />
+      <BadgeArt id={badgeId} size={h} />
       <Text numberOfLines={lines} style={[{ color: C.ink }, style, { flexShrink: 1 }]}>{name}{after}</Text>
     </View>
   );
