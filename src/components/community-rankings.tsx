@@ -38,7 +38,7 @@ export function CommunityRankings({ groups, onContextChange }: { groups: Communi
     let current = true;
     onContextChange(id);
     if (comune && id === `comune-${comune.id}`) previewCity(comune);
-    syncCommunity(id).then(
+    syncCommunity(id, { throwOnError: true }).then(
       () => { if (current) setRequest({ id, attempt: retry, phase: "ready" }); },
       () => { if (current) setRequest({ id, attempt: retry, phase: "error" }); },
     );
