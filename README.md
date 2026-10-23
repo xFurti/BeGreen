@@ -69,6 +69,8 @@ Official per-comune data is a bundled extract for the Province of Vicenza, match
 
 Nature and Leaf show plants only (iNaturalist `iconic_taxa=Plantae`; GBIF `taxonKey=6`). An empty result is shown as 0 recorded plant species, not as an absence of plants. The `spot` action keeps its ID and existing proofs, with plant-focused instructions. Older mixed-species caches are refreshed; existing shared Drops keep their identity and omit the old mixed count.
 
+Biodiversity questions use Leaf's grounded local engine even when an AI endpoint is configured, so its answers stay within the plants shown in Pulse.
+
 Each source loads separately, so one outage never empties the Pulse. If everything is offline, the app shows clearly labelled sample data, and a Drop built from sample data is never saved as the Comune's challenge.
 
 ## Shared backend (Supabase)
