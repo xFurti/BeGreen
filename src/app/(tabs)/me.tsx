@@ -9,12 +9,12 @@ import { ComuneSection } from "@/components/comune-card";
 import { Icon, type IconName } from "@/components/icon";
 import { LanguageSwitch } from "@/components/language-switch";
 import { TitledName } from "@/components/titled-name";
-import { Avatar, IconButton, Logo, Mono, Press, SectionHeader, TopCover, useCountUp } from "@/components/ui";
+import { Avatar, IconButton, Logo, Mono, Press, SectionHeader, Segmented, TopCover, useCountUp } from "@/components/ui";
 import { ACTIONS } from "@/data/actions";
 import { BADGE_ART } from "@/data/badge-art";
 import { BADGES, earnedBadges } from "@/data/badges";
 import { daysTo2030, SDG_LIST } from "@/data/sdgs";
-import type { Post } from "@/data/types";
+import type { Explain, Post } from "@/data/types";
 import { useComune } from "@/hooks/use-comune";
 import type { MessageKey } from "@/i18n/catalog";
 import { profileName, sdgTitle } from "@/i18n/content";
@@ -334,18 +334,25 @@ export default function Me() {
         </View>
 
         <View style={{ borderTopWidth: 1, borderTopColor: C.line }}>
+          <View style={{ gap: 10, paddingBottom: 14 }}>
+            <Mono color={C.ink}>{t("common.explainFor")}</Mono>
+            <Segmented<Explain>
+              value={explain}
+              onChange={setExplain}
+              options={[
+                { value: "me", label: t("common.me") },
+                { value: "class", label: t("common.myClass") },
+                { value: "comune", label: t("common.comune") },
+              ]}
+            />
+            <Text style={T.caption}>{t("me.explainHint")}</Text>
+          </View>
           <Row icon="location" label={t("common.comune")} value={comune?.name} onPress={() => router.push("/comune")} />
           <View style={{ flexDirection: "row", alignItems: "center", gap: 14, minHeight: 56, borderBottomWidth: 1, borderBottomColor: C.line }}>
             <Icon name="globe" size={16} color={C.ink} />
             <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2 }}>{t("language.row")}</Text>
             <LanguageSwitch />
           </View>
-          <Row
-            icon="doc"
-            label={t("me.explanations")}
-            value={{ me: t("common.me"), class: t("common.myClass"), comune: t("common.comune") }[explain]}
-            onPress={() => setExplain(explain === "me" ? "class" : explain === "class" ? "comune" : "me")}
-          />
           <Row icon="book" label={t("me.guide")} onPress={() => router.push("/guide")} />
           <Row icon="shield" label={t("me.sources")} onPress={() => router.push("/sources")} />
           <Row icon="sparkle" label={t("common.askLeaf")} onPress={() => router.push("/leaf")} />

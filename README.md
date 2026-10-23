@@ -46,7 +46,7 @@ BeGreen is built for the brief **“2. La mia sostenibilità”**: it takes sust
 | AI to understand measurements and documents | Leaf turns raw numbers into plain language and plugs into an LLM backend (see below) |
 | Answers that cite sources | Every Leaf answer carries source badges; every Pulse card carries its source |
 | Interpreting images | Proof photo + video verified by peers today; the backend contract covers image interpretation (species ID, proof checks) |
-| Explanations adapted to the reader | Me / My class / Comune on Pulse, in Leaf and in the defaults set from your role |
+| Explanations adapted to the reader | Me / My class / Comune on Pulse, in Leaf, in the Explain it for block on Me and in the defaults set from your role |
 | Sources aren't equivalent | Five source kinds, colour-coded everywhere; each data card's text names its limits (e.g. “model, ~10 km grid, not an ARPA station”) |
 | Some access and terms still to verify | The `verified: false` flag in `src/data/sources.ts` shows a ⚠︎ in *How we know* (ISPRA Catasto Rifiuti reuse licence) |
 
