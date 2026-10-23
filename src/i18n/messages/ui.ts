@@ -420,6 +420,7 @@ export const uiMessages = defineMessages(
       },
       note: "No alarm, no panic. Everyone in {place} gets the same Drop today. Post it whenever you actually do it, before midnight.",
       doIt: "Do it: {act}",
+      reward: "+{n} seeds",
       show: "Show me how",
     },
     dropCard: {
@@ -979,6 +980,7 @@ export const uiMessages = defineMessages(
       },
       note: "Niente allarme, niente panico. Tutti a {place} ricevono lo stesso Drop oggi. Pubblicalo quando lo fai davvero, prima di mezzanotte.",
       doIt: "Fallo: {act}",
+      reward: "+{n} semi",
       show: "Mostrami come",
     },
     dropCard: {
