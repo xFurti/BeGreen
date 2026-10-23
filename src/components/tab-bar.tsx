@@ -1,6 +1,6 @@
 import type { BottomTabBarProps } from "expo-router/js-tabs";
-import { router } from "expo-router";
-import { useEffect } from "react";
+import { router, useFocusEffect, useNavigation, usePathname } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import Animated, {
   Easing,
@@ -50,11 +50,13 @@ function Part({ d, color, stroke, origin, style }: { d: string; color: string; s
 }
 
 // The shutter. Looks like the camera it opens, in deep green with a lime ring.
-function CaptureButton() {
+function CaptureButton({ tabIndex }: { tabIndex: number }) {
   const done = postedToday(useMyPosts());
   const { C } = useTheme();
   const { t } = useI18n();
   const reduced = useReducedMotion();
+  const navigation = useNavigation();
+  const pathname = usePathname();
   const g = useSharedValue(0);
   const plus = useAnimatedStyle(() => ({
     opacity: interpolate(g.value, [0, 0.3], [1, 0], "clamp"),
@@ -63,18 +65,85 @@ function CaptureButton() {
   const stem = useAnimatedStyle(() => ({ transform: [{ scaleY: interpolate(g.value, [0.15, 0.5], [0, 1], "clamp") }] }));
   const left = useAnimatedStyle(() => ({ transform: [{ scale: interpolate(g.value, [0.4, 0.65, 0.8], [0, 1.15, 1], "clamp") }] }));
   const right = useAnimatedStyle(() => ({ transform: [{ scale: interpolate(g.value, [0.55, 0.85, 1], [0, 1.15, 1], "clamp") }] }));
+  // One open in flight. Leaving the tabs, or switching tab, drops it before the camera can open.
+  const pending = useRef(false);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const tabIndexRef = useRef(tabIndex);
+  const pathRef = useRef(pathname);
+  const [held, setHeld] = useState(false);
+
+  const drop = useCallback(() => {
+    for (const id of timers.current) clearTimeout(id);
+    timers.current = [];
+    if (!pending.current) return;
+    pending.current = false;
+    setHeld(false);
+    g.set(0);
+  }, [g]);
+
+  useEffect(
+    () => () => {
+      for (const id of timers.current) clearTimeout(id);
+      timers.current = [];
+    },
+    [],
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      return () => drop();
+    }, [drop]),
+  );
+
+  const seenTab = useRef(tabIndex);
+  useEffect(() => {
+    tabIndexRef.current = tabIndex;
+    if (seenTab.current === tabIndex) return;
+    seenTab.current = tabIndex;
+    drop();
+  }, [tabIndex, drop]);
+
+  useEffect(() => {
+    if (pathRef.current === pathname) return;
+    pathRef.current = pathname;
+    drop();
+  }, [pathname, drop]);
+
   return (
     <Press
       scale={0.9}
       hapticOn={false}
+      disabled={held}
+      dimDisabled={false}
       accessibilityLabel={t("tabs.capture")}
       onPress={() => {
+        if (pending.current) return;
         haptic.thud();
         if (reduced) return router.push("/capture");
+        pending.current = true;
+        setHeld(true);
+        const startedOn = tabIndexRef.current;
+        const startedPath = pathRef.current;
         g.set(withTiming(1, { duration: GROW_MS, easing: Easing.out(Easing.quad) }));
-        setTimeout(() => router.push("/capture"), GROW_MS);
-        // Back to a plus once the camera covers the bar.
-        setTimeout(() => g.set(0), GROW_MS + 600);
+        timers.current.push(
+          setTimeout(() => {
+            if (!pending.current) return;
+            const left = tabIndexRef.current !== startedOn || pathRef.current !== startedPath || !navigation.isFocused();
+            if (left) {
+              drop();
+              return;
+            }
+            router.push("/capture");
+            // Plus again once the camera covers the bar, if blur did not already reset it.
+            timers.current.push(
+              setTimeout(() => {
+                pending.current = false;
+                setHeld(false);
+                g.set(0);
+              }, 600),
+            );
+          }, GROW_MS),
+        );
       }}
       style={{
         width: 62,
@@ -197,7 +266,7 @@ export function TabBar({ state, emitter, navigateToTab }: BottomTabBarProps) {
     >
       {items.slice(0, 2)}
       <View style={{ width: 78, alignItems: "center" }}>
-        <CaptureButton />
+        <CaptureButton tabIndex={state.index} />
       </View>
       {items.slice(2)}
     </View>
