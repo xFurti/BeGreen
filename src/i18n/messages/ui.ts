@@ -724,7 +724,7 @@ export const uiMessages = defineMessages(
       seedsToPass: "{gap} Seeds per superare {name}. Una raccolta di rifiuti vale 25.",
       leading: "Stai guidando la settimana. Difendi la corona.",
       go: "Vai",
-      footnote: "Seeds dalle prove verificate di questa settimana. Le prove false vengono segnalate e li perdono.",
+      footnote: "Seeds dalle prove verificate di questa settimana. Le segnalazioni restano su questo dispositivo.",
       members: "{count} membri",
       left: "{days} g",
       code: "Hai un codice squadra?",
