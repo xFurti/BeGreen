@@ -12,7 +12,8 @@ import { ACTIONS } from "@/data/actions";
 import { daysTo2030, SDG_LIST, SDGS } from "@/data/sdgs";
 import type { Post } from "@/data/types";
 import { useComune } from "@/hooks/use-comune";
-import { sdgsOf, seedsOf, streakOf, useApp, useLeague } from "@/store/app-store";
+import { supabase } from "@/services/supabase";
+import { sdgsOf, seedsOf, streakOf, useApp, useLeague, useMyPosts } from "@/store/app-store";
 import { C, F, R, T } from "@/theme/tokens";
 import { haptic } from "@/utils/format";
 
@@ -59,24 +60,24 @@ function Agenda({ posts }: { posts: Post[] }) {
                   height: cell,
                   borderRadius: 12,
                   borderCurve: "continuous",
-                  backgroundColor: on ? C.ink : C.card,
+                  backgroundColor: on ? C.leaf : C.mint,
                   borderWidth: active ? 2 : 0,
-                  borderColor: on ? C.mute : C.ink,
+                  borderColor: on ? C.forest : C.leaf,
                   padding: 8,
                   justifyContent: "space-between",
                 }}
               >
-                <Text style={{ fontFamily: F.medium, fontSize: 20, letterSpacing: -0.8, color: on ? C.white : C.faint }}>{g}</Text>
-                {on && <Text style={{ fontFamily: F.monoMedium, fontSize: 9, color: C.nightMute, alignSelf: "flex-end" }}>×{counts.get(g)}</Text>}
+                <Text style={{ fontFamily: F.medium, fontSize: 20, letterSpacing: -0.8, color: on ? C.white : C.forestMute }}>{g}</Text>
+                {on && <Text style={{ fontFamily: F.monoMedium, fontSize: 9, color: C.mint, alignSelf: "flex-end" }}>×{counts.get(g)}</Text>}
               </Pressable>
             </Animated.View>
           );
         })}
-        <View style={{ width: cell, height: cell, borderRadius: 12, borderWidth: 1, borderColor: C.line, padding: 7, justifyContent: "space-between" }}>
-          <Text numberOfLines={1} style={{ fontFamily: F.medium, fontSize: 15, letterSpacing: -0.7, color: C.ink }}>
+        <View style={{ width: cell, height: cell, borderRadius: 12, backgroundColor: C.forest, padding: 7, justifyContent: "space-between" }}>
+          <Text numberOfLines={1} style={{ fontFamily: F.medium, fontSize: 15, letterSpacing: -0.7, color: C.lime }}>
             {daysTo2030()}
           </Text>
-          <Text style={{ fontFamily: F.monoMedium, fontSize: 8, color: C.mute, lineHeight: 10 }}>DAYS TO 2030</Text>
+          <Text style={{ fontFamily: F.monoMedium, fontSize: 8, color: C.forestMute, lineHeight: 10 }}>DAYS TO 2030</Text>
         </View>
       </View>
       <Text style={[T.callout, { minHeight: 42 }]}>
@@ -142,7 +143,7 @@ function Calendar({ posts }: { posts: Post[] }) {
                     alignItems: "center",
                     justifyContent: "center",
                     borderWidth: today ? 1.5 : 0,
-                    borderColor: C.ink,
+                    borderColor: C.leaf,
                   }}
                 >
                   {p ? (
@@ -178,21 +179,22 @@ function Stat({ value, label, first }: { value: number; label: string; first?: b
 export default function Me() {
   const { top } = useSafeAreaInsets();
   const profile = useApp((s) => s.profile);
-  const posts = useApp((s) => s.myPosts);
-  const bonus = useApp((s) => s.bonusSeeds);
-  const verifiedCount = useApp((s) => Object.keys(s.verified).length);
+  const posts = useMyPosts();
+  const verifiedCount = useApp((s) => s.verifiedCount);
+  const comune = useApp((s) => s.comune);
   const explain = useApp((s) => s.explain);
   const setExplain = useApp((s) => s.setExplain);
   const reset = useApp((s) => s.reset);
   const pulse = useApp((s) => s.pulse);
-  const comune = useComune();
+  const comuneView = useComune();
   const league = useLeague();
   const rank = league.findIndex((r) => r.me) + 1;
 
   const { width } = useWindowDimensions();
   const badgeSize = Math.floor((width - 40 - 16) / 3);
   const streak = streakOf(posts);
-  const seeds = seedsOf(posts, bonus);
+  const seeds = seedsOf(posts, verifiedCount);
+  const place = comune?.name ?? "your Comune";
   const imp = impact(posts);
   const kinds = new Set(posts.map((p) => p.action));
   const goals = sdgsOf(posts);
@@ -211,19 +213,19 @@ export default function Me() {
       <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ paddingTop: top + 10, paddingHorizontal: 20, paddingBottom: 140, gap: 40 }}>
         <View style={{ gap: 20 }}>
           <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" }}>
-            <Avatar name={profile.name || "You"} size={76} />
+            <Avatar name={profile.name || "You"} size={76} ring={C.lime} />
             <IconButton
               icon="share"
               label="Share profile"
               onPress={() =>
-                Share.share({ message: `I’m on a ${streak}-day BeGreen streak and #${rank} among my friends this week. Beat that. 🌱 #BeGreen` })
+                Share.share({ message: `I’m on a ${streak}-day BeGreen streak and #${rank} in ${place} this week. Beat that. 🌱 #BeGreen` })
               }
             />
           </View>
           <View style={{ gap: 6 }}>
             <Text style={[T.hero, { fontSize: 40, lineHeight: 42 }]}>{profile.name || "You"}</Text>
             <Mono>
-              @{profile.handle || "you"} · {ROLE_LABEL[profile.role]} · #{rank} this week
+              @{profile.handle || "you"} · {ROLE_LABEL[profile.role]} · #{rank} in {place}
             </Mono>
           </View>
           <View style={{ flexDirection: "row" }}>
@@ -240,7 +242,7 @@ export default function Me() {
 
         <Animated.View entering={FadeInDown.delay(120)} style={{ gap: 16 }}>
           <SectionHeader index="02" title="My Comune" action="Sources →" onAction={() => router.push("/sources")} />
-          <ComuneSection view={comune} pulse={pulse} />
+          <ComuneSection view={comuneView} pulse={pulse} />
         </Animated.View>
 
         <View style={{ gap: 16 }}>
@@ -270,12 +272,12 @@ export default function Me() {
                   height: badgeSize * 0.9,
                   borderRadius: R.md,
                   borderCurve: "continuous",
-                  backgroundColor: b.on ? C.ink : C.card,
+                  backgroundColor: b.on ? C.forest : C.card,
                   padding: 12,
                   justifyContent: "space-between",
                 }}
               >
-                <Icon name={b.on ? b.icon : "lock"} size={18} color={b.on ? C.white : C.faint} />
+                <Icon name={b.on ? b.icon : "lock"} size={18} color={b.on ? C.lime : C.faint} />
                 <Text style={{ fontFamily: F.medium, fontSize: 13, letterSpacing: -0.2, color: b.on ? C.white : C.mute }}>{b.label}</Text>
               </View>
             ))}
@@ -283,6 +285,7 @@ export default function Me() {
         </View>
 
         <View style={{ borderTopWidth: 1, borderTopColor: C.line }}>
+          <Row icon="location" label="Comune" value={comune?.name} onPress={() => router.push("/comune")} />
           <Row
             icon="doc"
             label="Explanations"
@@ -294,19 +297,26 @@ export default function Me() {
           <Row icon="sparkle" label="Ask Leaf" onPress={() => router.push("/leaf")} />
           <Row
             icon="refresh"
-            label="Reset demo"
+            label="Sign out & reset"
             onPress={() =>
-              Alert.alert("Reset BeGreen?", "This clears your posts and returns to onboarding.", [
-                { text: "Cancel", style: "cancel" },
-                {
-                  text: "Reset",
-                  style: "destructive",
-                  onPress: () => {
-                    reset();
-                    router.replace("/onboarding");
+              Alert.alert(
+                "Sign out of BeGreen?",
+                supabase
+                  ? "Your account is anonymous and tied to this phone: once you sign out, you can’t get it back. Your shared proofs stay on the feed."
+                  : "This clears your proofs from this phone and returns to onboarding.",
+                [
+                  { text: "Cancel", style: "cancel" },
+                  {
+                    text: "Sign out",
+                    style: "destructive",
+                    onPress: async () => {
+                      await supabase?.auth.signOut().catch(() => {});
+                      reset();
+                      router.replace("/onboarding");
+                    },
                   },
-                },
-              ])
+                ],
+              )
             }
           />
         </View>
@@ -349,7 +359,7 @@ function Row({ icon, label, value, onPress }: { icon: IconName; label: string; v
       accessibilityLabel={label}
       style={{ flexDirection: "row", alignItems: "center", gap: 14, height: 56, borderBottomWidth: 1, borderBottomColor: C.line }}
     >
-      <Icon name={icon} size={16} color={C.ink} />
+      <Icon name={icon} size={16} color={C.leaf} />
       <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2 }}>{label}</Text>
       {value && <Mono color={C.ink}>{value}</Mono>}
       <Icon name="chevron" size={12} color={C.faint} />

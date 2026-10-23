@@ -1,7 +1,8 @@
 // "My Comune": which comune you're in, plus live citizen data around it.
 // Official yearly indicators are bundled (src/data/comuni.ts); these calls only add what changes by the minute.
 
-import { COMUNI, findComune } from "@/data/comuni";
+import { COMUNI, findComune, PROVINCE } from "@/data/comuni";
+import type { Comune } from "@/data/types";
 import { citizenPm25, nearestComune, parseSensorCommunity, type ComuneStats } from "@/services/comune-levels";
 import type { Place } from "@/services/env";
 
@@ -37,6 +38,13 @@ export async function resolveComune(p: Place): Promise<ComuneId> {
     const near = nearestComune(COMUNI, p.lat, p.lon);
     return near ? { istat: near.istat, name: near.name, province: "Vicenza" } : { name: p.name };
   }
+}
+
+// The Comune picked in the app → the bundled official record, when it's in the province we have data for.
+export function identify(c: Comune): ComuneId {
+  if (c.province && c.province !== PROVINCE) return { name: c.name, province: c.province };
+  const hit = findComune(undefined, c.name) ?? nearestComune(COMUNI, c.lat, c.lon, 3);
+  return hit ? { istat: hit.istat, name: hit.name, province: PROVINCE } : { name: c.name, province: c.province };
 }
 
 export const statsFor = (id: ComuneId): ComuneStats | undefined => findComune(id.istat, id.name);

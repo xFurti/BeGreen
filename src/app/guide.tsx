@@ -113,13 +113,13 @@ export default function Guide() {
                   borderCurve: "continuous",
                   padding: 14,
                   gap: 10,
-                  backgroundColor: on ? C.ink : C.card,
+                  backgroundColor: on ? C.forest : C.card,
                 }}
               >
                 <Swatch bin={b} size={16} />
                 <View style={{ gap: 2 }}>
                   <Text style={{ fontFamily: F.medium, fontSize: 15, letterSpacing: -0.2, color: on ? C.white : C.ink }}>{BINS[b].name}</Text>
-                  <Text numberOfLines={1} style={{ fontFamily: F.regular, fontSize: 12, color: on ? C.nightMute : C.mute }}>
+                  <Text numberOfLines={1} style={{ fontFamily: F.regular, fontSize: 12, color: on ? C.forestMute : C.mute }}>
                     {BINS[b].it}
                   </Text>
                 </View>

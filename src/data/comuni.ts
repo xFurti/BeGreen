@@ -19,5 +19,13 @@ export const PM10_STATIONS: Station[] = [
   { id: "IT1065A", name: "Bassano del Grappa", istat: "024012", pm10Mean: 20, pm10Days: 11, year: 2025 },
 ];
 
+// GeoNames and ISTAT spell some names differently: compare without case, accents, spaces or apostrophes.
+const key = (s: string) =>
+  s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+
 export const findComune = (istat?: string, name?: string) =>
-  COMUNI.find((c) => c.istat === istat) ?? (name ? COMUNI.find((c) => c.name.toLowerCase() === name.toLowerCase()) : undefined);
+  COMUNI.find((c) => c.istat === istat) ?? (name ? COMUNI.find((c) => key(c.name) === key(name)) : undefined);

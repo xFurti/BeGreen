@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { create } from "zustand";
 
 import { Icon, type IconName } from "@/components/icon";
+import { LeafMark, SwayingLeaf } from "@/components/nature";
 import { SOURCE_KINDS, SOURCES, type SourceId } from "@/data/sources";
 import type { Media } from "@/data/types";
 import { C, F, R, shadow, T } from "@/theme/tokens";
@@ -22,15 +23,23 @@ import { haptic } from "@/utils/format";
 
 // ---------- Wordmark ----------
 
-export function Logo({ size = 28, color = C.ink }: { size?: number; color?: string }) {
+// "Be" in ink, "Green" in green, with a leaf growing from the n. On dark, Green turns lime;
+// any other ink colour (a muted footer) keeps the wordmark in one colour. `sway` lets the leaf move in the breeze.
+export function Logo({ size = 28, color = C.ink, dark, sway }: { size?: number; color?: string; dark?: boolean; sway?: boolean }) {
+  const green = dark ? C.lime : color === C.ink ? C.leaf : color;
   return (
-    <Text
-      accessibilityRole="header"
-      accessibilityLabel="BeGreen"
-      style={{ fontFamily: F.medium, fontSize: size, lineHeight: size * 1.1, letterSpacing: -size * 0.06, color }}
-    >
-      BeGreen
-    </Text>
+    <View accessible accessibilityRole="header" accessibilityLabel="BeGreen" style={{ flexDirection: "row", alignItems: "flex-start" }}>
+      <Text style={{ fontFamily: F.medium, fontSize: size, lineHeight: size * 1.1, letterSpacing: -size * 0.06, color }}>
+        Be<Text style={{ color: green }}>Green</Text>
+      </Text>
+      <View style={{ marginLeft: size * 0.02, marginTop: -size * 0.06 }}>
+        {sway ? (
+          <SwayingLeaf size={size * 0.42} color={green} vein={dark ? C.forest : C.white} rotate={8} />
+        ) : (
+          <LeafMark size={size * 0.42} color={green} vein={dark ? C.forest : C.white} rotate={8} />
+        )}
+      </View>
+    </View>
   );
 }
 
@@ -93,7 +102,7 @@ export function Press({
 
 // ---------- Buttons ----------
 
-type BtnKind = "primary" | "secondary" | "ghost" | "inverse" | "glass";
+type BtnKind = "primary" | "green" | "secondary" | "ghost" | "inverse" | "glass";
 
 export function Button({
   label,
@@ -116,8 +125,8 @@ export function Button({
   size?: "lg" | "md" | "sm";
   style?: StyleProp<ViewStyle>;
 }) {
-  const bg = { primary: C.ink, secondary: C.card, ghost: "transparent", inverse: C.white, glass: "rgba(255,255,255,0.12)" }[kind];
-  const fg = { primary: C.white, secondary: C.ink, ghost: C.ink, inverse: C.ink, glass: C.white }[kind];
+  const bg = { primary: C.ink, green: C.forest, secondary: C.mint, ghost: "transparent", inverse: C.white, glass: "rgba(255,255,255,0.12)" }[kind];
+  const fg = { primary: C.white, green: C.white, secondary: C.forest, ghost: C.ink, inverse: C.ink, glass: C.white }[kind];
   const h = { lg: 56, md: 46, sm: 34 }[size];
   return (
     <Press
@@ -145,7 +154,7 @@ export function Button({
         <ActivityIndicator color={fg} />
       ) : (
         <>
-          {icon && <Icon name={icon} size={size === "sm" ? 14 : 17} color={fg} />}
+          {icon && <Icon name={icon} size={size === "sm" ? 14 : 17} color={kind === "green" ? C.lime : fg} />}
           <Text style={{ color: fg, fontFamily: F.medium, fontSize: size === "sm" ? 14 : 16, letterSpacing: -0.2 }}>{label}</Text>
           {trailing && (
             <Text style={{ color: fg, opacity: 0.55, fontFamily: F.monoMedium, fontSize: size === "sm" ? 12 : 13 }}>{trailing}</Text>
@@ -159,8 +168,8 @@ export function Button({
 export function IconButton({
   icon,
   onPress,
-  bg = C.card,
-  color = C.ink,
+  bg = C.mint,
+  color = C.forest,
   size = 40,
   label,
 }: {
@@ -194,12 +203,12 @@ export function Avatar({ src, name, size = 36, ring, invert }: { src?: Media; na
         width: size,
         height: size,
         borderRadius: size / 2,
-        backgroundColor: invert ? C.white : C.ink,
+        backgroundColor: invert ? C.lime : C.forest,
         alignItems: "center",
         justifyContent: "center",
       }}
     >
-      <Text style={{ fontFamily: F.medium, fontSize: size * 0.42, letterSpacing: -size * 0.02, color: invert ? C.ink : C.white }}>
+      <Text style={{ fontFamily: F.medium, fontSize: size * 0.42, letterSpacing: -size * 0.02, color: invert ? C.forest : C.white }}>
         {name.slice(0, 1).toUpperCase()}
       </Text>
     </View>
@@ -235,7 +244,7 @@ export function Chip({
   onPress?: () => void;
   dark?: boolean;
 }) {
-  const bg = active ? (dark ? C.white : C.ink) : dark ? C.night2 : C.card;
+  const bg = active ? (dark ? C.lime : C.forest) : dark ? C.night2 : C.card;
   const fg = active ? (dark ? C.ink : C.white) : dark ? C.white : C.ink;
   const body = (
     <View
@@ -264,7 +273,7 @@ export function Chip({
 
 // Outlined mono tag: "DROP", "SDG 13".
 export function Tag({ label, dark, solid }: { label: string; dark?: boolean; solid?: boolean }) {
-  const fg = solid ? (dark ? C.ink : C.white) : dark ? C.white : C.ink;
+  const fg = solid ? (dark ? C.ink : C.white) : dark ? C.white : C.forest;
   return (
     <View
       style={{
@@ -272,8 +281,8 @@ export function Tag({ label, dark, solid }: { label: string; dark?: boolean; sol
         paddingHorizontal: 6,
         borderRadius: 5,
         borderWidth: solid ? 0 : 1,
-        borderColor: dark ? "rgba(255,255,255,0.28)" : C.line,
-        backgroundColor: solid ? (dark ? C.white : C.ink) : "transparent",
+        borderColor: dark ? "rgba(255,255,255,0.28)" : C.mint2,
+        backgroundColor: solid ? (dark ? C.lime : C.forest) : "transparent",
         justifyContent: "center",
       }}
     >
@@ -349,7 +358,7 @@ export function Segmented<V extends string>({
               boxShadow: on && !dark ? "0 1px 3px rgba(0,0,0,0.08), 0 1px 1px rgba(0,0,0,0.04)" : undefined,
             }}
           >
-            <Text style={{ fontFamily: F.medium, fontSize: 14, letterSpacing: -0.15, color: on ? C.ink : dark ? C.nightMute : C.mute }}>
+            <Text style={{ fontFamily: F.medium, fontSize: 14, letterSpacing: -0.15, color: on ? C.forest : dark ? C.nightMute : C.mute }}>
               {o.label}
             </Text>
           </Pressable>
@@ -390,6 +399,7 @@ export function TextTabs<V extends string>({
             {o.count !== undefined && (
               <Text style={{ fontFamily: F.monoMedium, fontSize: 10, color: on ? C.ink : C.faint, marginTop: 2 }}>{o.count}</Text>
             )}
+            {on && <LeafMark size={10} color={C.leaf} vein="transparent" />}
           </Pressable>
         );
       })}
@@ -423,7 +433,7 @@ export function SectionHeader({
 }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10 }}>
-      {index && <Mono>{index}</Mono>}
+      {index && <Mono color={C.leaf}>{index}</Mono>}
       <Text style={[T.title, { flex: 1 }]}>{title}</Text>
       {action && (
         <Pressable onPress={onAction} disabled={!onAction} hitSlop={10} accessibilityRole="button">
@@ -440,8 +450,8 @@ export function Hairline({ dark, style }: { dark?: boolean; style?: StyleProp<Vi
 
 export function Bar({
   value,
-  color = C.ink,
-  track = C.card2,
+  color = C.leaf,
+  track = C.mint2,
   height = 4,
 }: {
   value: number;
@@ -468,9 +478,9 @@ export function Card({
 }: {
   children: ReactNode;
   style?: StyleProp<ViewStyle>;
-  tone?: "card" | "white" | "ink";
+  tone?: "card" | "white" | "ink" | "mint" | "forest";
 }) {
-  const bg = { card: C.card, white: C.white, ink: C.ink }[tone];
+  const bg = { card: C.card, white: C.white, ink: C.ink, mint: C.mint, forest: C.forest }[tone];
   return (
     <View
       style={[
@@ -484,7 +494,7 @@ export function Card({
   );
 }
 
-export function LiveDot({ color = C.ink, size = 7 }: { color?: string; size?: number }) {
+export function LiveDot({ color = C.leaf, size = 7 }: { color?: string; size?: number }) {
   const o = useSharedValue(1);
   useEffect(() => {
     o.set(withRepeat(withSequence(withTiming(0.2, { duration: 800 }), withTiming(1, { duration: 800 })), -1));
@@ -538,7 +548,7 @@ export function Toaster() {
           flexDirection: "row",
           alignItems: "center",
           gap: 8,
-          backgroundColor: C.ink,
+          backgroundColor: C.forest,
           paddingHorizontal: 16,
           paddingVertical: 12,
           minHeight: 44,
@@ -547,7 +557,7 @@ export function Toaster() {
           maxWidth: "90%",
         }}
       >
-        {msg.icon && <Icon name={msg.icon} size={15} color={C.white} />}
+        {msg.icon && <Icon name={msg.icon} size={15} color={C.lime} />}
         <Text numberOfLines={2} style={{ flexShrink: 1, color: C.white, fontFamily: F.medium, fontSize: 14, lineHeight: 19, letterSpacing: -0.1 }}>
           {msg.text}
         </Text>

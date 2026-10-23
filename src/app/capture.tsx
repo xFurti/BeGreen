@@ -4,7 +4,7 @@ import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { KeyboardAvoidingView, Pressable, ScrollView, Share, Switch, Text, TextInput, View } from "react-native";
+import { KeyboardAvoidingView, Pressable, ScrollView, Share, Text, TextInput, View } from "react-native";
 import Animated, {
   Easing,
   FadeIn,
@@ -24,14 +24,16 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Circle } from "react-native-svg";
 
 import { Icon, type IconName } from "@/components/icon";
+import { Blobs, LeafMark, LeafSwitch } from "@/components/nature";
 import { ProofMedia } from "@/components/proof-media";
 import { Button, Chip, IconButton, Mono, Press, SdgTags, Segmented, useCountUp } from "@/components/ui";
 import { ACTION_LIST, ACTIONS, type ActionId } from "@/data/actions";
-import { DEMO_BY_ACTION } from "@/data/seed";
+import { DEMO_BY_ACTION } from "@/data/demo";
 import type { Audience, Media } from "@/data/types";
 import { usePulse } from "@/hooks/use-pulse";
 import { persistMedia } from "@/services/media";
-import { leagueOf, postedToday, sdgsOf, streakOf, useApp } from "@/store/app-store";
+import { hasBackend } from "@/services/supabase";
+import { leagueOf, mineOf, postedToday, sdgsOf, streakOf, useApp, useAuthor } from "@/store/app-store";
 import { C, F, R, T } from "@/theme/tokens";
 import { haptic } from "@/utils/format";
 
@@ -52,7 +54,7 @@ function RecordRing({ progress, size = 88 }: { progress: SharedValue<number>; si
         cx={size / 2}
         cy={size / 2}
         r={r}
-        stroke={C.white}
+        stroke={C.lime}
         strokeWidth={4}
         fill="none"
         strokeLinecap="round"
@@ -78,7 +80,7 @@ function Steps({ step }: { step: Step }) {
             {i > 0 && <View style={{ width: 18, height: 1, backgroundColor: C.nightLine }} />}
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
               {done ? (
-                <Icon name="check" size={11} color={C.white} />
+                <Icon name="check" size={11} color={C.lime} />
               ) : (
                 <Mono color={on ? C.white : C.nightMute}>{it.n}</Mono>
               )}
@@ -119,10 +121,11 @@ function Bit({ angle, i }: { angle: number; i: number }) {
       { rotate: `${t.value * 180}deg` },
     ],
   }));
+  // Confetti made of leaves, in the three greens and white.
   return (
-    <Animated.View
-      style={[{ position: "absolute", width: size, height: size, borderRadius: i % 2 ? size / 2 : 1.5, backgroundColor: C.white }, s]}
-    />
+    <Animated.View style={[{ position: "absolute" }, s]}>
+      <LeafMark size={size + 6} color={[C.lime, C.leaf, C.white, C.mint2][i % 4]} vein="transparent" />
+    </Animated.View>
   );
 }
 
@@ -143,14 +146,14 @@ function Row({ icon, title, sub, right, delay }: { icon: IconName; title: string
   return (
     <Animated.View
       entering={FadeInDown.delay(delay).springify().damping(18)}
-      style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 14, borderTopWidth: 1, borderTopColor: C.nightLine }}
+      style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 14, borderTopWidth: 1, borderTopColor: C.forestLine }}
     >
-      <Icon name={icon} size={17} color={C.white} />
+      <Icon name={icon} size={17} color={C.lime} />
       <View style={{ flex: 1, gap: 2 }}>
         <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3, color: C.white }}>{title}</Text>
-        {sub && <Text style={{ fontFamily: F.regular, fontSize: 13, color: C.nightMute }}>{sub}</Text>}
+        {sub && <Text style={{ fontFamily: F.regular, fontSize: 13, color: C.forestMute }}>{sub}</Text>}
       </View>
-      {right && <Mono color={C.white}>{right}</Mono>}
+      {right && <Mono color={C.lime}>{right}</Mono>}
     </Animated.View>
   );
 }
@@ -170,8 +173,9 @@ function Done(r: Result) {
   return (
     <Animated.View
       entering={FadeIn.duration(220)}
-      style={{ flex: 1, backgroundColor: C.night, paddingTop: top + 16, paddingBottom: bottom + 12, paddingHorizontal: 22 }}
+      style={{ flex: 1, backgroundColor: C.forest, paddingTop: top + 16, paddingBottom: bottom + 12, paddingHorizontal: 22, overflow: "hidden" }}
     >
+      <Blobs colors={[C.leaf, C.lime]} opacity={0.2} size={360} />
       <Burst />
       <View style={{ flexDirection: "row", alignItems: "center" }}>
         <Mono color={C.white} style={{ flex: 1 }}>
@@ -181,7 +185,7 @@ function Done(r: Result) {
       </View>
 
       <View style={{ flex: 1, justifyContent: "center" }}>
-        <Animated.Text style={[T.mega, { color: C.white, fontSize: 128, lineHeight: 128, fontVariant: ["tabular-nums"] }, big]}>
+        <Animated.Text style={[T.mega, { color: C.lime, fontSize: 128, lineHeight: 128, fontVariant: ["tabular-nums"] }, big]}>
           +{n}
         </Animated.Text>
         <Animated.Text entering={FadeIn.delay(300)} style={{ fontFamily: F.medium, fontSize: 22, letterSpacing: -0.6, color: C.white }}>
@@ -207,7 +211,7 @@ function Done(r: Result) {
         {r.newGoals.length > 0 && (
           <Row icon="globe" title={`New on your Agenda 2030`} sub={r.newGoals.map((g) => `SDG ${g}`).join(" · ")} delay={510} />
         )}
-        {r.unlocked && <Row icon="lock" title="Today’s feed unlocked" sub="Go see what your friends did." delay={640} />}
+        {r.unlocked && <Row icon="lock" title="Today’s feed unlocked" sub="Go see what your Comune did." delay={640} />}
       </View>
 
       <View style={{ flexDirection: "row", gap: 10, paddingTop: 16 }}>
@@ -250,12 +254,18 @@ export default function Capture() {
   // The suggested act leads the chip row, so it's visible without scrolling.
   const [order] = useState(() => [ACTIONS[action], ...ACTION_LIST.filter((x) => x.id !== action)]);
   const [caption, setCaption] = useState("");
-  const [audience, setAudience] = useState<Audience>("friends");
+  const [audience, setAudience] = useState<Audience>("comune");
   const [shareSpot, setShareSpot] = useState(true);
   const squads = useApp((s) => s.squads);
+  const comune = useApp((s) => s.comune);
   const [squadId, setSquadId] = useState<string | undefined>(squads[0]?.id);
   const addPost = useApp((s) => s.addPost);
+  const author = useAuthor();
   const [result, setResult] = useState<Result | null>(null);
+  const place = comune?.name ?? pulse.place.name;
+  // Only a challenge the backend knows about can be claimed (or any, when running on-device only).
+  const dropDone = useApp((s) => s.posts.some((p) => p.authorId === s.userId && p.challengeId === drop.id));
+  const dropOpen = !drop.offline && (drop.shared || !hasBackend) && !dropDone;
 
   useEffect(() => {
     if (realCamera && perm && !perm.granted && perm.canAskAgain) requestPerm();
@@ -339,25 +349,26 @@ export default function Capture() {
   const post = () => {
     if (!photo || !proof) return;
     const s = useApp.getState();
-    const before = s.myPosts;
-    const name = s.profile.name;
+    const before = mineOf(s.posts, s.userId);
+    const name = (id: string) => author(id).name;
     const wasUnlocked = postedToday(before);
     const goalsBefore = sdgsOf(before);
-    const leagueBefore = leagueOf(before, name);
-    const isDrop =
-      action === drop.action && !before.some((p) => p.isDrop && new Date(p.createdAt).toDateString() === new Date().toDateString());
+    const leagueBefore = leagueOf(s.posts, s.userId, s.comune?.id, name);
+    const isDrop = action === drop.action && dropOpen;
+    const toSquad = audience === "squad" && squadId ? squadId : undefined;
     addPost({
       action,
       photo: typeof photo === "string" ? persistMedia(photo) : photo,
       proof: typeof proof === "string" ? persistMedia(proof) : proof,
       caption: caption.trim(),
-      audience,
-      place: shareSpot ? pulse.place.name : "Somewhere green",
-      isDrop,
-      squadId: audience === "squad" ? squadId : undefined,
+      audience: audience === "squad" && !toSquad ? "comune" : audience,
+      place: shareSpot ? place : "Somewhere green",
+      challengeId: isDrop ? drop.id : undefined,
+      squadId: toSquad,
     });
-    const after = useApp.getState().myPosts;
-    const leagueAfter = leagueOf(after, name);
+    const now = useApp.getState();
+    const after = mineOf(now.posts, now.userId);
+    const leagueAfter = leagueOf(now.posts, now.userId, now.comune?.id, name);
     const rankBefore = leagueBefore.findIndex((r) => r.me) + 1;
     const rankAfter = leagueAfter.findIndex((r) => r.me) + 1;
     setResult({
@@ -381,7 +392,7 @@ export default function Capture() {
 
   if (step === "review" && photo && proof) {
     const a = ACTIONS[action];
-    const isDropAct = action === drop.action;
+    const isDropAct = action === drop.action && dropOpen;
     return (
       <KeyboardAvoidingView behavior={process.env.EXPO_OS === "ios" ? "padding" : undefined} style={{ flex: 1, backgroundColor: C.bg }}>
         <View
@@ -489,31 +500,34 @@ export default function Capture() {
               value={audience}
               onChange={setAudience}
               options={[
-                { value: "friends", label: "Friends" },
+                { value: "comune", label: place },
                 { value: "squad", label: "Squad" },
                 { value: "public", label: "Everyone" },
               ]}
             />
-            {audience === "squad" && (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-                {squads.map((s) => (
-                  <Chip key={s.id} label={s.name} active={s.id === squadId} onPress={() => setSquadId(s.id)} />
-                ))}
-              </ScrollView>
-            )}
+            {audience === "squad" &&
+              (squads.length ? (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+                  {squads.map((s) => (
+                    <Chip key={s.id} label={s.name} active={s.id === squadId} onPress={() => setSquadId(s.id)} />
+                  ))}
+                </ScrollView>
+              ) : (
+                <Text style={T.caption}>You’re not in a squad yet, so this goes to {place}. Join or start one from the League.</Text>
+              ))}
           </View>
 
           <View style={{ flexDirection: "row", alignItems: "center", gap: 12, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 16 }}>
             <Icon name="location" size={16} />
             <View style={{ flex: 1, gap: 2 }}>
-              <Text style={{ fontFamily: F.medium, fontSize: 15 }}>Show area · {pulse.place.name}</Text>
+              <Text style={{ fontFamily: F.medium, fontSize: 15 }}>Show area · {place}</Text>
               <Text style={{ fontFamily: F.regular, fontSize: 13, color: C.mute }}>Neighbourhood only. Never your exact spot.</Text>
             </View>
-            <Switch value={shareSpot} onValueChange={setShareSpot} trackColor={{ true: C.ink }} />
+            <LeafSwitch value={shareSpot} onValueChange={setShareSpot} label="Show my area" />
           </View>
         </ScrollView>
         <View style={{ paddingHorizontal: 16, paddingBottom: bottom + 10, paddingTop: 8 }}>
-          <Button label="Post BeGreen" trailing={`+${a.seeds + (isDropAct ? 10 : 0)}`} onPress={post} />
+          <Button label="Post BeGreen" kind="green" trailing={`+${a.seeds + (isDropAct ? 10 : 0)}`} onPress={post} />
         </View>
       </KeyboardAvoidingView>
     );
