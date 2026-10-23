@@ -217,7 +217,7 @@ export const PostCard = memo(function PostCard({
   return (
     <Animated.View entering={FadeInDown.delay(Math.min(index, 4) * 60).springify().damping(20)} style={{ gap: 12 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-        <Avatar src={a.avatar} name={a.name} size={34} />
+        <Avatar src={a.avatar} name={a.name} seed={a.seed} seeds={a.seeds} size={34} />
         <View style={{ flex: 1, gap: 2 }}>
           <TitledName name={a.name} badgeId={a.badgeId} style={{ fontFamily: F.semibold, fontSize: 15, letterSpacing: -0.2, color: C.ink }} />
           <Mono>

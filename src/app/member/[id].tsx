@@ -35,7 +35,7 @@ export default function Member() {
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 20, gap: 20, paddingBottom: 50 }}>
       <Stack.Screen options={{ title: u.name }} />
       <View style={{ alignItems: "center", gap: 10 }}>
-        <Avatar name={u.name} size={72} />
+        <Avatar name={u.name} seed={u.seed} seeds={u.seeds} size={72} />
         <TitledName name={u.name} badgeId={u.badgeId} align="center" style={{ fontFamily: F.medium, fontSize: 24, letterSpacing: -0.8, color: C.ink }} />
         <Mono>
           @{u.handle}

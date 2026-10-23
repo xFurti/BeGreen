@@ -4,6 +4,7 @@ import { Alert, ScrollView, Text, TextInput, View } from "react-native";
 import Animated, { FadeInDown, LinearTransition } from "react-native-reanimated";
 
 import { Icon } from "@/components/icon";
+import { SeedTip } from "@/components/seed-ui";
 import { TitledName } from "@/components/titled-name";
 import { Avatar, AvatarStack, Bar, Button, IconButton, Mono, Press, SectionHeader, TextTabs, toast } from "@/components/ui";
 import { ACTIONS } from "@/data/actions";
@@ -34,7 +35,7 @@ function Podium({ top3 }: { top3: Racer[] }) {
         return (
           <Animated.View key={r.id} entering={FadeInDown.delay(100 + i * 90).springify().damping(16)} style={{ flex: 1, alignItems: "center", gap: 8 }}>
             {place === 1 && <Icon name="crown" size={16} color={C.leaf} />}
-            <Avatar src={r.avatar} name={r.name} size={place === 1 ? 56 : 46} ring={r.me ? C.leaf : undefined} />
+            <Avatar src={r.avatar} name={r.name} seed={r.seed} seeds={r.seeds} size={place === 1 ? 56 : 46} ring={r.me ? C.leaf : undefined} />
             <View style={{ alignItems: "center", gap: 1 }}>
               <TitledName name={r.name} badgeId={r.badgeId} align="center" style={{ fontFamily: F.medium, fontSize: 14, letterSpacing: -0.2, color: C.ink }} />
               <Mono>{r.points}</Mono>
@@ -85,7 +86,7 @@ function RacerRow({ r, rank, index }: { r: Racer; rank: number; index: number })
       <Mono color={r.me ? C.lime : C.mute} style={{ width: 22 }}>
         {String(rank).padStart(2, "0")}
       </Mono>
-      <Avatar src={r.avatar} name={r.name} size={36} invert={r.me} />
+      <Avatar src={r.avatar} name={r.name} seed={r.seed} seeds={r.seeds} size={36} invert={r.me} />
       <View style={{ flex: 1, gap: 2 }}>
         <TitledName
           name={r.me && r.name !== you ? `${r.name} (${t("common.youInline")})` : r.name}
@@ -206,6 +207,8 @@ export default function League() {
           </View>
           <IconButton icon="plus" label={t("league.newSquad")} bg={C.forest} color={C.lime} onPress={() => router.push("/new-squad")} />
         </View>
+
+        <SeedTip id="league" text={t("seed.tips.league", { place })} />
 
         <TextTabs<View_>
           value={tab}

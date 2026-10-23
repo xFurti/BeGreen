@@ -32,3 +32,14 @@ Stato: proposte. La prima e la seconda fase della specifica sono implementate (v
 - Riepiloghi dei risultati collettivi basati su dati attendibili (oggi solo conteggi, nessuna stima d’impatto).
 - Nomina dei moderatori dall’app e coda di moderazione per le segnalazioni.
 - Indicatori da osservare: adesioni, aperture della mappa e interazioni con i segnaposto, luoghi aggiunti, salvataggi e condivisioni, sfide con più partecipanti, ritorni nei giorni successivi, segnalazioni risolte, contenuti che portano a un’interazione reale. Servono un sistema di analytics rispettoso della privacy e una decisione del team su cosa misurare.
+
+### Onboarding «Pianta il tuo seme»: oltre la #13
+
+Stato: proposte, emerse riscrivendo la #13. Fuori scope della prima versione.
+
+- Login reale e recupero dell'account: collegare l'account anonimo a email, Apple o Google (`linkIdentity` di Supabase) e un percorso «Ho già un account». Oggi cambiando telefono si perde il seme.
+- Notifica quando esce la Drop del giorno o quando il seme ha sete (richiede `expo-notifications` e una build di sviluppo).
+- Suoni brevi per i momenti chiave (piantare, germogliare).
+- Personalizzazione della pianta: vasi e accessori sbloccati con i badge.
+- Soglie degli stadi da tarare sui dati veri della demo (oggi 1 / 60 / 200 / 500 Seeds).
+

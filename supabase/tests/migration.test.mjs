@@ -27,6 +27,7 @@ before(async () => {
       select (string_to_array(name, '/'))[1:array_length(string_to_array(name, '/'), 1) - 1] $$;
     create publication supabase_realtime;
     grant usage on schema public, auth, storage to authenticated;
+    grant usage on schema public to anon;
     grant select, insert on storage.objects to authenticated;
   `);
   for (const f of readdirSync(dir).filter((f) => f.endsWith(".sql")).sort()) await db.exec(readFileSync(new URL(f, dir), "utf8"));
@@ -44,6 +45,15 @@ async function as(uid, sql) {
   }
 }
 const rejects = (uid, sql) => assert.rejects(() => as(uid, sql));
+
+async function asAnon(sql) {
+  await db.exec("set role anon; select set_config('request.jwt.claim.sub', '', false);");
+  try {
+    return (await db.query(sql)).rows;
+  } finally {
+    await db.exec("reset role;");
+  }
+}
 
 test("profiles: own row only, unique handles", async () => {
   await as(A, `insert into comuni (id, name, lat, lon) values ('6542283', 'Milano', 45.46, 9.19) on conflict do nothing`);
@@ -273,4 +283,27 @@ test("blocks: your list is yours alone", async () => {
   await rejects(A, `insert into blocks (blocked_id) values ('${A}')`);
   assert.equal((await as(B, `select * from blocks`)).length, 0);
   assert.equal((await as(A, `select blocked_id from blocks`))[0].blocked_id, B);
+});
+
+test("seeds: your own species from the catalog, growth totals from the server, free handles for anyone", async () => {
+  const C = "00000000-0000-0000-0000-00000000005c";
+  const D = "00000000-0000-0000-0000-00000000005d";
+  await db.exec(`insert into auth.users values ('${C}'), ('${D}')`);
+  await as(C, `insert into profiles (id, name, handle, comune_id, seed) values ('${C}', 'Cleo', 'cleo.seed', '6542283', 'oak')`);
+  await as(D, `insert into profiles (id, name, handle, comune_id) values ('${D}', 'Dani', 'dani.seed', '6542283')`);
+  assert.equal((await as(D, `select seed from profiles where id = '${D}'`))[0].seed, null);
+  assert.equal((await as(D, `update profiles set seed = 'fir' where id = '${D}' returning seed`))[0].seed, "fir");
+  await rejects(D, `update profiles set seed = 'cactus' where id = '${D}'`);
+  assert.equal((await as(D, `update profiles set seed = 'poppy' where id = '${C}' returning id`)).length, 0);
+
+  // Cleo: the Drop as a move (20 + 10) and a plant (30). Dani verifies one: 2.
+  const [p] = await as(C, `insert into posts (author_id, comune_id, challenge_id, action, photo, proof) values ('${C}', '6542283', '${challenge}', 'move', 'p', 'v') returning id`);
+  await as(C, `insert into posts (author_id, comune_id, action, photo, proof) values ('${C}', '6542283', 'plant', 'p', 'v')`);
+  await as(D, `insert into verifications (post_id) values ('${p.id}')`);
+  const growth = await as(D, `select id, seeds from profile_seeds(array['${C}', '${D}']::uuid[]) order by id`);
+  assert.deepEqual(growth, [{ id: C, seeds: 60 }, { id: D, seeds: 2 }]);
+  await assert.rejects(() => asAnon(`select * from profile_seeds(array['${C}']::uuid[])`));
+
+  const free = await asAnon(`select free_handles as h from free_handles(array['cleo.seed', 'cleo.green', 'BAD HANDLE', 'dani.seed', 'dani.seed2'])`);
+  assert.deepEqual(free.map((r) => r.h), ["cleo.green", "dani.seed2"]);
 });

@@ -1,5 +1,6 @@
 import type { ActionId } from "@/data/actions";
 import type { BadgeId } from "@/data/badges";
+import type { SeedId } from "@/data/seeds";
 
 // A bundled asset (require()) or a file / remote URI.
 export type Media = number | string;
@@ -15,6 +16,9 @@ export type User = {
   badgeId?: BadgeId | null;
   avatar?: Media;
   tag?: string;
+  // The seed they planted, and their lifetime Seeds when known: how far their plant has grown.
+  seed?: SeedId;
+  seeds?: number;
 };
 
 // An Italian Comune. `id` is its GeoNames admin3 id, stable across devices.

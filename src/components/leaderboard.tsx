@@ -37,7 +37,7 @@ function Row({ r, rank, index }: { r: Standing; rank: number; index: number }) {
       }}
     >
       <Text style={{ width: 26, fontFamily: F.monoMedium, fontSize: 13, color: rank <= 3 ? C.lime : C.forestMute }}>{String(rank).padStart(2, "0")}</Text>
-      <Avatar name={who.name} src={who.avatar} size={32} invert />
+      <Avatar name={who.name} src={who.avatar} seed={who.seed} seeds={who.seeds} size={32} invert />
       <View style={{ flex: 1, gap: 1 }}>
         <TitledName name={name} badgeId={who.badgeId} style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3, color: C.white }} />
         {r.postedToday && <Text style={{ fontFamily: F.regular, fontSize: 12, color: C.forestMute }}>{t("community.board.today")}</Text>}
