@@ -173,8 +173,14 @@ export default function DropSheet() {
   ];
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg }}>
-      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 20, paddingTop: 26, gap: 22, paddingBottom: 150 + foot }}>
+    <View collapsable={false} style={{ flex: 1, backgroundColor: C.bg }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        showsVerticalScrollIndicator={false}
+        automaticallyAdjustContentInsets={false}
+        contentInsetAdjustmentBehavior="never"
+        contentContainerStyle={{ padding: 20, paddingTop: 26, gap: 22, paddingBottom: 150 + foot }}
+      >
         <Reveal
           duration={360}
           // Leaf-shaped, like the Drop card on the feed it opens from.
