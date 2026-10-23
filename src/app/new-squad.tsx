@@ -31,7 +31,7 @@ export default function NewSquad() {
         style={{
           height: 60,
           borderBottomWidth: 1,
-          borderBottomColor: name ? C.ink : C.line,
+          borderBottomColor: name ? C.leaf : C.line,
           fontSize: 28,
           fontFamily: F.medium,
           letterSpacing: -1,
@@ -45,6 +45,7 @@ export default function NewSquad() {
       </View>
       <Button
         label="Create squad"
+        kind="green"
         disabled={name.trim().length < 3}
         onPress={() => {
           haptic.success();

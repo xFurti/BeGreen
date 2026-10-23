@@ -18,12 +18,12 @@ function Ring({ value, size = 112 }: { value: number; size?: number }) {
   const len = 2 * Math.PI * r;
   return (
     <Svg width={size} height={size} style={{ transform: [{ rotate: "-90deg" }] }}>
-      <Circle cx={size / 2} cy={size / 2} r={r} stroke={C.card2} strokeWidth={6} fill="none" />
+      <Circle cx={size / 2} cy={size / 2} r={r} stroke={C.mint2} strokeWidth={6} fill="none" />
       <Circle
         cx={size / 2}
         cy={size / 2}
         r={r}
-        stroke={C.ink}
+        stroke={C.leaf}
         strokeWidth={6}
         fill="none"
         strokeLinecap="round"
@@ -97,7 +97,7 @@ export default function SquadDetail() {
         </View>
       </View>
 
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 20, backgroundColor: C.card, borderRadius: R.xl, padding: 18 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 20, backgroundColor: C.mint, borderRadius: R.xl, padding: 18 }}>
         <View style={{ alignItems: "center", justifyContent: "center" }}>
           <Ring value={pct} />
           <Text style={{ position: "absolute", fontFamily: F.medium, fontSize: 26, letterSpacing: -1.2 }}>{Math.round(pct * 100)}%</Text>
@@ -142,7 +142,7 @@ export default function SquadDetail() {
                 <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 14 }}>{ACTIONS[k].label}</Text>
                 <Mono color={C.ink}>{n.toLocaleString("en")}</Mono>
               </View>
-              <Bar value={n / maxN} color={i === 0 ? C.ink : C.mute} height={3} />
+              <Bar value={n / maxN} color={i === 0 ? C.leaf : C.forestMute} height={3} />
             </Animated.View>
           ))}
         </View>
@@ -170,10 +170,10 @@ export default function SquadDetail() {
                   paddingHorizontal: 10,
                   height: 28,
                   borderRadius: R.pill,
-                  backgroundColor: on ? C.ink : C.card,
+                  backgroundColor: on ? C.forest : C.card,
                 }}
               >
-                <Icon name={DOMAINS[d].icon} size={11} color={on ? C.white : C.faint} />
+                <Icon name={DOMAINS[d].icon} size={11} color={on ? C.lime : C.faint} />
                 <Text style={{ fontFamily: F.medium, fontSize: 12, color: on ? C.white : C.mute }}>{DOMAINS[d].label}</Text>
               </View>
             );

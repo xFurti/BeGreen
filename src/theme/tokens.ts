@@ -1,6 +1,6 @@
 // BeGreen design tokens.
-// Monochrome on purpose: white paper, black ink, photography brings the colour.
-// Signal colours exist only for data (air bands, verification) — never for decoration.
+// White paper, black ink, one living green. Green marks growth and action (your row, the shutter,
+// verified proofs, goals moved); data keeps its own signal colours (air bands, sources).
 
 export const C = {
   bg: "#FFFFFF",
@@ -17,6 +17,15 @@ export const C = {
   nightMute: "#8A8A8A",
   white: "#FFFFFF",
   black: "#000000",
+  // Brand greens
+  forest: "#0B3D2A", // deep canopy: dark surfaces, green text on white
+  forest2: "#174D39",
+  forestLine: "#24604A",
+  forestMute: "#8FB5A2",
+  leaf: "#1B7D44", // the brand green: icons, fills, progress (5.2:1 on white, 4.6:1 on mint)
+  lime: "#B6F23C", // new growth: accents on dark only
+  mint: "#E6F6EC", // soft tint for cards and tracks
+  mint2: "#CFE8D8",
   // Signals
   green: "#1F9D55",
   amber: "#C98A00",

@@ -6,6 +6,7 @@ import Animated, { FadeIn, FadeInDown, LinearTransition } from "react-native-rea
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Icon } from "@/components/icon";
+import { Blobs } from "@/components/nature";
 import { Button, IconButton, Mono, Press, SdgTags, Segmented, SourceBadge, TopCover } from "@/components/ui";
 import { ACTIONS } from "@/data/actions";
 import type { Explain } from "@/data/types";
@@ -39,7 +40,7 @@ function AirChart({ data }: { data: { hour: string; aqi: number }[] }) {
               flex: 1,
               height: `${Math.max(6, (d.aqi / max) * 100)}%`,
               borderRadius: 2,
-              backgroundColor: i === 0 ? C.ink : d.aqi > 60 ? C.red : C.card2,
+              backgroundColor: i === 0 ? C.forest : d.aqi > 60 ? C.red : C.mint2,
             }}
           />
         ))}
@@ -66,7 +67,7 @@ function RainChart({ data }: { data: { day: string; mm: number }[] }) {
               flex: 1,
               height: `${Math.max(4, (d.mm / max) * 100)}%`,
               borderRadius: 2,
-              backgroundColor: i >= todayIdx ? C.card2 : C.ink,
+              backgroundColor: i >= todayIdx ? C.mint2 : C.forest,
             }}
           />
         ))}
@@ -244,7 +245,7 @@ export default function PulseScreen() {
           </View>
           <View style={{ flexDirection: "row", gap: 8 }}>
             <IconButton icon="info" label="How we know" onPress={() => router.push("/sources")} />
-            <IconButton icon="sparkle" label="Ask Leaf" bg={C.ink} color={C.white} onPress={() => router.push("/leaf")} />
+            <IconButton icon="sparkle" label="Ask Leaf" bg={C.forest} color={C.lime} onPress={() => router.push("/leaf")} />
           </View>
         </View>
 
@@ -258,10 +259,10 @@ export default function PulseScreen() {
         {!ready ? (
           <View style={{ gap: 12 }}>
             {[110, 200, 200].map((h, i) => (
-              <View key={i} style={{ height: h, borderRadius: R.lg, backgroundColor: C.card, alignItems: "center", justifyContent: "center", gap: 10 }}>
+              <View key={i} style={{ height: h, borderRadius: R.lg, backgroundColor: C.mint, alignItems: "center", justifyContent: "center", gap: 10 }}>
                 {i === 0 && (
                   <>
-                    <ActivityIndicator color={C.ink} />
+                    <ActivityIndicator color={C.leaf} />
                     <Mono>Reading {pulse.place.name}</Mono>
                   </>
                 )}
@@ -277,16 +278,29 @@ export default function PulseScreen() {
               {pulse.nature && <Cell label="Species" value={String(pulse.nature.speciesCount)} sub="10 km" last />}
             </Animated.View>
 
-            <Animated.View entering={FadeInDown.delay(80)} style={{ backgroundColor: C.night, borderRadius: R.xl, borderCurve: "continuous", padding: 20, gap: 18 }}>
-              <Mono color={C.nightMute}>Today in {pulse.place.name}</Mono>
+            <Animated.View
+              entering={FadeInDown.delay(80)}
+              style={{
+                backgroundColor: C.forest,
+                borderRadius: R.sm,
+                borderTopLeftRadius: 40,
+                borderBottomRightRadius: 40,
+                borderCurve: "continuous",
+                padding: 20,
+                gap: 18,
+                overflow: "hidden",
+              }}
+            >
+              <Blobs colors={[C.leaf, C.lime]} opacity={0.18} />
+              <Mono color={C.forestMute}>Today in {pulse.place.name}</Mono>
               <Text style={{ fontFamily: F.medium, fontSize: 30, lineHeight: 33, letterSpacing: -1.3, color: C.white }}>
                 {lever ? (
                   <>
-                    Biggest lever today: <Text style={{ color: C.nightMute }}>{lever.label.toLowerCase()}.</Text>
+                    Biggest lever today: <Text style={{ color: C.lime }}>{lever.label.toLowerCase()}.</Text>
                   </>
                 ) : (
                   <>
-                    All clear. <Text style={{ color: C.nightMute }}>Make it count anyway.</Text>
+                    All clear. <Text style={{ color: C.lime }}>Make it count anyway.</Text>
                   </>
                 )}
               </Text>

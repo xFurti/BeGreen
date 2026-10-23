@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { DropCard, useCountdown } from "@/components/drop-card";
 import { Icon } from "@/components/icon";
+import { Sprout } from "@/components/nature";
 import { PostCard, VerifyBar } from "@/components/post-card";
 import { Avatar, Bar, Button, Logo, Mono, Press, TextTabs } from "@/components/ui";
 import { ACTIONS } from "@/data/actions";
@@ -22,18 +23,32 @@ const FRIEND_SET = new Set(FRIENDS);
 function NotYet({ streak }: { streak: number }) {
   const left = useCountdown();
   return (
-    <View style={{ borderRadius: R.xl, borderCurve: "continuous", borderWidth: 1, borderColor: C.line, padding: 20, gap: 18 }}>
+    <View
+      style={{
+        borderRadius: R.sm,
+        borderTopRightRadius: R.xl,
+        borderBottomLeftRadius: R.xl,
+        borderCurve: "continuous",
+        backgroundColor: C.mint,
+        padding: 20,
+        gap: 18,
+        overflow: "hidden",
+      }}
+    >
+      <View pointerEvents="none" style={{ position: "absolute", right: 16, bottom: 92, opacity: 0.9 }}>
+        <Sprout size={64} />
+      </View>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-        <Mono color={C.ink}>Your BeGreen</Mono>
+        <Mono color={C.forest}>Your BeGreen</Mono>
         <View style={{ flex: 1 }} />
-        <Icon name="flame" size={13} color={streak > 0 ? C.ink : C.faint} />
-        <Mono color={streak > 0 ? C.ink : C.mute}>{streak}</Mono>
+        <Icon name="flame" size={13} color={streak > 0 ? C.forest : C.faint} />
+        <Mono color={streak > 0 ? C.forest : C.mute}>{streak}</Mono>
       </View>
       <View style={{ gap: 8 }}>
-        <Text style={{ fontFamily: F.medium, fontSize: 28, lineHeight: 30, letterSpacing: -1.2, color: C.ink }}>
+        <Text style={{ fontFamily: F.medium, fontSize: 28, lineHeight: 30, letterSpacing: -1.2, color: C.ink, paddingRight: 64 }}>
           You haven’t BeGreen’d today.
         </Text>
-        <Text style={{ fontFamily: F.regular, fontSize: 15, lineHeight: 21, color: C.mute }}>
+        <Text style={{ fontFamily: F.regular, fontSize: 15, lineHeight: 21, color: C.ink2, paddingRight: 64 }}>
           {streak > 0 ? (
             <>
               Your <Text style={{ color: C.ink, fontFamily: F.medium }}>{streak}-day streak</Text> dies in{" "}
@@ -45,8 +60,8 @@ function NotYet({ streak }: { streak: number }) {
         </Text>
       </View>
       <View style={{ flexDirection: "row", gap: 8 }}>
-        <Button label="BeGreen now" icon="camera" onPress={() => router.push("/capture")} style={{ flex: 1 }} />
-        <Button label="Ideas" kind="secondary" icon="book" onPress={() => router.push("/guide")} />
+        <Button label="BeGreen now" kind="green" icon="camera" onPress={() => router.push("/capture")} style={{ flex: 1 }} />
+        <Button label="Ideas" kind="inverse" icon="book" onPress={() => router.push("/guide")} />
       </View>
     </View>
   );
@@ -63,7 +78,7 @@ function Mine({ post }: { post: Post }) {
     >
       <Image source={post.photo} style={{ width: 62, height: 78, borderRadius: 12, backgroundColor: C.card }} contentFit="cover" />
       <View style={{ flex: 1, gap: 6 }}>
-        <Mono color={C.ink}>Your BeGreen · today</Mono>
+        <Mono color={C.leaf}>Your BeGreen · today</Mono>
         <Text style={{ fontFamily: F.medium, fontSize: 18, letterSpacing: -0.5, color: C.ink }}>{a.label}</Text>
         <VerifyBar post={post} />
       </View>
@@ -86,10 +101,10 @@ function Race() {
     >
       <View style={{ flexDirection: "row", alignItems: "center" }}>
         <Mono style={{ flex: 1 }}>This week · friends</Mono>
-        <Mono color={C.ink}>League →</Mono>
+        <Mono color={C.forest}>League →</Mono>
       </View>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
-        <Text style={{ fontFamily: F.medium, fontSize: 44, lineHeight: 46, letterSpacing: -2, color: C.ink }}>#{i + 1}</Text>
+        <Text style={{ fontFamily: F.medium, fontSize: 44, lineHeight: 46, letterSpacing: -2, color: C.forest }}>#{i + 1}</Text>
         <View style={{ flex: 1, gap: 4 }}>
           <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3, color: C.ink }} numberOfLines={1}>
             {ahead ? `${gap} seeds behind ${ahead.name}` : "You’re on top. Stay there."}
@@ -183,9 +198,9 @@ export default function Feed() {
         }}
       >
         <Press onPress={() => router.push("/leaf")} accessibilityLabel="Ask Leaf" style={{ width: 40, height: 40, justifyContent: "center" }}>
-          <Icon name="sparkle" size={21} color={C.ink} />
+          <Icon name="sparkle" size={21} color={C.leaf} />
         </Press>
-        <Logo size={26} />
+        <Logo size={26} sway />
         <Press onPress={() => router.navigate("/me")} accessibilityLabel="Your profile" style={{ width: 40, alignItems: "flex-end" }}>
           <Avatar name={profile.name || "You"} size={32} />
         </Press>
@@ -207,9 +222,10 @@ export default function Feed() {
         )}
         onViewableItemsChanged={onViewable}
         viewabilityConfig={{ itemVisiblePercentThreshold: 60 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.ink} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.leaf} colors={[C.leaf]} />}
         ListEmptyComponent={
           <Animated.View entering={FadeIn} style={{ alignItems: "center", gap: 10, paddingVertical: 40 }}>
+            <Sprout size={56} />
             <Text style={{ fontFamily: F.medium, fontSize: 20, letterSpacing: -0.6, color: C.ink }}>Quiet here.</Text>
             <Text style={{ fontFamily: F.regular, color: C.mute, textAlign: "center" }}>
               Join a squad to see what your class or town is doing.

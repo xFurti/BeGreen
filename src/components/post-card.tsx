@@ -4,6 +4,7 @@ import { Pressable, Text, View } from "react-native";
 import Animated, { FadeIn, FadeInDown, ZoomIn } from "react-native-reanimated";
 
 import { Icon } from "@/components/icon";
+import { LeafBurst } from "@/components/nature";
 import { ProofMedia } from "@/components/proof-media";
 import { Avatar, Mono, Press, SdgTags, Tag } from "@/components/ui";
 import { ACTIONS } from "@/data/actions";
@@ -27,7 +28,7 @@ function Dots({ n, dark }: { n: number; dark?: boolean }) {
       {Array.from({ length: VERIFY_GOAL }).map((_, i) => (
         <View
           key={i}
-          style={{ width: 12, height: 3, borderRadius: 2, backgroundColor: i < n ? (dark ? C.white : C.ink) : dark ? C.nightLine : C.card2 }}
+          style={{ width: 12, height: 3, borderRadius: 2, backgroundColor: i < n ? (dark ? C.lime : C.leaf) : dark ? C.nightLine : C.mint2 }}
         />
       ))}
     </View>
@@ -41,12 +42,20 @@ export function VerifyBar({ post }: { post: Post }) {
   const done = n >= VERIFY_GOAL;
   const mine = post.authorId === ME_ID;
   const iVerified = post.verifiedBy.includes(ME_ID);
+  // Survives the switch from the Verify button to the verified label, so the leaves finish flying.
+  const [burst, setBurst] = useState(0);
+  const leaves = burst > 0 && (
+    <View pointerEvents="none" style={{ position: "absolute", left: 0, top: 0, width: 80, height: 30 }}>
+      <LeafBurst id={burst} />
+    </View>
+  );
 
   if (done) {
     const names = post.verifiedBy.slice(0, 2).map((id) => author(id, meName)?.name ?? "?");
     return (
       <Animated.View entering={FadeIn} style={{ flexDirection: "row", alignItems: "center", gap: 6, flexShrink: 1 }}>
-        <Icon name="checkSeal" size={14} color={C.ink} />
+        {leaves}
+        <Icon name="checkSeal" size={14} color={C.leaf} />
         <Text numberOfLines={1} style={{ fontFamily: F.regular, fontSize: 13, color: C.mute, flexShrink: 1 }}>
           Verified by <Text style={{ color: C.ink, fontFamily: F.medium }}>{names.join(", ")}</Text>
           {n > 2 ? ` +${n - 2}` : ""}
@@ -57,10 +66,12 @@ export function VerifyBar({ post }: { post: Post }) {
 
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+      {leaves}
       {!mine && !iVerified ? (
         <Press
           onPress={() => {
             haptic.success();
+            setBurst(Date.now());
             verify(post.id);
           }}
           accessibilityLabel="Verify this proof"
@@ -68,17 +79,17 @@ export function VerifyBar({ post }: { post: Post }) {
             flexDirection: "row",
             alignItems: "center",
             gap: 6,
-            backgroundColor: C.ink,
+            backgroundColor: C.forest,
             paddingHorizontal: 12,
             height: 30,
             borderRadius: R.pill,
           }}
         >
-          <Icon name="check" size={12} color={C.white} />
+          <Icon name="check" size={12} color={C.lime} />
           <Text style={{ color: C.white, fontFamily: F.medium, fontSize: 13 }}>Verify</Text>
         </Press>
       ) : (
-        <Text style={{ fontFamily: F.medium, fontSize: 13, color: C.ink2 }}>{mine ? "Waiting for friends" : "You verified"}</Text>
+        <Text style={{ fontFamily: F.medium, fontSize: 13, color: mine ? C.ink2 : C.leaf }}>{mine ? "Waiting for friends" : "You verified"}</Text>
       )}
       <Dots n={n} />
       <Mono>
@@ -145,7 +156,7 @@ function Reactions({ post }: { post: Post }) {
                   alignItems: "center",
                   justifyContent: "center",
                   borderRadius: 18,
-                  backgroundColor: mine === e ? C.card : "transparent",
+                  backgroundColor: mine === e ? C.mint : "transparent",
                 }}
               >
                 <Text style={{ fontSize: 20 }}>{e}</Text>
@@ -207,7 +218,7 @@ export const PostCard = memo(function PostCard({
       {!locked && (
         <View style={{ gap: 10 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <Icon name={action.icon} size={15} color={C.ink} />
+            <Icon name={action.icon} size={15} color={C.leaf} />
             <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 15, letterSpacing: -0.2, color: C.ink }}>{action.label}</Text>
             <SdgTags goals={action.sdgs.slice(0, 2)} />
           </View>
