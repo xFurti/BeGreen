@@ -94,7 +94,7 @@ function Extra({ k, pulse }: { k: Insight["key"]; pulse: Pulse }) {
         {pulse.nature.top.slice(0, 10).map((s) => (
           <View key={s.id} style={{ width: 120, gap: 6 }}>
             <View style={{ width: 120, height: 150, borderRadius: 16, overflow: "hidden", backgroundColor: C.card }}>
-              {s.photo ? <Image source={s.photo} style={{ flex: 1 }} contentFit="cover" transition={200} /> : null}
+              {s.photo ? <Image source={s.photo} style={{ flex: 1 }} contentFit="cover" transition={200} priority="low" /> : null}
               <View style={{ position: "absolute", top: 8, left: 8, backgroundColor: "rgba(0,0,0,0.5)", paddingHorizontal: 6, height: 18, borderRadius: 9, justifyContent: "center" }}>
                 <Mono color={C.white} size={10}>
                   ×{s.count}

@@ -324,7 +324,7 @@ export default function Capture() {
     progress.set(0);
     progress.set(withTiming(1, { duration: PROOF_SECONDS * 1000, easing: Easing.linear }));
     try {
-      const v = await cam.current.recordAsync({ maxDuration: PROOF_SECONDS });
+      const v = await cam.current.recordAsync({ maxDuration: PROOF_SECONDS, codec: "avc1" });
       if (v?.uri) {
         setProof(v.uri);
         haptic.success();
@@ -599,6 +599,8 @@ export default function Capture() {
                 ratio="4:3"
                 facing={facing}
                 mode={isProof ? "video" : "picture"}
+                videoQuality="720p"
+                videoBitrate={4_000_000}
                 mute
                 flash={flash ? "on" : "off"}
                 enableTorch={isProof && flash}

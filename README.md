@@ -75,7 +75,7 @@ Profiles, posts, verifications, reactions, comments, squads and the daily challe
 
 - **Accounts** are anonymous Supabase users with a public name and handle. Every rule is enforced in the database: you write only your own rows, can't verify your own proof, can't claim the same Drop twice, and squad points are added by a trigger, not by the app.
 - **The Drop** is one row per Comune per day (`<comune id>:<date>`). The first phone to open the app that day builds it from the Comune's live data and inserts it; everyone else reads the same row.
-- **Media** go to the public `proofs` bucket, each user in their own folder. Demo captures store a reference to the bundled clip instead of uploading it.
+- **Media** go to the public `proofs` bucket, each user in their own folder: photos are JPEGs with a 1280 px long side, clips are 720p at about 4 Mbps, and native uploads stream directly from disk. Demo captures store a reference to the bundled clip instead of uploading it.
 - **Live updates:** the feed refreshes when someone posts, verifies, reacts or comments.
 
 Without the two environment variables below the app still runs, on this phone only: your proofs stay local and the feed shows the example proofs for today's Drop.
