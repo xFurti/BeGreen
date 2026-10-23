@@ -16,6 +16,8 @@ import { formatNumber, timeAgo } from "@/i18n/format";
 import { useI18n } from "@/i18n/use-i18n";
 import type { Pulse } from "@/services/env";
 import { aqiBand, type Insight, type Level } from "@/services/interpret";
+import { canClaimDrop, seedsFor } from "@/services/rewards";
+import { hasBackend } from "@/services/supabase";
 import { useApp } from "@/store/app-store";
 import { C, F, R, T } from "@/theme/tokens";
 
@@ -220,6 +222,7 @@ export default function PulseScreen() {
   const lever = bad[0];
   const air = pulse.air ? aqiBand(pulse.air.aqi, language) : null;
   const da = actionCopy(t, drop.action);
+  const bonus = useApp((s) => canClaimDrop(drop, s.posts, s.userId, hasBackend));
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
@@ -313,7 +316,7 @@ export default function PulseScreen() {
                 kind="inverse"
                 icon={da.icon}
                 label={t("pulse.doDrop")}
-                trailing={`+${da.seeds + 10}`}
+                trailing={`+${seedsFor({ action: drop.action, isDrop: bonus })}`}
                 onPress={() => router.push({ pathname: "/capture", params: { action: drop.action } })}
               />
             </Animated.View>

@@ -280,7 +280,7 @@ export const uiMessages = defineMessages(
       your: "Your BeGreen",
       what: "What did you do?",
       howTo: "How to →",
-      dropBonus: "Today’s challenge +10",
+      dropBonus: "Today’s challenge · bonus included",
       caption: "Caption",
       captionPh: "Today I {verb}…",
       who: "Who sees it",
@@ -434,6 +434,7 @@ export const uiMessages = defineMessages(
     },
     shared: {
       offline: "Couldn’t reach BeGreen. Try again in a moment.",
+      challengeAlreadyDone: "You already completed this challenge. This proof earns the act’s base Seeds; the bonus is awarded once.",
       savedLocally: "Saved on this phone. It’ll post when you’re back online.",
       someone: "BeGreen user",
       checkConnection: "Check your connection and try again.",
@@ -771,7 +772,7 @@ export const uiMessages = defineMessages(
       your: "Il tuo BeGreen",
       what: "Che cosa hai fatto?",
       howTo: "Come si fa →",
-      dropBonus: "Sfida di oggi +10",
+      dropBonus: "Sfida di oggi · bonus incluso",
       caption: "Didascalia",
       captionPh: "Oggi {verb}…",
       who: "Chi lo vede",
@@ -925,6 +926,7 @@ export const uiMessages = defineMessages(
     },
     shared: {
       offline: "Non riesco a raggiungere BeGreen. Riprova tra poco.",
+      challengeAlreadyDone: "Hai già completato questa sfida. La prova vale i Seeds base del gesto: il bonus si riceve una volta sola.",
       savedLocally: "Salvata su questo telefono. Verrà pubblicata appena torni online.",
       someone: "Utente BeGreen",
       checkConnection: "Controlla la connessione e riprova.",
