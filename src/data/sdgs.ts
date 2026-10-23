@@ -3,8 +3,8 @@
 
 export const SDG_LIST = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
 
-// The Agenda ends at the close of 31 December 2030: the first instant of 2031.
-const END_DAY = civilDayNumber(2031, 1, 1);
+// «Giorni al 2030» reaches the year 2030: midnight at the start of 1 January 2030.
+const END_DAY = civilDayNumber(2030, 1, 1);
 
 // Days between two civil dates, independent of time zones and DST.
 function civilDayNumber(year: number, month: number, day: number): number {
