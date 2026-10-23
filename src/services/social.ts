@@ -4,15 +4,18 @@ import { fetch as expoFetch } from "expo/fetch";
 import type { ActionId } from "@/data/actions";
 import { isBadgeId, type BadgeId } from "@/data/badges";
 import { assetKey, resolveMedia } from "@/data/demo";
+import { isSeedId, type SeedId } from "@/data/seeds";
 import type { Audience, Comment, Comune, Media, Post, Role, Squad, SquadKind, User } from "@/data/types";
 import { shrinkPhoto } from "@/services/media";
+import { signedMedia } from "@/services/storage-media";
+import { proofPath } from "@/services/storage-path";
 import { SUPABASE_KEY, SUPABASE_URL, supabase } from "@/services/supabase";
 
 // The shared social layer on Supabase. Pure data access: the store decides what to keep.
 
 const D = 864e5;
 
-export type ProfileRow = { id: string; name: string; handle: string; role: Role; badge_id: string | null };
+export type ProfileRow = { id: string; name: string; handle: string; role: Role; badge_id: string | null; seed: string | null };
 export type PostRow = {
   id: string;
   author_id: string;
@@ -25,6 +28,7 @@ export type PostRow = {
   place: string;
   audience: Audience;
   squad_id: string | null;
+  group_id: string | null;
   spot_id: string | null;
   created_at: string;
   author: ProfileRow | null;
@@ -46,15 +50,22 @@ type SquadRow = {
   squad_members: { user_id: string }[];
 };
 
-export const PROFILE = "id, name, handle, role, badge_id";
+export const PROFILE = "id, name, handle, role, badge_id, seed";
 // posts and profiles are also linked through verifications, reactions and comments: name the FK for each embed.
 export const POST =
-  "id, author_id, comune_id, challenge_id, action, photo, proof, caption, place, audience, squad_id, spot_id, created_at, " +
+  "id, author_id, comune_id, challenge_id, action, photo, proof, caption, place, audience, squad_id, group_id, spot_id, created_at, " +
   `author:profiles!posts_author_id_fkey(${PROFILE}), verifications(user_id, user:profiles!verifications_user_id_fkey(${PROFILE})), ` +
   `reactions(user_id, emoji), comments(id, author_id, text, created_at, author:profiles!comments_author_id_fkey(${PROFILE}))`;
 const SQUAD = "id, name, kind, place, comune_id, code, points, quest, monthly, month, squad_members(user_id)";
 
-export const toUser = (p: ProfileRow): User => ({ id: p.id, name: p.name, handle: p.handle, role: p.role, badgeId: isBadgeId(p.badge_id) ? p.badge_id : null });
+export const toUser = (p: ProfileRow): User => ({
+  id: p.id,
+  name: p.name,
+  handle: p.handle,
+  role: p.role,
+  badgeId: isBadgeId(p.badge_id) ? p.badge_id : null,
+  seed: isSeedId(p.seed) ? p.seed : undefined,
+});
 
 export type Feed = { posts: Post[]; profiles: Record<string, User>; myReactions: Record<string, string> };
 
@@ -93,13 +104,19 @@ export function toFeed(rows: PostRow[], me: string): Feed {
       isDrop: !!r.challenge_id,
       challengeId: r.challenge_id ?? undefined,
       comuneId: r.comune_id ?? undefined,
-      audience: r.audience,
+      audience: r.audience === "squad" ? "group" : r.audience,
       squadId: r.squad_id ?? undefined,
+      groupId: r.group_id ?? undefined,
       spotId: r.spot_id ?? undefined,
     });
   }
   posts.sort((a, b) => b.createdAt - a.createdAt);
   return { posts, profiles, myReactions };
+}
+
+export async function readFeed(rows: PostRow[], me: string): Promise<Feed> {
+  const media = await signedMedia(rows.flatMap((r) => [r.photo, r.proof]));
+  return toFeed(rows.map((r) => ({ ...r, photo: media.get(r.photo) as string, proof: media.get(r.proof) as string })), me);
 }
 
 function toSquad(r: SquadRow): Squad {
@@ -135,7 +152,7 @@ export function db() {
 }
 
 // Your Comune this week, public proofs from everywhere, your squads, and your own history.
-export async function fetchFeed(me: string, comuneId: string, squadIds: string[]): Promise<Feed> {
+export async function fetchFeed(me: string, comuneId: string, groupIds: string[]): Promise<Feed> {
   const s = db();
   const since = (days: number) => new Date(Date.now() - days * D).toISOString();
   const queries = [
@@ -143,12 +160,12 @@ export async function fetchFeed(me: string, comuneId: string, squadIds: string[]
     s.from("posts").select(POST).eq("audience", "public").gte("created_at", since(3)).order("created_at", { ascending: false }).limit(60),
     s.from("posts").select(POST).eq("author_id", me).order("created_at", { ascending: false }).limit(400),
   ];
-  if (squadIds.length) {
+  if (groupIds.length) {
     queries.push(
       s
         .from("posts")
         .select(POST)
-        .in("squad_id", squadIds)
+        .in("group_id", groupIds)
         .gte("created_at", since(30))
         .order("created_at", { ascending: false })
         .limit(120),
@@ -160,7 +177,13 @@ export async function fetchFeed(me: string, comuneId: string, squadIds: string[]
     if (r.error) throw r.error;
     rows.push(...(r.data as unknown as PostRow[]));
   }
-  return toFeed(rows, me);
+  return readFeed(rows, me);
+}
+
+export async function fetchGroupIds(me: string): Promise<string[]> {
+  const { data, error } = await db().from("community_members").select("community_id, community:communities!inner(kind)").eq("user_id", me).neq("community.kind", "territory");
+  if (error) throw error;
+  return (data ?? []).map((r) => r.community_id as string);
 }
 
 export async function countMyVerifications(me: string): Promise<number> {
@@ -191,10 +214,17 @@ export async function fetchProfiles(ids: string[]): Promise<Record<string, User>
 
 export class HandleTaken extends Error {}
 
-export async function saveProfile(me: string, p: { name: string; handle: string; role: Role; badgeId?: BadgeId | null }, comune: Comune | null) {
+export async function saveProfile(
+  me: string,
+  p: { name: string; handle: string; role: Role; badgeId?: BadgeId | null; seed?: SeedId | null },
+  comune: Comune | null,
+) {
   const { error } = await db()
     .from("profiles")
-    .upsert({ id: me, name: p.name, handle: p.handle, role: p.role, badge_id: p.badgeId ?? null, comune_id: comune?.id ?? null }, { onConflict: "id" });
+    .upsert(
+      { id: me, name: p.name, handle: p.handle, role: p.role, badge_id: p.badgeId ?? null, seed: p.seed ?? null, comune_id: comune?.id ?? null },
+      { onConflict: "id" },
+    );
   if (error?.code === "23505") throw new HandleTaken(p.handle);
   if (error) throw error;
 }
@@ -215,6 +245,28 @@ export async function handleFree(handle: string, me: string | null): Promise<boo
   const { data, error } = await db().from("profiles").select("id").eq("handle", handle).maybeSingle();
   if (error) throw error;
   return !data || data.id === me;
+}
+
+// Which of these handles nobody has yet. Works before sign-in (onboarding checks while you type).
+export async function freeHandles(candidates: string[]): Promise<Set<string>> {
+  const { data, error } = await db().rpc("free_handles", { candidates: candidates.slice(0, 12) });
+  if (error) throw error;
+  return new Set((data as string[] | null) ?? []);
+}
+
+// Lifetime Seeds of these people, computed by the database: how far each plant has grown.
+export async function fetchSeeds(ids: string[]): Promise<Record<string, number>> {
+  if (!ids.length) return {};
+  const { data, error } = await db().rpc("profile_seeds", { ids: ids.slice(0, 200) });
+  if (error) throw error;
+  return Object.fromEntries(((data as { id: string; seeds: number }[] | null) ?? []).map((r) => [r.id, r.seeds]));
+}
+
+// How many seeds are planted in a Comune: "you're seed no. X".
+export async function countPlanted(comuneId: string): Promise<number> {
+  const { count, error } = await db().from("profiles").select("id", { count: "exact", head: true }).eq("comune_id", comuneId);
+  if (error) throw error;
+  return count ?? 0;
 }
 
 // ---------- media ----------
@@ -250,7 +302,7 @@ async function putObject(file: File, type: string, path: string): Promise<void> 
     "Content-Type": type,
     "x-upsert": String(upsert),
     // Paths are unique timestamps: long CDN cache cuts origin hits without hurting updates.
-    "Cache-Control": "public, max-age=31536000, immutable",
+    "Cache-Control": "private, max-age=300",
   });
   // Authenticated HEAD on the object API — not the public CDN URL — and require a real byte length.
   const stored = async () => {
@@ -282,6 +334,8 @@ async function upload(me: string, m: Media, kind: "photo" | "proof"): Promise<st
   const key = assetKey(m);
   if (key) return key;
   if (typeof m !== "string") throw new Error("Unknown bundled media");
+  const existing = proofPath(m, SUPABASE_URL);
+  if (existing) return `storage:proofs/${existing}`;
   if (/^(https?:|asset:)/.test(m)) return m;
   const isWeb = process.env.EXPO_OS === "web";
   let bytes: ArrayBuffer;
@@ -298,12 +352,12 @@ async function upload(me: string, m: Media, kind: "photo" | "proof"): Promise<st
   const path = `${me}/${Date.now()}-${kind}.${e}`;
   const s = db();
   if (isWeb) {
-    const { error } = await s.storage.from("proofs").upload(path, bytes!, { contentType: type, upsert: false });
+    const { error } = await s.storage.from("proofs").upload(path, bytes!, { contentType: type, upsert: false, cacheControl: "300" });
     if (error) throw error;
   } else {
     await putObject(new File(m), type, path);
   }
-  return s.storage.from("proofs").getPublicUrl(path).data.publicUrl;
+  return `storage:proofs/${path}`;
 }
 
 // A photo for the community map, in the same public bucket and folder rules as proofs.
@@ -326,12 +380,13 @@ export async function publishPost(me: string, p: Post): Promise<Post> {
       place: p.place,
       audience: p.audience,
       squad_id: p.squadId ?? null,
+      group_id: p.groupId ?? null,
       spot_id: p.spotId ?? null,
     })
     .select(POST)
     .single();
   if (error) throw error;
-  return toFeed([data as unknown as PostRow], me).posts[0];
+  return (await readFeed([data as unknown as PostRow], me)).posts[0];
 }
 
 export async function addVerification(postId: string) {
@@ -402,7 +457,7 @@ export function subscribeFeed(onChange: () => void): () => void {
   if (!supabase) return () => {};
   const s = supabase;
   const ch = s.channel("feed");
-  for (const table of ["posts", "verifications", "comments", "reactions", "spots", "spot_comments", "spot_reactions", "challenge_entries"]) {
+  for (const table of ["posts", "verifications", "comments", "reactions", "spots", "spot_comments", "spot_reactions", "challenge_entries", "community_members", "group_progress"]) {
     ch.on("postgres_changes", { event: "*", schema: "public", table }, onChange);
   }
   ch.subscribe();

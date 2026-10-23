@@ -13,6 +13,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Icon, type IconName } from "@/components/icon";
 import { LeafMark } from "@/components/nature";
+import { SeedBuddy } from "@/components/seed-buddy";
+import { plantStage, type SeedId } from "@/data/seeds";
 import { SOURCE_KINDS, SOURCES, type SourceId } from "@/data/sources";
 import type { Media } from "@/data/types";
 import { sourceCopy, sourceKindCopy } from "@/i18n/content";
@@ -46,6 +48,7 @@ export function Press({
   style,
   scale = 0.97,
   disabled,
+  dimDisabled = true,
   hapticOn = true,
   accessibilityLabel,
   hitSlop,
@@ -56,6 +59,8 @@ export function Press({
   style?: StyleProp<ViewStyle>;
   scale?: number;
   disabled?: boolean;
+  /** Disabled still blocks presses. Set false when a short lock should not fade the control. */
+  dimDisabled?: boolean;
   hapticOn?: boolean;
   accessibilityLabel?: string;
   hitSlop?: PressableProps["hitSlop"];
@@ -82,7 +87,7 @@ export function Press({
         onPress?.();
       }}
     >
-      <Animated.View style={[inner, a, disabled && { opacity: 0.35 }]}>{children}</Animated.View>
+      <Animated.View style={[inner, a, disabled && dimDisabled && { opacity: 0.35 }]}>{children}</Animated.View>
     </Pressable>
   );
 }
@@ -186,11 +191,41 @@ export function IconButton({
 
 // ---------- Avatar ----------
 
-// `invert` for monograms sitting on black.
-export function Avatar({ src, name, size = 36, ring, invert }: { src?: Media; name: string; size?: number; ring?: string; invert?: boolean }) {
+// `invert` for monograms sitting on black. With a seed and no photo, the person's plant at its stage.
+export function Avatar({
+  src,
+  name,
+  size = 36,
+  ring,
+  invert,
+  seed,
+  seeds,
+}: {
+  src?: Media;
+  name: string;
+  size?: number;
+  ring?: string;
+  invert?: boolean;
+  seed?: SeedId;
+  seeds?: number;
+}) {
   const { C } = useTheme();
   const inner = src ? (
     <Image source={src} style={{ width: size, height: size, borderRadius: size / 2 }} contentFit="cover" transition={150} />
+  ) : seed ? (
+    <View
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        backgroundColor: invert ? C.lime : C.mint,
+        alignItems: "center",
+        justifyContent: "flex-end",
+        overflow: "hidden",
+      }}
+    >
+      <SeedBuddy seed={seed} stage={plantStage(seeds ?? 0)} size={size * 0.92} />
+    </View>
   ) : (
     <View
       style={{
@@ -211,13 +246,21 @@ export function Avatar({ src, name, size = 36, ring, invert }: { src?: Media; na
   return <View style={{ padding: 2, borderRadius: size, backgroundColor: ring }}>{inner}</View>;
 }
 
-export function AvatarStack({ people, size = 24, ring }: { people: { avatar?: Media; name: string }[]; size?: number; ring?: string }) {
+export function AvatarStack({
+  people,
+  size = 24,
+  ring,
+}: {
+  people: { avatar?: Media; name: string; seed?: SeedId; seeds?: number }[];
+  size?: number;
+  ring?: string;
+}) {
   const { C } = useTheme();
   return (
     <View style={{ flexDirection: "row" }}>
       {people.map((p, i) => (
         <View key={i} style={{ marginLeft: i === 0 ? 0 : -size * 0.32 }}>
-          <Avatar src={p.avatar} name={p.name} size={size} ring={ring ?? C.bg} />
+          <Avatar src={p.avatar} name={p.name} seed={p.seed} seeds={p.seeds} size={size} ring={ring ?? C.bg} />
         </View>
       ))}
     </View>

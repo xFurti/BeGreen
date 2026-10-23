@@ -158,3 +158,31 @@ export const THEMES: Record<Scheme, Theme> = {
   light: { scheme: "light", C: light, T: type(light) },
   dark: { scheme: "dark", C: dark, T: type(dark) },
 };
+
+// Your seed's illustration (src/components/seed-buddy.tsx): the same in both themes, like a sticker.
+// Species colours are the petals, fruit or crown; coat is the seed; heart the flower's eye or the trunk.
+export const seedArt = {
+  ink: "#1E2A22",
+  cheek: "#F29B8F",
+  pot: "#D9774B",
+  rim: "#C2643C",
+  leafA: "#3FA35B",
+  leafB: "#2C7A44",
+  stem: "#2E7D46",
+  shine: "#FFFFFF",
+  shadow: "#000000",
+  sweat: "#6BB8F0",
+  puff: ["#B9B9B9", "#C9C9C9", "#D9D9D9"],
+  spark: "#F5B700",
+  zzz: "#8E8E93",
+  soil: "#7A5236",
+  soilTop: "#946645",
+  species: {
+    sunflower: { color: "#F5B700", coat: "#5A4632", heart: "#6B3E1F" },
+    oak: { color: "#3E9B4F", coat: "#A86B32", heart: "#7A4A1F" },
+    lavender: { color: "#9B7BD4", coat: "#6E5A8A", heart: "#5C3F94" },
+    poppy: { color: "#E5484D", coat: "#4A3A3A", heart: "#2A1E1E" },
+    tomato: { color: "#E8553A", coat: "#C9A56B", heart: "#2F7D3A" },
+    fir: { color: "#1F6E4A", coat: "#8A5A35", heart: "#5A3A22" },
+  },
+} as const;

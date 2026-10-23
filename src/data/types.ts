@@ -1,5 +1,6 @@
 import type { ActionId } from "@/data/actions";
 import type { BadgeId } from "@/data/badges";
+import type { SeedId } from "@/data/seeds";
 
 // A bundled asset (require()) or a file / remote URI.
 export type Media = number | string;
@@ -15,6 +16,9 @@ export type User = {
   badgeId?: BadgeId | null;
   avatar?: Media;
   tag?: string;
+  // The seed they planted, and their lifetime Seeds when known: how far their plant has grown.
+  seed?: SeedId;
+  seeds?: number;
 };
 
 // An Italian Comune. `id` is its GeoNames admin3 id, stable across devices.
@@ -23,7 +27,7 @@ export type Comune = { id: string; name: string; province?: string; region?: str
 export type Comment = { id: string; authorId: string; text: string; createdAt: number };
 
 // "comune": everyone in your Comune · "squad": members only · "public": everyone everywhere.
-export type Audience = "comune" | "squad" | "public";
+export type Audience = "comune" | "squad" | "group" | "public";
 
 export type Post = {
   id: string;
@@ -45,6 +49,7 @@ export type Post = {
   comuneId?: string;
   audience: Audience;
   squadId?: string;
+  groupId?: string;
   // The community place this proof was taken at.
   spotId?: string;
   // Example proof for today's challenge: never verified, never counted.

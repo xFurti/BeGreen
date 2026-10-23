@@ -5,6 +5,7 @@ import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from "react
 import Animated, { FadeIn, FadeInDown, LinearTransition } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { SeedTip } from "@/components/seed-ui";
 import { Icon } from "@/components/icon";
 import { Blobs } from "@/components/nature";
 import { Button, IconButton, Mono, Press, SdgTags, Segmented, SourceBadge, TopCover } from "@/components/ui";
@@ -269,6 +270,8 @@ export default function PulseScreen() {
             <IconButton icon="sparkle" label={t("common.askLeaf")} bg={C.forest} color={C.lime} onPress={() => router.push("/leaf")} />
           </View>
         </View>
+
+        <SeedTip id="pulse" text={t("seed.tips.pulse")} />
 
         {ready && pulse.sample && (
           <View style={{ flexDirection: "row", gap: 10, alignItems: "center", backgroundColor: C.card, borderRadius: R.md, padding: 12 }}>

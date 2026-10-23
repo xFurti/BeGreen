@@ -4,8 +4,10 @@ import { ActivityIndicator, ScrollView, Text, TextInput, View } from "react-nati
 import { Icon } from "@/components/icon";
 import { Button, Mono, Press } from "@/components/ui";
 import type { Comune } from "@/data/types";
+import { useKeyboardCover } from "@/hooks/use-keyboard-cover";
 import { useI18n } from "@/i18n/use-i18n";
 import { comuneNearMe, searchComuni } from "@/services/comuni";
+import { scrollPaddingBottom } from "@/services/keyboard-inset";
 import { useApp } from "@/store/app-store";
 import { F } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
@@ -15,6 +17,7 @@ export default function ComunePicker() {
   const { C, T } = useTheme();
   const current = useApp((s) => s.comune);
   const setComune = useApp((s) => s.setComune);
+  const { ref: keyboardRoot, cover, scrollerRef, scrollProps } = useKeyboardCover();
   const { t } = useI18n();
   const [q, setQ] = useState("");
   const [results, setResults] = useState<{ q: string; list: Comune[] }>({ q: "", list: [] });
@@ -55,7 +58,14 @@ export default function ComunePicker() {
   };
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 22, paddingTop: 30, gap: 24 }} keyboardShouldPersistTaps="handled">
+    <View ref={keyboardRoot} collapsable={false} style={{ flex: 1, backgroundColor: C.bg }}>
+      <ScrollView
+        ref={scrollerRef}
+        {...scrollProps}
+        nestedScrollEnabled={process.env.EXPO_OS === "android"}
+        contentContainerStyle={{ padding: 22, paddingTop: 30, paddingBottom: scrollPaddingBottom(40, cover), gap: 24 }}
+        keyboardShouldPersistTaps="handled"
+      >
       <View style={{ gap: 10 }}>
         <Mono>{t("comune.yourTitle")}</Mono>
         <Text style={[T.hero, { fontSize: 38, lineHeight: 40 }]}>{t("comune.title")}</Text>
@@ -118,6 +128,7 @@ export default function ComunePicker() {
         })}
         {answered && status === "idle" && shown.length === 0 && <Text style={T.caption}>{t("comune.none", { q: q.trim() })}</Text>}
       </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }

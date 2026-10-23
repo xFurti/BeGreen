@@ -5,7 +5,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Icon } from "@/components/icon";
-import { useMyRank } from "@/components/leaderboard";
+import { TerritoryCard } from "@/components/territory-card";
 import { LoveYourCity } from "@/components/love-your-city";
 import { Button, IconButton, Logo, Mono, Press, TopCover } from "@/components/ui";
 import { COMMUNITY_KIND_ICON, type Community } from "@/data/community";
@@ -60,23 +60,25 @@ function CommunityRow({
   const { C } = useTheme();
   return (
     <Animated.View entering={FadeInDown.delay(index * 50).springify().damping(20)}>
-      <Press
-        scale={0.985}
-        onPress={() => open(c)}
-        accessibilityLabel={c.name}
-        style={{ flexDirection: "row", alignItems: "center", gap: 14, padding: 14, borderRadius: R.lg, borderCurve: "continuous", backgroundColor: C.card }}
-      >
-        <View style={{ width: 46, height: 46, borderRadius: 14, backgroundColor: C.forest, alignItems: "center", justifyContent: "center" }}>
-          <Icon name={COMMUNITY_KIND_ICON[c.kind]} size={20} color={C.lime} />
-        </View>
-        <View style={{ flex: 1, gap: 3 }}>
-          <Text numberOfLines={1} style={{ fontFamily: F.medium, fontSize: 17, letterSpacing: -0.4, color: C.ink }}>
-            {c.name}
-          </Text>
-          {subtitle}
-        </View>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 14, padding: 14, borderRadius: R.lg, borderCurve: "continuous", backgroundColor: C.card }}>
+        <Press
+          scale={0.985}
+          onPress={() => open(c)}
+          accessibilityLabel={c.name}
+          style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 14 }}
+        >
+          <View style={{ width: 46, height: 46, borderRadius: 14, backgroundColor: C.forest, alignItems: "center", justifyContent: "center" }}>
+            <Icon name={COMMUNITY_KIND_ICON[c.kind]} size={20} color={C.lime} />
+          </View>
+          <View style={{ flex: 1, gap: 3 }}>
+            <Text numberOfLines={1} style={{ fontFamily: F.medium, fontSize: 17, letterSpacing: -0.4, color: C.ink }}>
+              {c.name}
+            </Text>
+            {subtitle}
+          </View>
+        </Press>
         {trailing}
-      </Press>
+      </View>
     </Animated.View>
   );
 }
@@ -84,7 +86,6 @@ function CommunityRow({
 function GroupRow({ c, index }: { c: Community; index: number }) {
   const { C } = useTheme();
   const { t } = useI18n();
-  const { rank, size } = useMyRank(c);
   const priv = c.visibility === "private";
   return (
     <CommunityRow
@@ -100,12 +101,6 @@ function GroupRow({ c, index }: { c: Community; index: number }) {
       }
       trailing={
         <>
-          {size > 1 && (
-            <View style={{ alignItems: "flex-end" }}>
-              <Text style={{ fontFamily: F.medium, fontSize: 20, letterSpacing: -0.6, color: C.forest }}>#{rank}</Text>
-              <Mono size={9.5}>{t("community.hub.thisWeek")}</Mono>
-            </View>
-          )}
           <Icon name="chevron" size={14} color={C.faint} />
         </>
       }
@@ -197,13 +192,15 @@ export default function CommunityTab() {
           <IconButton icon="search" label={t("community.hub.findCity")} onPress={() => router.push("/communities")} />
         </View>
 
+        <TerritoryCard />
+
         <Section title={t("community.hub.groups")} action={groups.length ? t("community.hub.joinCode") : undefined} onAction={() => router.push("/join")}>
           {groups.map((c, i) => (
             <GroupRow key={c.id} c={c} index={i} />
           ))}
           {groups.length === 0 && <Text style={T.callout}>{t("community.hub.noGroups")}</Text>}
           <View style={{ flexDirection: "row", gap: 8 }}>
-            <Button label={t("community.hub.newGroup")} kind="green" size="md" icon="plus" style={{ flex: 1 }} onPress={() => router.push("/new-community")} />
+            <Button label={t("community.hub.newGroup")} kind="green" size="md" icon="plus" style={{ flex: 1 }} onPress={() => router.navigate("/new-community")} />
             {groups.length === 0 && <Button label={t("community.hub.joinCode")} kind="secondary" size="md" style={{ flex: 1 }} onPress={() => router.push("/join")} />}
           </View>
         </Section>

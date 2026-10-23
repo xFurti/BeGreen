@@ -2,7 +2,7 @@ import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
 import { useRef, useState } from "react";
-import { Alert, KeyboardAvoidingView, Pressable, ScrollView, Switch, Text, TextInput, View } from "react-native";
+import { Alert, Pressable, ScrollView, Switch, Text, TextInput, View } from "react-native";
 import Animated, { FadeIn, FadeInRight } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -12,10 +12,12 @@ import { Icon } from "@/components/icon";
 import { EventScheduleFields, EMPTY_EVENT_SCHEDULE } from "@/components/event-schedule-fields";
 import { Button, Mono, Press, Segmented } from "@/components/ui";
 import { CATEGORY_LIST, KIND_LIST, KINDS, dayKey, promptOf, type SpotCategory, type SpotKind } from "@/data/community";
+import { useKeyboardCover } from "@/hooks/use-keyboard-cover";
 import { requestMyLocation } from "@/hooks/use-my-location";
 import { useI18n } from "@/i18n/use-i18n";
-import { approximate, inBBox, type LatLon } from "@/services/geo";
 import { parseEventSchedule, type EventScheduleInput } from "@/services/event-schedule";
+import { approximate, inBBox, type LatLon } from "@/services/geo";
+import { scrollPaddingBottom } from "@/services/keyboard-inset";
 import { useCommunity, useCommunityById } from "@/store/community-store";
 import { F, R } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
@@ -30,6 +32,7 @@ export default function AddSpot() {
   const { C, T } = useTheme();
   const params = useLocalSearchParams<{ community?: string; kind?: SpotKind; prompt?: string; challenge?: string; category?: SpotCategory }>();
   const { top, bottom } = useSafeAreaInsets();
+  const { ref: keyboardRoot, cover, scrollerRef, scrollProps } = useKeyboardCover();
   const { t, language } = useI18n();
   const primary = useCommunity((s) => s.primary);
   const community = useCommunityById(params.community ?? primary);
@@ -199,9 +202,14 @@ export default function AddSpot() {
   }
 
   return (
-    <KeyboardAvoidingView behavior={process.env.EXPO_OS === "ios" ? "padding" : undefined} style={{ flex: 1, backgroundColor: C.bg }}>
+    <View ref={keyboardRoot} collapsable={false} style={{ flex: 1, backgroundColor: C.bg }}>
       {header}
-      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: bottom + 40, gap: 18 }} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        ref={scrollerRef}
+        {...scrollProps}
+        contentContainerStyle={{ padding: 20, paddingBottom: scrollPaddingBottom(bottom + 40, cover), gap: 18 }}
+        keyboardShouldPersistTaps="handled"
+      >
         {params.prompt && (
           <View style={{ backgroundColor: C.forest, borderRadius: R.md, padding: 14, gap: 4 }}>
             <Mono color={C.lime}>{t("community.prompt.kicker")}</Mono>
@@ -370,6 +378,6 @@ export default function AddSpot() {
           </Animated.View>
         )}
       </ScrollView>
-    </KeyboardAvoidingView>
+    </View>
   );
 }

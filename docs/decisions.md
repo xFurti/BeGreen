@@ -41,6 +41,14 @@
 - Scelta: la tab mostra subito le community a cui appartieni, in due tipi. **Gruppi** (amici, classi): si entra con un codice, pubblici o privati, classifica settimanale in cima. **Città**: luoghi reali cercabili per nome (qualsiasi Comune italiano), mappa e luoghi in cima, classifica più in basso. Creare un gruppo richiede solo nome e visibilità, poi si condivide il codice. La mappa usa le tile standard di OpenStreetMap in Web Mercator e la ricerca di vie e luoghi di Photon (komoot); niente più estratto illustrato né esempi sulla mappa. Nuova migrazione `20261026000000_community_groups.sql`: tipo `friends`, codice per ogni gruppo, leggibile da ogni membro, `join_by_code`.
 - Conseguenza: tile e ricerca vie richiedono connessione e sono servizi gratuiti per uso leggero; in produzione `TILE_URL` va sostituito con un fornitore con chiave. Squad (League) e gruppi si sovrappongono: da unificare.
 
+## 2026-10-23 — Migrazione unificata da Classifica a Community
+
+- Concordato con Leonardo in questa attività: territorio in primo piano; classifiche secondarie dentro città e gruppi; unificazione di squadre e gruppi conservando i dati; destinazione scelta esplicitamente alla pubblicazione.
+- Il Comune dell'onboarding guida l'anteprima territoriale. Feed, profilo, onboarding e completamento non ruotano più intorno al piazzamento; Seeds e traguardi personali restano.
+- Le squadre diventano gruppi privati con ID deterministici. Membri, inviti, prove, interazioni, missione e totali disponibili sono preservati, senza cancellare le tabelle originali. Gli inviti ambigui richiedono una scelta esplicita.
+- Le prove dei gruppi non sono raccolte automaticamente dai post degli autori. I permessi coprono anche interazioni e media: bucket privato e URL firmati a scadenza. Il rilascio richiede app e migrazione coordinate; non è un deploy automatico e non può revocare copie già scaricate.
+- La precedente specifica di #59 (classifica in testa ai gruppi) è superata da questa scelta. Le PR #52/#53 sui vecchi percorsi Classifica vanno coordinate con i redirect; il lavoro #13 sull'onboarding rimane separato.
+
 ## Come registrare una nuova decisione
 
 Indica data, problema, opzioni considerate, scelta, motivo e conseguenza pratica. Collega issue o PR e indica chi ha concordato la scelta. Non usare questo registro come elenco di idee non ancora decise.

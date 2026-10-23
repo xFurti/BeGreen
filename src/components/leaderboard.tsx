@@ -8,7 +8,7 @@ import { isCity, type Community } from "@/data/community";
 import { formatNumber } from "@/i18n/format";
 import { useI18n } from "@/i18n/use-i18n";
 import { rankOf, type Standing } from "@/services/leaderboard";
-import { useAuthor, weekResetIn } from "@/store/app-store";
+import { useAuthor } from "@/store/app-store";
 import { useStandings } from "@/store/community-store";
 import { F, R } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
@@ -37,7 +37,7 @@ function Row({ r, rank, index }: { r: Standing; rank: number; index: number }) {
       }}
     >
       <Text style={{ width: 26, fontFamily: F.monoMedium, fontSize: 13, color: rank <= 3 ? C.lime : C.forestMute }}>{String(rank).padStart(2, "0")}</Text>
-      <Avatar name={who.name} src={who.avatar} size={32} invert />
+      <Avatar name={who.name} src={who.avatar} seed={who.seed} seeds={who.seeds} size={32} invert />
       <View style={{ flex: 1, gap: 1 }}>
         <TitledName name={name} badgeId={who.badgeId} style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3, color: C.white }} />
         {r.postedToday && <Text style={{ fontFamily: F.regular, fontSize: 12, color: C.forestMute }}>{t("community.board.today")}</Text>}
@@ -72,12 +72,12 @@ export function Leaderboard({ community, limit, title }: { community: Community;
         <Mono color={C.lime} style={{ flex: 1 }}>
           {title}
         </Mono>
-        <Mono color={C.forestMute}>{t("community.board.resets", { days: weekResetIn() })}</Mono>
+        <Mono color={C.forestMute}>{t("groups.rollingWeek")}</Mono>
       </View>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
         <Text style={{ fontFamily: F.medium, fontSize: 44, lineHeight: 46, letterSpacing: -2, color: C.white, fontVariant: ["tabular-nums"] }}>#{rank}</Text>
         <Text style={{ flex: 1, fontFamily: F.regular, fontSize: 14, lineHeight: 19, color: C.forestMute }}>{line}</Text>
-        <Button label={t("community.board.post")} kind="inverse" size="sm" icon="camera" onPress={() => router.push("/capture")} />
+        <Button label={t("community.board.post")} kind="inverse" size="sm" icon="camera" onPress={() => router.push(isCity(community) ? "/capture" : { pathname: "/capture", params: { group: community.id } })} />
       </View>
       <View style={{ height: 1, backgroundColor: C.forestLine }} />
       <View>
@@ -91,7 +91,7 @@ export function Leaderboard({ community, limit, title }: { community: Community;
           </>
         )}
       </View>
-      <Text style={{ fontFamily: F.regular, fontSize: 12, color: C.forestMute }}>{t("community.board.how")}</Text>
+      <Text style={{ fontFamily: F.regular, fontSize: 12, color: C.forestMute }}>{t("groups.boardHow")}</Text>
     </View>
   );
 }

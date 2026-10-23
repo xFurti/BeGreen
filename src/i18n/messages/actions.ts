@@ -156,17 +156,17 @@ export const actionMessages = defineMessages(
       },
     },
     crew: {
-      label: "Squad action",
-      verb: "acted with the squad",
+      label: "Group action",
+      verb: "acted with the group",
       proofHint: "Film the crew in action.",
       impactNote: "Group actions are counted per participant.",
       howto: {
         a: "Get 3+ people: your class, team or friends.",
         b: "Pick one thing: a clean-up, a swap party, a bin audit at school.",
-        c: "Film the crew in action and post it to your squad.",
+        c: "Film the crew in action and share the proof with your group.",
       },
       captions: {
-        a: "the squad showed up",
+        a: "the group showed up",
         b: "group project but make it useful",
         c: "4B carried the planet today",
         d: "teamwork makes the earth work",
@@ -335,7 +335,7 @@ export const actionMessages = defineMessages(
       howto: {
         a: "Riunisci almeno 3 persone: la classe, la squadra o gli amici.",
         b: "Scegliete una cosa: una pulizia, uno swap, un’analisi dei bidoni a scuola.",
-        c: "Filma il gruppo in azione e pubblica nella squadra.",
+        c: "Filma il gruppo in azione e condividi la prova nel gruppo.",
       },
       captions: {
         a: "la squadra si è presentata",

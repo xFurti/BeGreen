@@ -64,6 +64,8 @@ npx expo install --fix      # fix incompatible package versions
 
 Run lint and typecheck before declaring any task done.
 
+Per un'anteprima locale senza collegare Supabase usa `EXPO_NO_DOTENV=1 npm run web -- --port 8092`. I test in `supabase/tests` usano PGlite: verificano SQL/RLS ma non gli endpoint HTTP di Supabase Storage o la propagazione CDN. Una migrazione del bucket richiede anche una verifica di integrazione prima del rilascio.
+
 ## Navigation & Routing
 
 - Use **Expo Router** for all navigation. Routes live in `src/app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `src/app/`.

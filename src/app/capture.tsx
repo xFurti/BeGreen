@@ -30,23 +30,27 @@ import Svg, { Circle } from "react-native-svg";
 import { Icon, type IconName } from "@/components/icon";
 import { Blobs, LeafMark, LeafSwitch } from "@/components/nature";
 import { ProofMedia } from "@/components/proof-media";
+import { SeedBuddy } from "@/components/seed-buddy";
+import { SeedTip, useMySeed } from "@/components/seed-ui";
 import { toast } from "@/components/toast";
 import { Button, Chip, IconButton, LiveDot, Mono, Press, SdgTags, useCountUp } from "@/components/ui";
 import { CATEGORIES } from "@/data/community";
 import { ACTION_LIST, ACTIONS, type ActionId } from "@/data/actions";
 import { DEMO_BY_ACTION } from "@/data/demo";
+import { plantStage, STAGE_IDS } from "@/data/seeds";
 import type { Audience, Media } from "@/data/types";
 import { useKeyboardCover } from "@/hooks/use-keyboard-cover";
 import { actionCopy } from "@/i18n/content";
 import { useI18n } from "@/i18n/use-i18n";
 import { HIDDEN_PLACE } from "@/i18n/persist";
 import { usePulse } from "@/hooks/use-pulse";
+import { scrollPaddingBottom } from "@/services/keyboard-inset";
 import { persistMedia, proofWithinBudget } from "@/services/media";
 import { canStopProof, displaySeconds, noteProgress, outcomeFromRecording, PROOF_SECONDS } from "@/services/proof-recording.mjs";
 import { canClaimDrop, DROP_BONUS, seedsFor } from "@/services/rewards";
 import { hasBackend } from "@/services/supabase";
-import { leagueOf, mineOf, postedToday, sdgsOf, streakOf, useApp, useAuthor } from "@/store/app-store";
-import { linkableSpotId, useCommunity } from "@/store/community-store";
+import { mineOf, postedToday, sdgsOf, seedsOf, streakOf, useApp } from "@/store/app-store";
+import { linkableSpotId, syncCommunity, useCommunity, useJoined } from "@/store/community-store";
 import { F, R } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
@@ -164,12 +168,51 @@ type Result = {
   isDrop: boolean;
   action: ActionId;
   photo: Media;
-  rankBefore: number;
-  rankAfter: number;
-  passed: string[];
-  next?: { name: string; gap: number };
+  destination: string;
+  pending: boolean;
   newGoals: number[];
+  // Your seed's stage before and after this proof, when it grew.
+  grew?: { from: number; to: number };
 };
+
+// The moment your seed grows: it shows the old stage, then springs into the new one.
+function Grew({ from, to, delay }: { from: number; to: number; delay: number }) {
+  const { C } = useTheme();
+  const { t } = useI18n();
+  const seed = useMySeed();
+  const [stage, setStage] = useState(from);
+  useEffect(() => {
+    const id = setTimeout(() => {
+      haptic.success();
+      setStage(to);
+    }, delay + 500);
+    return () => clearTimeout(id);
+  }, [to, delay]);
+  const label = to >= 4 ? t("seed.growth.grewMax") : t("seed.growth.grew", { stage: t(`seed.stages.${STAGE_IDS[to]}`) });
+  return (
+    <Animated.View
+      entering={FadeInDown.delay(delay).springify().damping(18)}
+      accessible
+      accessibilityLabel={label}
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+        padding: 10,
+        borderRadius: R.lg,
+        borderCurve: "continuous",
+        backgroundColor: C.forest2,
+        borderWidth: 1,
+        borderColor: C.forestLine,
+      }}
+    >
+      <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: C.mint, alignItems: "center", justifyContent: "flex-end", overflow: "hidden" }}>
+        <SeedBuddy seed={seed} stage={stage} mood="wow" size={52} animated />
+      </View>
+      <Text style={{ flex: 1, fontFamily: F.semibold, fontSize: 15, letterSpacing: -0.2, color: C.lime }}>{label}</Text>
+    </Animated.View>
+  );
+}
 
 function StatCard({
   icon,
@@ -268,12 +311,6 @@ function Done(r: Result) {
     scale.set(withSpring(1, { damping: 12, stiffness: 160 }));
   }, [scale]);
   const big = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
-  const climbed = r.rankBefore - r.rankAfter;
-  const rankSub = r.passed.length
-    ? t("capture.passed", { names: `${r.passed.slice(0, 2).join(" & ")}${r.passed.length > 2 ? ` +${r.passed.length - 2}` : ""}` })
-    : r.next
-      ? t("capture.moreToPass", { gap: r.next.gap, name: r.next.name })
-      : t("capture.defend");
 
   return (
     <Animated.View
@@ -408,10 +445,10 @@ function Done(r: Result) {
             delay={180}
           />
           <StatCard
-            icon="league"
-            badge={climbed > 0 ? `↑${climbed}` : `#${r.rankAfter}`}
-            title={t("capture.rank", { rank: r.rankAfter })}
-            sub={rankSub}
+            icon="people"
+            badge="+1"
+            title={r.pending ? t("groups.pending") : t("groups.destination", { name: r.destination })}
+            sub={t(r.pending ? "groups.pendingBody" : "groups.contribution")}
             delay={260}
           />
         </View>
@@ -421,6 +458,14 @@ function Done(r: Result) {
         )}
         {r.unlocked && (
           <BannerRow icon="lock" title={t("capture.unlocked")} sub={t("capture.unlockedSub")} delay={420} />
+        )}
+        {r.grew && <Grew from={r.grew.from} to={r.grew.to} delay={500} />}
+        {r.newGoals.length > 0 && (
+          <SeedTip
+            id="goals"
+            stage={r.grew?.to ?? 1}
+            text={t("seed.tips.goals", { goals: [...r.newGoals].sort((a, b) => a - b).map((g) => `SDG ${g}`).join(", ") })}
+          />
         )}
       </ScrollView>
 
@@ -441,11 +486,13 @@ function PublishBar({
   seeds,
   isDrop,
   posting,
+  disabled,
   onPress,
 }: {
   seeds: number;
   isDrop: boolean;
   posting: boolean;
+  disabled?: boolean;
   onPress: () => void;
 }) {
   const { C } = useTheme();
@@ -480,7 +527,7 @@ function PublishBar({
   return (
     <Press
       onPress={onPress}
-      disabled={posting}
+      disabled={posting || disabled}
       scale={0.98}
       accessibilityLabel={`${t("capture.post")} +${seeds}`}
       style={{
@@ -549,9 +596,9 @@ function PublishBar({
 export default function Capture() {
   // The camera steps and the Done screen are dark in both themes; only the review follows it.
   const { C, T, scheme } = useTheme();
-  const params = useLocalSearchParams<{ action?: ActionId; spot?: string }>();
+  const params = useLocalSearchParams<{ action?: ActionId; spot?: string; group?: string }>();
   const { top, bottom } = useSafeAreaInsets();
-  const { ref: keyboardRoot, cover } = useKeyboardCover();
+  const { ref: keyboardRoot, cover, scrollerRef, scrollProps } = useKeyboardCover();
   const { drop, pulse } = usePulse();
   const [perm, requestPerm] = useCameraPermissions();
   const cam = useRef<CameraView>(null);
@@ -578,20 +625,21 @@ export default function Capture() {
   const [actsOpen, setActsOpen] = useState(false);
   const [order] = useState(() => [ACTIONS[action], ...ACTION_LIST.filter((x) => x.id !== action)]);
   const [caption, setCaption] = useState("");
-  const [audience, setAudience] = useState<Audience>("comune");
+  const { groups } = useJoined();
+  const [initialGroup] = useState(() => params.group ?? groups.find((g) => g.id === useCommunity.getState().spots.find((s) => s.id === params.spot)?.communityId)?.id);
+  const [audience, setAudience] = useState<Audience>(initialGroup ? "group" : "comune");
   const [shareSpot, setShareSpot] = useState(true);
-  const squads = useApp((s) => s.squads);
   const comune = useApp((s) => s.comune);
-  const [squadId, setSquadId] = useState<string | undefined>(squads[0]?.id);
+  const [groupId, setGroupId] = useState<string | undefined>(initialGroup);
+  const selectedGroup = groups.find((g) => g.id === groupId);
   const addPost = useApp((s) => s.addPost);
-  const author = useAuthor();
   // The community place this proof was taken at: from its page, or picked here.
   const [spotId, setSpotId] = useState<string | undefined>(params.spot);
   const primaryCommunity = useCommunity((s) => s.primary);
   const savedSpots = useCommunity((s) => s.saved);
   const allSpots = useCommunity((s) => s.spots);
   const spotChoices = allSpots
-    .filter((x) => !x.hidden && x.lat != null && (x.id === params.spot || x.communityId === primaryCommunity))
+    .filter((x) => !x.hidden && x.lat != null && (audience === "group" ? x.communityId === groupId : !groups.some((g) => g.id === x.communityId) && (x.id === params.spot || x.communityId === primaryCommunity)))
     .sort((a, b) => Number(b.id === params.spot) - Number(a.id === params.spot) || (savedSpots[b.id] ?? 0) - (savedSpots[a.id] ?? 0) || b.createdAt - a.createdAt)
     .slice(0, 8);
   const [result, setResult] = useState<Result | null>(null);
@@ -601,6 +649,8 @@ export default function Capture() {
   const dropOpen = useApp((s) => canClaimDrop(drop, s.posts, s.userId, hasBackend));
   const [posting, setPosting] = useState(false);
   const submitting = useRef(false);
+
+  useEffect(() => { void syncCommunity(params.group); }, [params.group]);
 
   useEffect(() => {
     if (realCamera && perm && !perm.granted && perm.canAskAgain) requestPerm();
@@ -731,6 +781,10 @@ export default function Capture() {
 
   const post = async () => {
     if (!photo || !proof || submitting.current) return;
+    if (audience === "group" && !selectedGroup) {
+      toast(t("groups.chooseGroup"));
+      return;
+    }
     submitting.current = true;
     setPosting(true);
     try {
@@ -738,27 +792,24 @@ export default function Capture() {
       const before = mineOf(s.posts, s.userId);
       const wasUnlocked = postedToday(before);
       const goalsBefore = sdgsOf(before);
-      const leagueBefore = leagueOf(s.posts, s.userId, s.comune?.id, author);
       const isDrop = action === drop.action && canClaimDrop(drop, s.posts, s.userId, hasBackend);
-      const toSquad = audience === "squad" && squadId ? squadId : undefined;
       const posted = await addPost({
         action,
         photo: typeof photo === "string" ? persistMedia(photo) : photo,
         proof: typeof proof === "string" ? persistMedia(proof) : proof,
         caption: caption.trim(),
-        audience: audience === "squad" && !toSquad ? "comune" : audience,
+        audience,
         place: shareSpot ? place : HIDDEN_PLACE,
         // The Comune centre is an area reference, never the location of the act.
         location: shareSpot && comune ? {lat: comune.lat, lon: comune.lon} : undefined,
         challengeId: isDrop ? drop.id : undefined,
-        squadId: toSquad,
-        spotId: linkableSpotId(spotId),
+        groupId: audience === "group" ? groupId : undefined,
+        spotId: spotChoices.some((s) => s.id === spotId) ? linkableSpotId(spotId) : undefined,
       });
       const now = useApp.getState();
       const after = mineOf(now.posts, now.userId);
-      const leagueAfter = leagueOf(now.posts, now.userId, now.comune?.id, author);
-      const rankBefore = leagueBefore.findIndex((r) => r.me) + 1;
-      const rankAfter = leagueAfter.findIndex((r) => r.me) + 1;
+      const stageBefore = plantStage(seedsOf(before, s.verifiedCount));
+      const stageAfter = plantStage(seedsOf(after, now.verifiedCount));
       setResult({
         seeds: seedsFor(posted),
         streak: streakOf(after),
@@ -766,13 +817,14 @@ export default function Capture() {
         isDrop: !!posted.isDrop,
         action,
         photo,
-        rankBefore,
-        rankAfter,
-        passed: leagueAfter.slice(rankAfter, rankBefore).map((r) => r.name),
-        next: rankAfter > 1 ? { name: leagueAfter[rankAfter - 2].name, gap: leagueAfter[rankAfter - 2].points - leagueAfter[rankAfter - 1].points } : undefined,
+        destination: audience === "group" ? selectedGroup!.name : audience === "public" ? t("common.everyone") : place,
+        pending: !!posted.pending,
         newGoals: ACTIONS[action].sdgs.filter((g) => !goalsBefore.has(g)),
+        grew: stageAfter > stageBefore ? { from: stageBefore, to: stageAfter } : undefined,
       });
       setStep("done");
+    } catch {
+      toast(t(audience === "group" ? "groups.chooseGroup" : "shared.checkConnection"));
     } finally {
       submitting.current = false;
       setPosting(false);
@@ -795,7 +847,7 @@ export default function Capture() {
     const totalSeeds = seedsFor({ action, isDrop: isDropAct });
     const audienceOptions: { value: Audience; icon: IconName; label: string }[] = [
       { value: "comune", icon: "building", label: t("common.comune") },
-      { value: "squad", icon: "people", label: t("common.squad") },
+      { value: "group", icon: "people", label: t("groups.group") },
       { value: "public", icon: "globe", label: t("common.everyone") },
     ];
     return (
@@ -824,7 +876,12 @@ export default function Capture() {
           <IconButton icon="close" label={t("capture.discard")} onPress={() => !posting && router.back()} />
         </View>
 
-        <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, gap: 22, paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          ref={scrollerRef}
+          {...scrollProps}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, gap: 22, paddingBottom: scrollPaddingBottom(24, cover > 0 ? 16 : 0) }}
+          keyboardShouldPersistTaps="handled"
+        >
           <Animated.View
             entering={ZoomIn.springify().damping(15)}
             style={{ paddingHorizontal: 40, paddingTop: 4, transform: [{ rotate: posting ? "0deg" : "-1.2deg" }] }}
@@ -1180,19 +1237,22 @@ export default function Capture() {
                       </View>
                     )}
 
-                    {audience === "squad" &&
-                      (squads.length ? (
+                    {audience === "group" &&
+                      (groups.length ? (
                         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-                          {squads.map((s) => (
-                            <Chip key={s.id} label={s.name} icon="people" active={s.id === squadId} onPress={() => setSquadId(s.id)} />
+                          {groups.map((s) => (
+                            <Chip key={s.id} label={s.name} icon="people" active={s.id === groupId} onPress={() => setGroupId(s.id)} />
                           ))}
                         </View>
                       ) : (
                         <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 8, paddingHorizontal: 4 }}>
                           <Icon name="info" size={14} color={C.mute} />
-                          <Text style={[T.caption, { flex: 1 }]}>{t("capture.noSquad", { place })}</Text>
+                          <Text style={[T.caption, { flex: 1 }]}>{t("groups.noGroups")}</Text>
                         </View>
                       ))}
+                    {audience === "group" && <Text style={T.caption}>{selectedGroup
+                      ? t(selectedGroup.visibility === "private" ? "groups.groupPrivate" : "groups.groupPublic", { name: selectedGroup.name })
+                      : t("groups.chooseGroup")}</Text>}
                   </Animated.View>
                 </View>
 
@@ -1245,7 +1305,7 @@ export default function Capture() {
         </ScrollView>
 
         <View style={{ paddingHorizontal: 16, paddingBottom: cover > 0 ? 10 : bottom + 10, paddingTop: 8 }}>
-          <PublishBar seeds={totalSeeds} isDrop={isDropAct} posting={posting} onPress={post} />
+          <PublishBar seeds={totalSeeds} isDrop={isDropAct} posting={posting} disabled={audience === "group" && !selectedGroup} onPress={post} />
         </View>
       </View>
     );

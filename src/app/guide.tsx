@@ -7,8 +7,10 @@ import { Icon } from "@/components/icon";
 import { Button, Mono, SdgTags } from "@/components/ui";
 import { ACTION_LIST, type ActionId } from "@/data/actions";
 import { BINS, searchItems, type BinId } from "@/data/guide";
+import { useKeyboardCover } from "@/hooks/use-keyboard-cover";
 import { actionCopy, binCopy, itemCopy } from "@/i18n/content";
 import { useI18n } from "@/i18n/use-i18n";
+import { scrollPaddingBottom } from "@/services/keyboard-inset";
 import { F, R } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
@@ -50,6 +52,7 @@ function Steps({ id }: { id: ActionId }) {
 export default function Guide() {
   const { C, T } = useTheme();
   const params = useLocalSearchParams<{ action?: ActionId; from?: string }>();
+  const { ref: keyboardRoot, cover, scrollerRef, scrollProps } = useKeyboardCover();
   const [q, setQ] = useState("");
   const [open, setOpen] = useState<ActionId | null>(params.action ?? null);
   const [bin, setBin] = useState<BinId | null>(null);
@@ -63,7 +66,14 @@ export default function Guide() {
   };
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 22, paddingTop: 30, gap: 34, paddingBottom: 60 }} keyboardShouldPersistTaps="handled">
+    <View ref={keyboardRoot} collapsable={false} style={{ flex: 1, backgroundColor: C.bg }}>
+      <ScrollView
+        ref={scrollerRef}
+        {...scrollProps}
+        nestedScrollEnabled={process.env.EXPO_OS === "android"}
+        contentContainerStyle={{ padding: 22, paddingTop: 30, gap: 34, paddingBottom: scrollPaddingBottom(60, cover) }}
+        keyboardShouldPersistTaps="handled"
+      >
       <View style={{ gap: 10 }}>
         <Mono>{t("guide.kicker")}</Mono>
         <Text style={[T.hero, { fontSize: 38, lineHeight: 40 }]}>{t("guide.title")}</Text>
@@ -200,6 +210,7 @@ export default function Guide() {
           );
         })}
       </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }

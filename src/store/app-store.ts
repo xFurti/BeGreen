@@ -8,6 +8,7 @@ import { toast } from "@/components/toast";
 import { ACTIONS, type ActionId } from "@/data/actions";
 import { badgeById, isBadgeId, type BadgeId, type BadgeStats } from "@/data/badges";
 import { DEMO_AUTHOR } from "@/data/demo";
+import { isSeedId, seedOf, type SeedId } from "@/data/seeds";
 import type { Audience, Comune, Explain, Post, Role, Squad, User } from "@/data/types";
 import { translate, type MessageKey } from "@/i18n/catalog";
 import { deviceLanguage } from "@/i18n/device";
@@ -17,11 +18,15 @@ import { saveComune } from "@/services/comuni";
 import type { Drop } from "@/services/drop";
 import { DEFAULT_PLACE, type Place, type Pulse } from "@/services/env";
 import { existingLocal, preferLocal } from "@/services/media";
+import { assertDestination, isGroupPost } from "@/services/groups";
+import { mediaAccessVersion } from "@/services/storage-media";
 import {
   addComment,
   addVerification,
   countMyVerifications,
+  fetchSeeds,
   fetchFeed,
+  fetchGroupIds,
   fetchProfiles,
   fetchSquads,
   HandleTaken,
@@ -36,7 +41,10 @@ import { canClaimDrop, DROP_BONUS, publishWithReward, seedsFor } from "@/service
 import { ensureSession, hasBackend } from "@/services/supabase";
 import { saveProfileChanges } from "@/utils/profile";
 
-export type Profile = { name: string; handle: string; role: Role; badgeId: BadgeId | null };
+export type Profile = { name: string; handle: string; role: Role; badgeId: BadgeId | null; seed: SeedId | null };
+
+// One-time hints from your seed, shown the first time each thing matters.
+export type TipId = "drop" | "verify" | "league" | "goals" | "pulse";
 
 export type ThemePref = "system" | "light" | "dark";
 
@@ -63,6 +71,9 @@ type State = {
   localMedia: Record<string, { photo?: string; proof?: string }>;
   verifiedCount: number;
   nudged: Record<string, number>;
+  // Lifetime Seeds of other people, from the server: how far their plants have grown.
+  growth: Record<string, number>;
+  tips: Partial<Record<TipId, true>>;
   syncedAt: number;
 };
 
@@ -76,12 +87,15 @@ type NewPost = {
   location?: Post["location"];
   challengeId?: string;
   squadId?: string;
+  groupId?: string;
   spotId?: string;
 };
 
 type Actions = {
   updateProfile: (changes: Pick<Profile, "name" | "handle" | "role">) => Promise<void>;
-  finishOnboarding: (p: Omit<Profile, "badgeId"> & { badgeId?: BadgeId | null }) => void;
+  finishOnboarding: (p: Omit<Profile, "badgeId" | "seed"> & { badgeId?: BadgeId | null; seed?: SeedId | null }) => void;
+  setSeed: (seed: SeedId) => void;
+  seeTip: (id: TipId) => void;
   setExplain: (e: Explain) => void;
   setTheme: (t: ThemePref) => void;
   setComune: (c: Comune) => void;
@@ -106,7 +120,7 @@ const initial: State = {
   language: deviceLanguage(),
   onboarded: false,
   userId: "",
-  profile: { name: "", handle: "", role: "student", badgeId: null },
+  profile: { name: "", handle: "", role: "student", badgeId: null, seed: null },
   explain: "me",
   theme: "system",
   comune: null,
@@ -123,6 +137,8 @@ const initial: State = {
   localMedia: {},
   verifiedCount: 0,
   nudged: {},
+  growth: {},
+  tips: {},
   syncedAt: 0,
 };
 
@@ -142,7 +158,7 @@ export const useApp = create<State & Actions>()(
     (set, get) => ({
       ...initial,
       finishOnboarding: (p) => {
-        const profile = { ...p, badgeId: p.badgeId ?? null };
+        const profile = { ...p, badgeId: p.badgeId ?? null, seed: p.seed ?? null };
         set({
           onboarded: true,
           profile,
@@ -155,7 +171,16 @@ export const useApp = create<State & Actions>()(
         const profile = await saveProfileChanges(s.profile, changes, async (next) => {
           if (hasBackend) await saveProfileDetails(s.userId, next);
         });
-        if (get().userId === s.userId) set({ profile: { ...profile, badgeId: get().profile.badgeId } });
+        if (get().userId === s.userId) set({ profile: { ...profile, badgeId: get().profile.badgeId, seed: get().profile.seed } });
+      },
+      setSeed: (seed) => {
+        const s = get();
+        const profile = { ...s.profile, seed };
+        set({ profile });
+        if (hasBackend && s.onboarded && s.userId) saveProfile(s.userId, profile, s.comune).catch(fail);
+      },
+      seeTip: (id) => {
+        if (!get().tips[id]) set({ tips: { ...get().tips, [id]: true } });
       },
       setExplain: (explain) => set({ explain }),
       setTheme: (theme) => set({ theme }),
@@ -179,6 +204,9 @@ export const useApp = create<State & Actions>()(
       setPulse: (pulse) => set({ pulse }),
       setChallenge: (challenge) => set({ challenge }),
       addPost: async (input) => {
+        const community = await import("@/store/community-store");
+        const groups = community.useCommunity.getState();
+        assertDestination(input.audience, input.groupId, groups.catalog.filter((c) => c.kind !== "territory" && groups.roles[c.id]).map((c) => c.id));
         const s = get();
         const eligible = s.challenge && input.challengeId === s.challenge.id && input.action === s.challenge.action &&
           canClaimDrop(s.challenge, s.posts, s.userId, hasBackend);
@@ -210,7 +238,10 @@ export const useApp = create<State & Actions>()(
               )
             : s.squads,
         });
-        return hasBackend ? await publish(post) : post;
+        if (!hasBackend) community.recordGroupPost(post);
+        const result = hasBackend ? await publish(post) : post;
+        if (hasBackend && !result.pending && input.groupId) void community.syncCommunity(input.groupId);
+        return result;
       },
       verify: (postId) => {
         const s = get();
@@ -314,7 +345,7 @@ export const useApp = create<State & Actions>()(
         place: s.place,
         pulse: s.pulse,
         challenge: s.challenge,
-        posts: s.posts,
+        posts: hasBackend ? s.posts.filter((p) => p.authorId === s.userId || !isGroupPost(p)) : s.posts,
         profiles: s.profiles,
         reacted: s.reacted,
         flagged: s.flagged,
@@ -324,6 +355,8 @@ export const useApp = create<State & Actions>()(
         localMedia: s.localMedia,
         verifiedCount: s.verifiedCount,
         nudged: s.nudged,
+        growth: s.growth,
+        tips: s.tips,
         syncedAt: s.syncedAt,
       }),
       merge: (persisted, current) => {
@@ -336,7 +369,10 @@ export const useApp = create<State & Actions>()(
             ...current.profile,
             ...merged.profile,
             badgeId: isBadgeId(merged.profile?.badgeId) ? merged.profile.badgeId : null,
+            seed: isSeedId(merged.profile?.seed) ? merged.profile.seed : null,
           },
+          growth: merged.growth ?? {},
+          tips: merged.tips ?? {},
         };
       },
     },
@@ -408,18 +444,20 @@ export function syncSocial(): Promise<void> {
     }
     for (const p of useApp.getState().posts.filter((x) => x.pending)) await publish(p);
 
-    const { mine, local } = await fetchSquads(uid, s.comune.id);
+    const [{ mine, local }, groupIds] = await Promise.all([fetchSquads(uid, s.comune.id), fetchGroupIds(uid)]);
+    const access = mediaAccessVersion();
     const [feed, verifiedCount] = await Promise.all([
       fetchFeed(
         uid,
         s.comune.id,
-        mine.map((q) => q.id),
+        groupIds,
       ),
       countMyVerifications(uid),
     ]);
     const known = { ...useApp.getState().profiles, ...feed.profiles };
     const missing = [...new Set([...mine, ...local].flatMap((q) => q.memberIds))].filter((id) => !known[id]);
     const members = await fetchProfiles(missing).catch(() => ({}));
+    const growth = await fetchSeeds(Object.keys({ ...known, ...members }).filter((id) => id !== uid)).catch(() => useApp.getState().growth);
     // Keep what's still uploading, and your proofs that finished uploading after the feed was fetched.
     const fetched = new Set(feed.posts.map((p) => p.id));
     const keep = useApp.getState().posts.filter((p) => p.pending || ((published.get(p.id) ?? 0) >= startedAt && !fetched.has(p.id)));
@@ -432,6 +470,7 @@ export function syncSocial(): Promise<void> {
         })
         .filter((entry): entry is [string, { photo?: string; proof?: string }] => entry !== null),
     );
+    if (uid !== useApp.getState().userId || access !== mediaAccessVersion()) return;
     useApp.setState({
       posts: [...keep, ...preferLocal(feed.posts, localMedia).map((p) => ({ ...p, location: useApp.getState().localAreas[p.id] }))],
       profiles: { ...known, ...members },
@@ -440,6 +479,7 @@ export function syncSocial(): Promise<void> {
       localSquads: local,
       localMedia,
       verifiedCount,
+      growth,
       syncedAt: Date.now(),
     });
     dropStaleBadge();
@@ -454,9 +494,9 @@ export function syncSocial(): Promise<void> {
 }
 
 // Creates (or updates) your public profile. Throws HandleTaken if someone has your handle.
-export async function registerProfile(p: Omit<Profile, "badgeId"> & { badgeId?: BadgeId | null }, comune: Comune | null) {
+export async function registerProfile(p: Omit<Profile, "badgeId" | "seed"> & { badgeId?: BadgeId | null; seed?: SeedId | null }, comune: Comune | null) {
   if (!hasBackend) return;
-  const profile = { ...p, badgeId: p.badgeId ?? null };
+  const profile = { ...p, badgeId: p.badgeId ?? null, seed: p.seed ?? null };
   const uid = await ensureSession();
   if (!uid) return;
   useApp.setState({ userId: uid });
@@ -527,16 +567,40 @@ export function mineOf(posts: Post[], me: string) {
   return posts.filter((p) => p.authorId === me && !p.isDemo);
 }
 
+// Seeds from the proofs this phone knows about, for people the server hasn't counted yet.
+export function knownSeeds(posts: Post[]) {
+  const out: Record<string, number> = {};
+  for (const p of posts) out[p.authorId] = (out[p.authorId] ?? 0) + seedsFor(p);
+  return out;
+}
+
 export function useAuthor() {
   const profiles = useApp((s) => s.profiles);
   const me = useApp((s) => s.userId);
   const profile = useApp((s) => s.profile);
   const language = useApp((s) => s.language);
+  const posts = useApp((s) => s.posts);
+  const growth = useApp((s) => s.growth);
+  const verifiedCount = useApp((s) => s.verifiedCount);
+  const known = useMemo(() => knownSeeds(posts.filter((p) => !p.pending || p.authorId === me)), [posts, me]);
+  const mySeeds = useMemo(() => seedsOf(mineOf(posts, me), verifiedCount), [posts, me, verifiedCount]);
   return (id: string): User => {
     const t = (key: MessageKey) => translate(language, key);
-    if (id === DEMO_AUTHOR.id) return { ...DEMO_AUTHOR, name: t("demo.author"), tag: t("demo.tag") };
-    if (id === me) return { id, name: profile.name || t("common.you"), handle: profile.handle || t("common.youInline"), role: profile.role, badgeId: profile.badgeId, tag: t("common.you") };
-    return profiles[id] ?? { id, name: t("shared.someone"), handle: "someone" };
+    const seeds = Math.max(growth[id] ?? 0, known[id] ?? 0);
+    if (id === DEMO_AUTHOR.id) return { ...DEMO_AUTHOR, name: t("demo.author"), tag: t("demo.tag"), seed: seedOf(id), seeds };
+    if (id === me)
+      return {
+        id,
+        name: profile.name || t("common.you"),
+        handle: profile.handle || t("common.youInline"),
+        role: profile.role,
+        badgeId: profile.badgeId,
+        tag: t("common.you"),
+        seed: seedOf(id, profile.seed),
+        seeds: mySeeds,
+      };
+    const u = profiles[id] ?? { id, name: t("shared.someone"), handle: "someone" };
+    return { ...u, seed: seedOf(id, u.seed), seeds };
   };
 }
 
@@ -549,10 +613,20 @@ export function weeklyOf(posts: Post[]) {
   return posts.filter((p) => p.createdAt > since).reduce((a, p) => a + seedsFor(p), 0);
 }
 
-export type Racer = { id: string; name: string; badgeId?: BadgeId | null; avatar?: number | string; points: number; me: boolean; postedToday: boolean };
+export type Racer = {
+  id: string;
+  name: string;
+  badgeId?: BadgeId | null;
+  avatar?: number | string;
+  seed?: SeedId;
+  seeds?: number;
+  points: number;
+  me: boolean;
+  postedToday: boolean;
+};
 
 // This week's race between everyone posting in your Comune, from real proofs.
-export function leagueOf(posts: Post[], me: string, comuneId: string | undefined, who: (id: string) => Pick<User, "name" | "badgeId">): Racer[] {
+export function leagueOf(posts: Post[], me: string, comuneId: string | undefined, who: (id: string) => Pick<User, "name" | "badgeId" | "seed" | "seeds">): Racer[] {
   const since = Date.now() - WEEK;
   const byAuthor = new Map<string, Post[]>();
   byAuthor.set(me, []);
@@ -565,6 +639,8 @@ export function leagueOf(posts: Post[], me: string, comuneId: string | undefined
     id,
     name: who(id).name,
     badgeId: who(id).badgeId,
+    seed: who(id).seed,
+    seeds: who(id).seeds,
     points: ps.reduce((a, p) => a + seedsFor(p), 0),
     me: id === me,
     postedToday: postedToday(ps),
