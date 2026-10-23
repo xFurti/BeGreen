@@ -1,226 +1,511 @@
-# BeGreen
+<div align="center">
 
-**Proof, not promises.** A social app where you snap a green act, film 5 seconds of proof, and your friends verify it. All of it runs on live local environmental data.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/readme/brand/begreen-lockup-reverse-lime-on-canopy.svg">
+  <img src="docs/readme/brand/begreen-lockup-primary-canopy-on-lime.svg" alt="BeGreen" width="360">
+</picture>
 
-BeGreen is built for the brief **“2. La mia sostenibilità”**: it takes sustainability down to the size of one person, one class, one association or one Comune. It starts from what's happening in your area and links *knowing* to *doing*.
+### Love your city. Show it.
+
+**Snap a green act, prove it in 5 seconds, let your friends verify it, all starting from your Comune's live environmental data.**
+
+<sub><b>English</b> · <a href="README.it.md">Italiano</a></sub>
+
+<br>
+
+[![FESAV 2026](https://img.shields.io/badge/FESAV_2026-Good_Vibes_hackathon-152315?style=for-the-badge&labelColor=152315&color=C8E61A)](docs/regolamento.md)
+[![Track](https://img.shields.io/badge/Track_2-La_mia_sostenibilit%C3%A0-C8E61A?style=for-the-badge&labelColor=152315)](docs/traccia.md)
+[![Verify](https://github.com/xFurti/BeGreen/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/xFurti/BeGreen/actions/workflows/ci.yml)
+
+[![Expo](https://img.shields.io/badge/Expo-SDK_58-000020?style=flat-square&logo=expo&logoColor=white)](https://docs.expo.dev/versions/v58.0.0/)
+[![React Native](https://img.shields.io/badge/React_Native-0.88-61DAFB?style=flat-square&logo=react&logoColor=black)](https://reactnative.dev)
+[![React](https://img.shields.io/badge/React-19.3-149ECA?style=flat-square&logo=react&logoColor=white)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6.0-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Supabase](https://img.shields.io/badge/Supabase-Postgres_·_RLS_·_Realtime-3FCF8E?style=flat-square&logo=supabase&logoColor=white)](https://supabase.com)
+[![OpenStreetMap](https://img.shields.io/badge/OpenStreetMap-maps-7EBC6F?style=flat-square&logo=openstreetmap&logoColor=white)](https://www.openstreetmap.org)
+
+![Platforms](https://img.shields.io/badge/platforms-iOS_·_Android_·_Web-152315?style=flat-square)
+![Languages](https://img.shields.io/badge/languages-IT_·_EN-152315?style=flat-square)
+![Open data](https://img.shields.io/badge/open_data-9_sources-1B7D44?style=flat-square)
+![API keys](https://img.shields.io/badge/API_keys_in_the_app-none-1B7D44?style=flat-square)
+![Agenda 2030](https://img.shields.io/badge/Agenda_2030-SDG_tagged-1B7D44?style=flat-square)
+
+<br>
+
+[Why](#why-begreen) ·
+[How it works](#how-it-works) ·
+[Features](#features) ·
+[The brief](#built-for-the-brief) ·
+[Data & AI](#open-data--ai) ·
+[Run it](#run-it) ·
+[Architecture](#architecture) ·
+[Brand](#brand--design-system) ·
+[Limits](#honest-limits) ·
+[Team](#team-workflow)
+
+<br>
+
+<img src="docs/readme/showcase.png" alt="BeGreen screens: feed, today's challenge, Pulse data, community map and profile" width="100%">
+
+</div>
 
 ---
 
-## The core loop
+## Why BeGreen
 
-1. **The Drop:** each day everyone in a Comune gets the same challenge, built from that Comune's live data and stored on the shared backend, so the whole town sees one mission and one proof each counts for it. Example: air is “Poor” → *Leave the car. Own the street.* Unlike BeReal there's no random alarm. You post it when you actually do it.
-2. **Snap the thing:** a photo of the bike, the bin, the bottle or the plant.
-3. **Prove it:** a 5-second video of the act itself. It plays inside the photo, in the inset tile.
-4. **People verify:** people allowed to see your proof in your city or chosen group check it; 3 verifications turn it into a *Verified* proof. You can't verify your own.
-5. **Post yours to see theirs:** today's feed stays blurred until you've done your own green act.
+> People shouldn't open BeGreen because they care about sustainability. They open it because it's **fun, social and gives them something to share**. Sustainability is what makes the experience meaningful, and different.
 
-## Screens
+Sustainability usually feels like someone else's job: governments, companies, scientists. Teenagers aren't short on climate awareness; they're tired of doom, guilt and adults performing virtue online. What's missing is a **small, social and visible way to act**, one that starts from *where you live*.
 
-| Screen | What it does |
+“The air is poor in Schio today” hits harder than “the planet is warming”. BeGreen takes the live environmental data of your Comune, turns it into **one shared daily challenge**, and makes doing it the price of entry to see what your friends did.
+
+<table>
+<tr>
+<td width="33%" valign="top">
+
+<img src="docs/readme/icons/videocam.svg" width="28" alt=""><br>
+**Proof, not promises**<br>
+A photo plus a 5-second proof clip, verified by three people. No greenwashing, not even from yourself.
+
+</td>
+<td width="33%" valign="top">
+
+<img src="docs/readme/icons/location.svg" width="28" alt=""><br>
+**Local and real**<br>
+Every challenge starts from today's measurements in your Comune: air, rain, soil, nature, with their sources.
+
+</td>
+<td width="33%" valign="top">
+
+<img src="docs/readme/icons/heart.svg" width="28" alt=""><br>
+**Your city, through your community**<br>
+Repair shops, refill points, gardens, events and reports on a real map, built by the people who live there.
+
+</td>
+</tr>
+</table>
+
+## How it works
+
+```mermaid
+flowchart LR
+    A["Live data<br/>of your Comune"] --> B["Today's challenge<br/>one per Comune per day"]
+    B --> C["Snap<br/>the photo"]
+    C --> D["Prove<br/>5 s video"]
+    D --> E["Verify<br/>3 people confirm"]
+    E --> F["Unlock<br/>your friends' feed"]
+    F --> G["Grow<br/>Seeds · streak · plant"]
+    G -.->|tomorrow| B
+```
+
+| | Step | What happens |
+| :---: | --- | --- |
+| <img src="docs/readme/icons/calendar.svg" width="22" alt=""> | **Today's challenge** | Every morning everyone in a Comune gets **the same challenge**, built from that Comune's live data and stored on the shared backend. Poor air → *Leave the car. Own the street.* Unlike BeReal there is no random alarm: you post when you actually do it. |
+| <img src="docs/readme/icons/camera.svg" width="22" alt=""> | **Snap** | A photo of the thing: the bike, the bin, the refill bottle, the plant. |
+| <img src="docs/readme/icons/videocam.svg" width="22" alt=""> | **Prove** | A 2–5 second video of the act itself, played inside the photo as an inset tile. |
+| <img src="docs/readme/icons/checkmark-done-circle.svg" width="22" alt=""> | **Verify** | People who can see your proof (your Comune or the group you chose) check it. **3 verifications** make it *Verified*. You can't verify your own. |
+| <img src="docs/readme/icons/lock-open.svg" width="22" alt=""> | **Post yours to see theirs** | Today's feed stays blurred until you've done your own green act. |
+| <img src="docs/readme/icons/flower.svg" width="22" alt=""> | **Grow** | Seeds, a streak, Agenda 2030 goals and a plant that grows from seed to bloom. Never a rank in your face. |
+
+## Features
+
+<table>
+<tr>
+<td width="25%" align="center"><img src="docs/readme/screens/onboarding.png" alt="Onboarding" width="190"><br><sub><b>Plant your seed</b></sub></td>
+<td width="25%" align="center"><img src="docs/readme/screens/feed-proof.png" alt="Feed" width="190"><br><sub><b>Feed</b></sub></td>
+<td width="25%" align="center"><img src="docs/readme/screens/drop.png" alt="Today's challenge" width="190"><br><sub><b>Today's challenge</b></sub></td>
+<td width="25%" align="center"><img src="docs/readme/screens/capture.png" alt="Capture" width="190"><br><sub><b>Snap → Prove</b></sub></td>
+</tr>
+<tr>
+<td width="25%" align="center"><img src="docs/readme/screens/pulse.png" alt="Pulse" width="190"><br><sub><b>Pulse: local data</b></sub></td>
+<td width="25%" align="center"><img src="docs/readme/screens/pulse-detail.png" alt="Air quality detail" width="190"><br><sub><b>Explained for me, my class, the Comune</b></sub></td>
+<td width="25%" align="center"><img src="docs/readme/screens/leaf.png" alt="Leaf assistant" width="190"><br><sub><b>Leaf: answers with sources</b></sub></td>
+<td width="25%" align="center"><img src="docs/readme/screens/community.png" alt="Community" width="190"><br><sub><b>Community: territory</b></sub></td>
+</tr>
+<tr>
+<td width="25%" align="center"><img src="docs/readme/screens/map.png" alt="Community map" width="190"><br><sub><b>A map the community builds</b></sub></td>
+<td width="25%" align="center"><img src="docs/readme/screens/group.png" alt="Group page" width="190"><br><sub><b>Groups: classes, friends, crews</b></sub></td>
+<td width="25%" align="center"><img src="docs/readme/screens/me.png" alt="Profile" width="190"><br><sub><b>Me: plant, impact, Agenda 2030</b></sub></td>
+<td width="25%" align="center"><img src="docs/readme/screens/guide.png" alt="How to" width="190"><br><sub><b>How to & where it goes</b></sub></td>
+</tr>
+</table>
+
+### <img src="docs/readme/icons/flower.svg" width="20" alt=""> Plant your seed (onboarding)
+
+Your seed, a little buddy with a face, asks one thing at a time: where to plant it (your position or a search), then shows **the live ground of that Comune** (air, rain or dry days, soil moisture, each with its source) and reacts to it, while today's challenge opens like a bud. Then name, @handle (checked while you type, with free alternatives), role (student, teacher, association, Comune) and species (sunflower, oak, lavender, poppy, tomato, fir). *Hold to plant* creates an anonymous account: no email, no password. The camera permission is explained before the phone asks. Reduce Motion turns animations into fades; hold-to-plant becomes a tap for screen readers.
+
+### <img src="docs/readme/icons/people.svg" width="20" alt=""> Feed
+
+One daily card with today's challenge, a countdown, your streak, how many people in your Comune already did it and your own proof (with its verification progress), then an entry to Community. Lenses: **All · Friends · Groups · your Comune**. Group proofs appear only in the group they were shared to. When a Comune is still quiet, example proofs fill the feed, always labelled **DEMO**, never verifiable or counted. Your own posts have a **⋯** menu to delete them everywhere.
+
+### <img src="docs/readme/icons/camera.svg" width="20" alt=""> Capture: Snap → Prove → Review → Celebrate
+
+Photo, then a 2–5 second proof, then review. You choose where it goes: **your Comune, Everyone or one group** (a missing group blocks submission instead of publishing elsewhere). The celebration shows Seeds, streak, contribution and Agenda 2030 goals, plus the new plant stage if your seed grew. On a simulator or on the web there's no camera, so **library** and **demo** capture let you try the whole flow.
+
+### <img src="docs/readme/icons/pulse.svg" width="20" alt=""> Pulse: your Comune's data
+
+Six compact cards (**air, weather, rainfall, soil, plant observations, protected areas**). Each one opens a detail sheet with animated, selectable charts, photos or nearby areas, **Me / My class / Comune** explanations, sources and limits, and the action it links to. Each source loads separately, so one outage never empties the screen; missing sources stay visible with a retry.
+
+### <img src="docs/readme/icons/sparkles.svg" width="20" alt=""> Leaf: the assistant that cites its sources
+
+Leaf opens on one line about today in your Comune, today's numbers as chips and up to three questions picked from the data (problems first). Every answer is a card: a verdict, a short explanation, the numbers, **the sources it used** and whether it is a guided or an AI answer. *Explained for* switches between Me, My class and the Comune; follow-up chips re-ask for another audience. It never invents a value. [More on Leaf ↓](#leaf-the-ai-layer)
+
+### <img src="docs/readme/icons/map.svg" width="20" alt=""> Community: territory, groups, rankings
+
+- **Territory:** the Comune you picked, a large preview of the full-screen map, local people and recent contributions.
+- **The map is real:** OpenStreetMap down to street level, with BeGreen pins in seven layers: *discover, repair & reuse, gardens & groups, swap & share, events & challenges, reports, moments*. Search understands questions (“Where can I fix a bike?”, “events this weekend”) and finds real streets; filters, legend, clustering and directions.
+- **Add a place** in five photo-first steps (what, photo, words, where, who sees it). Exact public spots need explicit confirmation; any spot can be approximate (~200 m).
+- **Trust tools:** “out of date”, “wrong”, “not OK” and “looks fixed” flags, corrections, author blocking, moderators who verify, hide or delete. Nobody's real-time position is ever shown.
+- **Groups** for friends, classes, associations and crews: public or private, joined with an invite code. Each group has goals, an impact report as one big number (kg CO₂e avoided, acts, items) and an inline weekly leaderboard.
+- **Challenges** with a goal and a deadline (discover 5 places, organise a swap, clean up a neglected corner…), a thank-you list instead of a ranking, plus one optional **daily prompt** for everyone, no streak.
+- **Rankings** are secondary and opt-in: the Comune or one of your groups, from recent proofs, clearly labelled as a sample.
+
+### <img src="docs/readme/icons/heart.svg" width="20" alt=""> Friends
+
+Follow anyone: the accounts you follow are your friends. Profiles show Follow / Following / Follow back, counts and a photo grid. Search by name or @handle, with suggestions from your groups and Comune. Friends' proofs appear in the *Friends* lens and in the map's “from friends” filter.
+
+### <img src="docs/readme/icons/person-circle.svg" width="20" alt=""> Me
+
+Your seed's plant (seed → sprout → seedling at 60 Seeds → plant at 200 → bloom at 500; it never shrinks, it only looks thirsty when the streak breaks), streak, Seeds, verified proofs, followers. Three tabs:
+
+- **Impact:** estimated kg CO₂e, items, litres and nature records (always labelled as estimates), the **Agenda 2030** grid with the countdown to 1 January 2030, and six **badges** with progress rings, one of which you can wear as a title.
+- **Photos:** a grid of your proofs.
+- **Map:** the areas of your proofs (the Comune centre, never the exact spot).
+
+Settings: edit profile and seed, light / dark / system theme, explanation audience, Comune, **Italian / English**, saved places, guide, sources, Leaf.
+
+### <img src="docs/readme/icons/book.svg" width="20" alt=""> How to & How we know
+
+- **How to:** a card for each of the ten green acts with an optional three-step walkthrough, and a **“Where does it go?”** lookup for six materials with examples.
+- **How we know:** what each kind of source is (official, model, citizen science, open map, community), what it's good for and where to be careful. Data whose access or licence still needs checking is flagged ⚠︎.
+
+### The ten green acts
+
+| Act | Areas | Agenda 2030 | Estimated impact |
+| --- | --- | --- | --- |
+| <img src="docs/readme/icons/bicycle.svg" width="16" alt=""> Car-free trip | mobility, air | SDG 11 · 13 · 3 | 0.8 kg CO₂e |
+| Sorted right | consumption, soil | SDG 12 · 11 | 1 item |
+| <img src="docs/readme/icons/trash.svg" width="16" alt=""> Litter pick | soil, water, nature | SDG 14 · 15 · 11 | 5 items |
+| Refill, not landfill | consumption, water | SDG 12 · 6 | 1 item |
+| <img src="docs/readme/icons/leaf.svg" width="16" alt=""> Plant something | soil, nature, air | SDG 15 · 13 | 0.25 m² |
+| Spot a plant | nature | SDG 15 · 14 | 1 record |
+| Zero-waste plate | consumption | SDG 12 · 2 · 13 | 0.5 kg CO₂e |
+| Thrift / repair | consumption | SDG 12 · 8 | 1 item |
+| Save water / energy | water, air | SDG 6 · 7 · 13 | 20 litres |
+| Group action | community | SDG 17 · 11 · 4 | 10 items |
+
+<sub>Impact figures are conservative per-act estimates (`src/data/actions.ts`) and are labelled that way everywhere in the app.</sub>
+
+## Built for the brief
+
+BeGreen answers **Track 2, “La mia sostenibilità”** of the [Good Vibes / FESAV 2026](docs/regolamento.md) civic hackathon. The guiding question: *how do we turn the environmental data of our territory into decisions and actions within reach of whoever has to take them?*
+
+| Brief requirement | Where it lives in BeGreen |
 | --- | --- |
-| **Onboarding** | «Plant your seed»: your seed, a buddy with a face, asks one thing at a time. Where to plant it (your position or a search, without leaving the screen), then the live ground of that Comune (air, rain or dry days, soil moisture, each with its source) with the seed reacting to it, and today's Drop opening like a bud. Then your name, your @ (checked while you type, with free alternatives when it's taken), your role and the kind of seed (sunflower, oak, lavender, poppy, tomato, fir). A card shows how friends will see you; hold to plant creates an anonymous account (no email, no password). A short welcome («you're seed no. X in {Comune}») explains why the camera is needed before the phone asks, and leads to the first proof. Reduce Motion turns the animations into fades, and hold-to-plant becomes a tap for screen readers. |
-| **Comune** | Search any Italian Comune (or use your location to suggest it). Pulse, the Drop, the feed and Community's territory preview follow this choice. |
-| **Feed** | One daily card: today's Drop, a countdown, your streak, local participants and your own proof of the day (or a nudge to post one), then an entry to Community. Lenses: *All / Friends / Groups / your Comune*. Group proofs appear only in their chosen group, not automatically in every group the author belongs to. Example proofs remain marked **DEMO**, never verifiable or counted. |
-| **Capture** | Photo → 2–5 second proof → review. Choose your Comune, Everyone or one group; a missing group blocks submission rather than publishing elsewhere. The group’s public/private visibility is explained. Completion celebrates Seeds, streak, contribution and Agenda 2030 goals, not rank or overtakes. Pending uploads keep their selected destination and are identified as local. |
-| **Pulse / Dati** | The same daily card as the feed, then six compact cards for local air, weather, rainfall, soil, plant observations and protected areas. Tap a card to open its detail sheet with animated, selectable charts, photos or nearby areas, **Me / My class / Comune** explanations, sources and limits, and the linked action. Loading placeholders, card entrances and transitions respect Reduce Motion. Missing sources stay visible with a retry; an empty map result is distinguished from an unavailable source. Change the Comune from the place chip at the top. |
-| **Leaf** | An assistant that answers questions about your area using only the data you can see, and cites its sources. It adapts to the audience. |
-| **How we know** | Explains each kind of source (official, model, citizen science, open map, community): what it is, what it's good for, where to be careful. It also flags data whose access or terms still need checking. |
-| **Community** | Three sections, Territory, Groups and Rankings, with an animated selector. Territory has one Comune picker, a large preview opening the existing full-screen map, local community and recent contributions. Groups has creation, invite-code entry and cards with type, membership and visibility. Rankings lets you choose the selected Comune or a joined group, preview its board and open the full list. The selector stays visible while scrolling; reduced motion disables the new transitions. |
-| **Community map** | The real OpenStreetMap map of the area (streets, places, rivers, railway), pannable and zoomable to street level, with BeGreen pins in seven layers: discover, repair & reuse, gardens & groups, swap & share, events & challenges, reports, moments. Search that understands questions (“Dove posso riparare una bici?”, “eventi questo weekend”) and finds real streets and places in the area, layer chips, filters (distance, upcoming events, most saved, new this week, open reports, from friends, family-friendly once verified), a legend, clustering, and a card for the pin you tap with directions. |
-| **Add a place** | Photo-first, five steps: what (discovery, useful place, event, challenge/experience, report, moment), photo (optional), a few words and the category (for events: date as DD/MM/YYYY, 24-hour time as HH:MM and optional duration in minutes; fields can be cleared, and All day hides time/duration), where (your location only suggests it; exact or ~200 m; a moment can stay off the map), who sees it (everyone or members only). An exact public spot needs an explicit confirmation. |
-| **Place page** | Photo, category, status (verified / from the community / to verify / open or resolved / upcoming or ended), who added it and when, last update, address and directions, love, save, share, “I'm going” for events, the proofs taken there (and “add a proof here”), comments, and the trust tools: report out of date / wrong / not OK, propose a correction, “this looks fixed”, block the author; authors mark resolved/done or “still right”; moderators verify, hide, delete. |
-| **Community page** | A **city** leads with its map, this month's impact as one big number (kg CO₂e avoided, acts, items), local experiences, prompts, challenges and proofs, plus a link to its weekly leaderboard. A **group** shows its weekly leaderboard right on the page (top five and your row), the same big impact number, challenges, its impact report, preserved legacy goal, invitation and members (each with a Follow button). Private group content requires membership. |
-| **Friends** | Follow anyone: the accounts you follow are your friends. Profiles (tap a name on any proof) show Follow / Following / Follow back, following and followers counts, and a photo grid of their proofs. Your profile tab shows your counts and a *Photos* tab; *Friends* lists who you follow and who follows you, searches people by name or @username and suggests people from your groups and Comune. Friends' proofs come into the feed (*Friends* lens) and the community map's "from friends" filter. Stored in `follows` (`supabase/migrations/20261029000000_follows.sql`): anyone signed in can read it, only you can add or remove your own follows. |
-| **Challenges** | Collective challenges with a goal and a deadline, from starter ideas (discover 5 places, reuse, organise a swap, a second-hand shop, clean-up, a neglected area, a walk with a discovery) or your own. Contribute with a place or just “I did it”; progress, contributors (a thank-you list, not a leaderboard) and a result summary. Plus the **daily prompt**: one optional question for everyone, no streak. |
-| **Weekly leaderboard** | Optional Rankings section in Community, also reachable from each city or group detail; a group's page shows its board inline (top five and your row). Context selection leaves the app’s Comune unchanged and respects private group membership. Uses the most recent loaded proofs from the last 7 days; the UI labels it as a sample. With no recent proofs, it shows an empty state rather than a zero-point first place. If synchronization fails in Rankings, an error with Retry replaces the board; retry starts a fresh request. |
-| **How to** | Green-act cards, an optional three-step walkthrough, and a separate **“Where does it go?”** lookup with six compact materials, animated icons and examples from the existing catalog. All ten acts remain available. [Restyle and screenshots](docs/guide-restyle/README.md). |
-| **Old squad links** | `/squad/:id` redirects to its migrated group, `/new-squad` to group creation and `/league` to Community. Historical screen implementations are retained outside the router in `components/legacy-*`; they are not imported by the app. |
-| **Me** | Your seed's plant and how far the next stage is (seed → sprout at the first Seeds → seedling 60 → plant 200 → bloom 500; it never shrinks, it only looks thirsty when the streak breaks), streak, Seeds, verified count, following / followers, **Agenda 2030** grid, estimated impact, a Photos grid of your proofs, badges, saved places, contributions and settings (where you can change your seed). |
+| Person / class / association / Comune scale | Roles in onboarding, group types, **Me / My class / Comune** explanations in Pulse and Leaf |
+| Starts from the local environment | Pulse and today's challenge, from the Comune the user picks (GPS only suggests it) |
+| Links knowing to doing | Every Pulse card ends in an action; today's challenge turns the worst indicator of the day into a mission |
+| Air, water, soil, biodiversity, consumption, mobility, community | Six Pulse cards and ten acts, each tagged with the areas it touches |
+| Protected areas, species, nature observations | iNaturalist and GBIF species with photos and attribution; protected areas from OpenStreetMap |
+| Air quality, weather, local climate | CAMS European AQI with a 24 h chart and dominant pollutant, citizen PM2.5 sensors, ARPAV PM10 stations, weather and rain |
+| Soil and landscape | Soil moisture and its trend; ISPRA land sealing per Comune |
+| Individual behaviour and group activity | Personal proofs, group goals and impact, community challenges |
+| AI to understand data and documents | **Leaf** explains raw numbers in plain language and plugs into an LLM backend |
+| Answers that cite sources | Every Leaf answer and every Pulse card carries its source badges |
+| Image interpretation | Photo + video proofs verified by peers today; the backend contract covers species ID and proof checks |
+| Sources aren't equivalent | Five colour-coded source kinds; each card names its limits (e.g. “model, ~10 km grid, not an ARPA station”) |
+| Agenda 2030 | Every act and every Pulse card is tagged with the SDGs it touches; the profile counts goals covered |
 
-### Your seed
+### Against the jury criteria
 
-The plant is everyone's avatar when there's no photo: in the feed, community leaderboards, posts and member pages. The species is stored in `profiles.seed`; lifetime Seeds come from the `profile_seeds` database function (the stage is never written by the app). The first time something matters, the seed explains it once: today's Drop, peer verification, Pulse and the first Agenda 2030 goal. When a proof makes it grow, the celebration shows the new stage.
-
-## How the brief is covered
-
-| Brief requirement | Where it lives |
+| Criterion | Our answer |
 | --- | --- |
-| Personal / class / association / Comune scale | Roles in onboarding, Squads by type, the three explanation modes, the Community Report |
-| Agenda 2030 | Every act and every Pulse card is tagged with the UN Sustainable Development Goals it touches; your profile and the Community Report count goals covered |
-| Starts from the local environment | Pulse + the Drop, from the Comune the user picks (GPS only suggests it) |
-| Links knowledge to concrete action | Every Pulse card ends in an action button; the Drop turns today's worst indicator into today's mission |
-| Air, water, soil, biodiversity, consumption, mobility, community | Pulse cards (air, water, soil, nature, protected areas) and the 10 action types, each tagged with its areas; the report shows how many of the 7 a squad covers |
-| Protected areas, species, nature observations | iNaturalist species list with photos and attribution; OpenStreetMap protected areas nearby |
-| Air quality, weather, local climate | CAMS European AQI with a 24 h chart, pollutant breakdown and dominant pollutant; current weather |
-| Soil and landscape changes | Top-soil moisture and its trend; class and Comune text points to land-sealing and land-use cartography (access marked “to verify”) |
-| Individual behaviour and group activity | Personal proofs, squad quests, Community challenges and what we did together, Community Report |
-| AI to understand measurements and documents | Leaf turns raw numbers into plain language and plugs into an LLM backend (see below) |
-| Answers that cite sources | Every Leaf answer carries source badges; every Pulse card carries its source |
-| Interpreting images | Proof photo + video verified by peers today; the backend contract covers image interpretation (species ID, proof checks) |
-| Explanations adapted to the reader | Me / My class / Comune on Pulse, in Leaf and in the defaults set from your role |
-| Sources aren't equivalent | Five source kinds, colour-coded everywhere; each data card's text names its limits (e.g. “model, ~10 km grid, not an ARPA station”) |
-| Some access and terms still to verify | The `verified: false` flag in `src/data/sources.ts` shows a ⚠︎ in *How we know* (ISPRA Catasto Rifiuti reuse licence) |
+| <img src="docs/readme/icons/compass.svg" width="18" alt=""> **Coherence** | One loop from local open data to a concrete act, verified by real people, at the scale of a person, a class, an association or a Comune. |
+| <img src="docs/readme/icons/sparkles.svg" width="18" alt=""> **Innovation** | Not an eco dashboard: a social app whose currency is verified green acts. One shared challenge per Comune per day, proof video, peer verification, a map built by the community, an assistant that cites its sources. |
+| <img src="docs/readme/icons/earth.svg" width="18" alt=""> **Real sustainability** | No API keys and no paid data: open sources plus Expo and Supabase. Growth city by city and school by school; free for teens, with a paid tier for schools and Comuni and only vetted, verifiable sponsored challenges ([MARKETING.md](MARKETING.md)). Impact is counted in verified acts, never overclaimed. |
 
-## Data sources (no API keys)
+## Open data & AI
+
+### Data sources: no API keys
 
 | Domain | Source | Kind |
 | --- | --- | --- |
-| Air quality (EAQI, PM2.5, PM10, NO₂, O₃, 24 h forecast) | Copernicus CAMS via Open-Meteo | Model |
-| Weather, rain over the past 7 days and next 3, soil moisture | Open-Meteo | Model |
-| Species seen within 10 km in the last 30 days (research grade) | iNaturalist API | Citizen science |
-| Protected areas and nature reserves within 25 km | OpenStreetMap via Overpass | Open map |
-| Citizen PM2.5 sensors within 10 km (median of the latest readings) | Sensor.Community | Citizen science |
-| Species recorded within 5 km in the last 5 years | GBIF API | Citizen science |
-| Italian Comuni (search, coordinates) | Open-Meteo geocoding (GeoNames) | Open map |
-| PM10 annual mean and exceedance days per station (2025), emissions per comune (INEMAR 2019) | ARPAV open data (bundled CSV extract) | Official |
-| Land sealed per comune (2024) and separate collection per comune (2024) | ISPRA/SNPA, ISPRA Catasto Rifiuti (bundled extract) | Official |
-| Acts, quests, reports | BeGreen (aggregated, anonymised) | Community |
+| Air quality (EAQI, PM2.5, PM10, NO₂, O₃, 24 h forecast) | Copernicus CAMS via Open-Meteo | ![model](https://img.shields.io/badge/-model-6E56CF?style=flat-square) |
+| Weather, rain over the past 7 days and next 3, soil moisture | Open-Meteo | ![model](https://img.shields.io/badge/-model-6E56CF?style=flat-square) |
+| Species seen within 10 km in the last 30 days (research grade) | iNaturalist API | ![citizen science](https://img.shields.io/badge/-citizen_science-C98A00?style=flat-square) |
+| Species recorded within 5 km in the last 5 years | GBIF API | ![citizen science](https://img.shields.io/badge/-citizen_science-C98A00?style=flat-square) |
+| Citizen PM2.5 sensors within 10 km (median of the latest readings) | Sensor.Community | ![citizen science](https://img.shields.io/badge/-citizen_science-C98A00?style=flat-square) |
+| Protected areas and nature reserves within 25 km | OpenStreetMap via Overpass | ![open map](https://img.shields.io/badge/-open_map-8E8E93?style=flat-square) |
+| Italian Comuni (search, coordinates) | Open-Meteo geocoding (GeoNames) | ![open map](https://img.shields.io/badge/-open_map-8E8E93?style=flat-square) |
+| PM10 annual mean and exceedance days per station (2025), emissions per Comune (INEMAR 2019) | ARPAV open data (bundled CSV extract) | ![official](https://img.shields.io/badge/-official-3E63DD?style=flat-square) |
+| Land sealed per Comune (2024), separate waste collection per Comune (2024) | ISPRA / SNPA, ISPRA Catasto Rifiuti (bundled extract) | ![official](https://img.shields.io/badge/-official-3E63DD?style=flat-square) |
+| Acts, challenges, places | BeGreen (aggregated, anonymised) | ![community](https://img.shields.io/badge/-community-1F9D55?style=flat-square) |
 
-Official per-comune data is a bundled extract for the Province of Vicenza, matched to the Comune you picked by name (or, failing that, by the nearest centroid); datasets, joins and thresholds are documented in `docs/dati-comune.md`.
+Official per-Comune data is a bundled extract for the **Province of Vicenza**, matched to the Comune you picked by name (or the nearest centroid). Datasets, joins and thresholds: [`docs/dati-comune.md`](docs/dati-comune.md). If everything is offline the app shows clearly labelled sample data, and a challenge built from sample data is never saved as the Comune's challenge.
 
-Each source loads separately, so one outage never empties the Pulse. If everything is offline, the app shows clearly labelled sample data, and a Drop built from sample data is never saved as the Comune's challenge.
-
-## Shared backend (Supabase)
-
-Profiles, posts, verifications, reactions, comments, communities, group progress and daily challenges live on [Supabase](https://supabase.com) (Postgres + Storage + Realtime). The schema and row level security rules are in [`supabase/migrations`](supabase/migrations); [`supabase/tests`](supabase/tests) checks them on an in-memory Postgres as part of `npm test`.
-
-- **Accounts** are anonymous Supabase users with a public name and handle. Every rule is enforced in the database: you write only your own rows, can't verify your own proof, can't claim the same Drop twice, and squad points are added by a trigger, not by the app.
-- **The Drop** is one row per Comune per day (`<comune id>:<date>`). The first phone to open the app that day builds it from the Comune's live data and inserts it; everyone else reads the same row.
-- **Media** use the private `proofs` bucket, each user in their own folder. The app stores durable object references and reads authorized media through five-minute signed URLs, including files previously referenced by public URLs. Photos are JPEGs up to 1280 px, clips are 480p when supported, library clips over ~1.5 MB are refused, and native uploads stream from disk. Demo captures reference bundled assets.
-- **Live updates:** the feed refreshes when someone posts, verifies, reacts or comments.
-
-Without the two environment variables below the app still runs, on this phone only: your proofs stay local and the feed shows the example proofs for today's Drop.
-
-## Community
-
-BeGreen doesn't ask people to already care about sustainability: the Community tab is where people, groups and places meet. It links **people** (posts, reactions, shared challenges), **groups** (classes, associations, neighbourhoods, squads) and the **territory** (a map the community builds).
-
-- **Two kinds of community.** A **city** is a real place: Alto Vicentino is bundled and seeded, and any Italian Comune can be found by name (Open-Meteo geocoding) and joined; the first person to join starts it. A **group** is personal: friends, a class, a crew. Creating one takes a name and private/public; it gets an invite code, any member can share it, and the code alone is enough to join (`join_by_code`). Private groups show only their name until you join. The founder is the first moderator.
-- **Leaderboards** are secondary. A group counts only explicitly shared group proofs, including migrated squad proofs; a city excludes reserved group proofs. Seeds and personal milestones remain independent of rank. The board is computed from downloaded proofs, not a complete server aggregate.
-- **The map is real**: OpenStreetMap's standard tiles (© OpenStreetMap contributors, ODbL) in Web Mercator, with pins positioned by the same projection (`src/services/geo.ts`), and street/place search through Photon (komoot), limited to the community's area. Both are free and keyless for light use; a production build should swap `TILE_URL` in `community-map.tsx` for a keyed tile provider.
-- **Trust and privacy**: verified places are distinguished from community additions; two “out of date / wrong” flags mark a place *to verify* (the author's edit clears it), three “not OK” flags hide it until a moderator checks, two “looks fixed” flags resolve a report. Flags are private to moderators. Nobody's real-time position is shown; a precise public spot needs explicit confirmation, and any spot can be shared as approximate (~200 m). Blocking hides someone's places, posts and comments. Last update and verification dates are shown on every place.
-- **Event dates**: timed events require a valid date and start time; duration is optional (1–1440 minutes). All-day events need only a date and are stored as a full local calendar day in the existing start/end timestamps, including daylight-saving days. Their summary and place page show “All day” rather than hours.
-- **Empty and quiet states**: no fake places, not even examples: the map is real, so only real pins go on it. An empty city says so and offers to add the first place. Location unavailable or denied → search a street or move the map.
-- All of it lives in `supabase/migrations/20261025000000_community.sql` (tables, RLS, the flag trigger, join/create/verify functions) and `20261026000000_community_groups.sql` (the `friends` kind, codes for every group, `join_by_code`), and is covered by `supabase/tests`. Without a backend everything works on the phone only.
-
-### Migrating existing squads to groups
-
-`20261028000000_unified_groups.sql` copies existing squads into private groups with stable `squad:<uuid>` IDs, preserves memberships and join dates, and links existing posts without recreating their IDs or interactions. It retains the old tables, quest progress, points and existing monthly totals. New monthly totals live in `group_progress.months`; months that the old system already discarded cannot be reconstructed by this migration.
-
-Old invite codes remain valid aliases. If an old code collides with another group's code, joining asks the person to select the intended group; it never silently chooses one. Existing creators who already left a squad are not automatically re-enrolled. Device-only squads migrate once into the local Community store, without resetting the profile or proof history.
-
-The migration protects group posts and their comments, reactions, verifications and media. Group membership, not legacy squad membership, controls access. Leaving clears cached group content and media authorization; the author retains their own proofs. Signed URLs already issued remain valid until expiry, and previously downloaded files cannot be revoked.
-
-**Coordinated rollout required:** test against a disposable copy first, then apply the migration and distribute the matching app together after human approval. The bucket becomes private, so old app versions that only use public media URLs are not compatible. No storage objects are moved or deleted. Existing public CDN copies may outlive the database change; this does not retroactively make previously shared media secret. The automated tests exercise Postgres/RLS through PGlite, not Supabase Storage's HTTP/CDN behavior. Do not apply this migration to the live backend merely to preview the UI.
-
-Local visual demo: run `EXPO_NO_DOTENV=1 npm run web -- --port 8092`, finish onboarding, open Community, explore the city, create a private group, and share a demo proof explicitly into it. Check that the proof appears in that group, that the leaderboard requires a separate action, and that `/league` redirects to Community.
-
-## The AI layer (Leaf)
+### Leaf: the AI layer
 
 `src/services/leaf.ts` has two modes:
 
-Leaf opens on one line about today in your Comune (what to keep an eye on, or that nothing is alarming), today's numbers as chips and up to three questions picked from the data (a problem comes first). The chip at the top shows the place and when the data was updated, and opens the Comune page. Each question becomes a card: the question as caption, then a verdict, a short explanation, the numbers as chips, its sources (tap for what they are) and whether it is a guided or an AI answer. *Explained for* above the composer chooses Me, My class or the Comune for the next questions; it starts from your profile's choice but does not change Pulse or Me. Under the latest answer, chips re-ask it for another audience or suggest a next question; past answers never rewrite themselves.
+- **Grounded local engine (default):** recognises the intent of the question and answers using only the live Pulse numbers. It never invents a value, always cites sources and works offline, in Italian or English.
+- **AI backend:** set `EXPO_PUBLIC_LEAF_ENDPOINT`. That server is where a language model reads documents, interprets proof images, identifies species and rewrites answers for the audience. **Model keys stay on the server, never in the app.** If the backend fails, the app falls back to the local engine.
 
-- **Grounded local engine (default):** answers by recognising the question's intent, using only the live Pulse numbers. It never invents a value and always cites sources. It works offline.
-- **AI backend:** set `EXPO_PUBLIC_LEAF_ENDPOINT`. The app sends `POST { question, audience, language, pulse, insights }` (`language` is `it` or `en`) and expects `{ text, cites: SourceId[] }`, optionally with `headline` (the verdict shown in bold), `facts: { label, value, unit?, level? }[]` (number chips) and `followUps: string[]` (up to two next questions); unknown sources and malformed fields are dropped. That server is where a language model reads documents, interprets proof images, identifies species and rewrites answers for the audience. **Model keys stay on the server, never in the app.** If the backend fails or ignores `language`, the app falls back to the local engine, which answers in the active language.
+<details>
+<summary><b>Leaf backend contract</b></summary>
+
+<br>
+
+The app sends:
+
+```json
+POST { "question": "…", "audience": "me | class | comune", "language": "it | en", "pulse": { }, "insights": [ ] }
+```
+
+and expects:
+
+```json
+{ "text": "…", "cites": ["cams", "openmeteo"], "headline": "…", "facts": [{ "label": "PM2.5", "value": 18, "unit": "µg/m³", "level": "fair" }], "followUps": ["…", "…"] }
+```
+
+`headline`, `facts` and `followUps` (up to two) are optional; unknown sources and malformed fields are dropped. If the backend ignores `language`, the local engine answers in the active language.
+
+</details>
 
 ## Run it
 
+> [!NOTE]
+> Requires Node.js 24 (as in CI) and npm. The app runs in **Expo Go**, no native build needed for the demo.
+
 ```bash
+git clone https://github.com/xFurti/BeGreen.git
+cd BeGreen
 npm install
-npx expo start          # press i for the iOS simulator, or scan the QR code with Expo Go
+npx expo start            # i = iOS simulator · a = Android · scan the QR code with Expo Go
 ```
 
-The app runs in **Expo Go**, with a static compatibility preview in the profile map. The interactive native profile map uses **Expo Maps** and requires a new development build (Apple Maps on iOS; Google Maps on Android, with a Maps SDK key configured for that build). Native photo maps use iOS 18 or later; older iOS versions and unconfigured Android builds use the tile preview. Web uses an interactive OpenStreetMap preview. On a simulator (which has no camera), the capture screen offers **library** and **demo** capture so you can try the whole flow. See [docs/profile.md](docs/profile.md) for map setup and area-history limits.
-
-To share the feed between phones, connect a Supabase project:
-
-1. Create a project (or run `eas integrations:supabase:connect`), then in **Authentication → Sign In / Providers** turn on **Allow anonymous sign-ins**.
-2. Apply the schema: `npx supabase link --project-ref <ref>` and `npx supabase db push`, or paste the migration into the SQL editor.
-3. Copy `.env.example` to `.env.local` and fill in `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (Project Settings → API). Both are public; never put a secret key in the app.
-4. Restart `npx expo start`. Two phones (or a browser and a private window) share the Drop, the feed and their joined communities.
-
-## Language
-
-The interface is Italian or English. On first launch BeGreen uses Italian if the device language is Italian and English otherwise. A switch on onboarding (beside Skip) and on Me changes it immediately, keeps the current screen, and survives a restart. Signing out keeps the chosen language and returns to onboarding. Captions, comments and names people typed stay as they wrote them. Drop, Pulse explanations and Leaf’s local answers follow the active language and keep the same measured numbers: the shared daily challenge stores its readings, and every phone writes its title and text in its own language.
+**Local web preview without any backend** (everything stays in the browser):
 
 ```bash
-npm run typecheck
-npm run lint
+EXPO_NO_DOTENV=1 npm run web -- --port 8092
 ```
 
-## Project structure
+### Shared feed between phones (Supabase)
+
+1. Create a Supabase project (or run `npx eas-cli@latest integrations:supabase:connect`), then in **Authentication → Sign In / Providers** enable **Allow anonymous sign-ins**.
+2. Apply the schema: `npx supabase link --project-ref <ref>` and `npx supabase db push`.
+3. Copy `.env.example` to `.env.local` and fill in the public values:
+
+   | Variable | Required | What |
+   | --- | :---: | --- |
+   | `EXPO_PUBLIC_SUPABASE_URL` | for sharing | Project URL (Project Settings → API) |
+   | `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | for sharing | Publishable key, public by design: RLS protects the data |
+   | `EXPO_PUBLIC_LEAF_ENDPOINT` | optional | Your AI backend for Leaf |
+   | `GOOGLE_MAPS_API_KEY` | optional, build time | Restricted Maps SDK key for the native Android profile map |
+
+4. Restart `npx expo start`. Two phones (or a browser and a private window) now share today's challenge, the feed, groups and the map.
+
+> [!IMPORTANT]
+> Never put a secret or service-role key in the app. Without the two Supabase variables BeGreen still runs, on this phone only.
+
+### Maps
+
+The community map uses OpenStreetMap tiles and Photon search everywhere. The profile map uses **Expo Maps** in a development build (Apple Maps from iOS 18; Google Maps on Android with a Maps SDK key), and a static tile preview in Expo Go. Details: [`docs/profile.md`](docs/profile.md).
+
+### Checks
+
+```bash
+npm run verify            # typecheck + lint + tests (workflows, i18n, services, Supabase migrations and RLS)
+```
+
+The same command is the `Verify` check in CI. Database tests run every migration on an in-memory Postgres ([PGlite](https://pglite.dev)) and check row level security.
+
+## Architecture
+
+```mermaid
+flowchart TB
+    subgraph App["BeGreen app · Expo Router · iOS / Android / Web"]
+        UI["Screens<br/>Feed · Pulse · Community · Me · Capture · Leaf"]
+        Store["Zustand stores<br/>persisted with expo-sqlite"]
+        Pulse["use-pulse<br/>Comune → live data → insights → today's challenge"]
+        LeafL["Leaf local engine"]
+    end
+    subgraph Open["Open data, no keys"]
+        OM["Open-Meteo + CAMS"]
+        NAT["iNaturalist · GBIF"]
+        SC["Sensor.Community"]
+        OSM["OpenStreetMap · Overpass · Photon"]
+        OFF["ARPAV · ISPRA<br/>bundled extracts"]
+    end
+    subgraph SB["Supabase"]
+        PG["Postgres + RLS<br/>profiles · posts · verifications · follows<br/>communities · places · challenges"]
+        ST["Private storage<br/>signed URLs"]
+        RT["Realtime"]
+    end
+    LB["Optional Leaf backend<br/>LLM · keys on server"]
+
+    UI --> Store
+    UI --> Pulse
+    Pulse --> OM & NAT & SC & OSM & OFF
+    UI --> LeafL
+    LeafL -.->|EXPO_PUBLIC_LEAF_ENDPOINT| LB
+    Store <--> PG
+    Store <--> ST
+    RT --> Store
+```
+
+<details>
+<summary><b>Shared backend: rules enforced in the database</b></summary>
+
+<br>
+
+- **Accounts** are anonymous Supabase users with a public name and handle. You write only your own rows, can't verify your own proof, can't claim the same challenge twice; group totals are maintained by the database, not by the app. Deleting your post cascades to its verifications, reactions and comments.
+- **Today's challenge** is one row per Comune per day (`<comune id>:<date>`). The first phone that opens the app that day builds it from the Comune's live data; everyone else reads the same row. Every phone writes the title in its own language from the same stored readings.
+- **Media** live in the private `proofs` bucket, one folder per user, read through five-minute signed URLs. Photos are JPEGs up to 1280 px, clips are 480p when supported.
+- **Live updates:** the feed refreshes when someone posts, verifies, reacts or comments.
+- **Community:** cities and groups, places, flags (with auto-hide), saves, events, challenges, blocks and `join_by_code`, all with RLS.
+- **Follows:** anyone signed in can read them; only you can add or remove your own.
+
+Migrations: [`supabase/migrations`](supabase/migrations) · tests: [`supabase/tests`](supabase/tests).
+
+</details>
+
+<details>
+<summary><b>Migrating old squads to groups</b></summary>
+
+<br>
+
+`20261028000000_unified_groups.sql` copies existing squads into private groups with stable `squad:<uuid>` IDs, preserves memberships, join dates, posts and interactions, and keeps the old tables. Old invite codes remain valid aliases; ambiguous codes ask the person to choose. The `proofs` bucket becomes private, so **app and migration must be rolled out together after human approval**, after testing on a disposable copy. PGlite tests cover Postgres/RLS, not Supabase Storage HTTP or CDN behaviour. Legacy routes `/squad/:id`, `/new-squad` and `/league` redirect to the new screens.
+
+</details>
+
+<details>
+<summary><b>Project structure</b></summary>
+
+<br>
 
 ```
 src/
-  app/                    Expo Router routes (screens only)
-    (tabs)/               Feed · Pulse · Community · Me + custom tab bar with the shutter button
-    community/[id].tsx    Community page: territory or shared group activity, goals and impact
-    community-ranking.tsx Secondary weekly leaderboard
-    map/[id].tsx          Full-screen community map
-    spot/[id].tsx         A place or experience: info, trust tools, proofs, comments
-    add-spot.tsx          Add to the map: what → photo → words → where → who sees it
-    communities.tsx       Find a city · new-community.tsx New group → invite · join.tsx Join with code
-    new-challenge.tsx flag-spot.tsx saved.tsx member/[id].tsx league.tsx
-    capture.tsx           Snap → Prove → Review → Celebrate
-    post/[id].tsx         Post detail, verifiers, comments, flagging
-    squad/[id].tsx        Compatibility redirect to the migrated group
-    guide.tsx             How-to: waste lookup, bins, steps per act
-    comune.tsx            Comune search / pick
-    drop.tsx leaf.tsx sources.tsx new-squad.tsx onboarding.tsx
-  components/             UI kit (ui.tsx), icon, proof media, post card, drop card, tab bar
-  data/                   Actions (impact, SDGs, how-to, caption ideas), UN goals, waste guide, sources, demo media + example proofs, types
-  services/               env (live APIs), interpret (audience-aware text), drop, challenge (shared daily Drop), comuni,
-                          supabase (client + anonymous session), social (feed, uploads, verify, squads), leaf, media
-  hooks/                  use-pulse (Comune → live data → insights + today's Drop), use-social (sync + live updates)
-  store/app-store.ts      Zustand store: local cache of the shared data, saved through the expo-sqlite localStorage polyfill
-  store/community-store.ts  Communities, map places, saves, challenges, blocks (same pattern, its own persisted store)
-  data/community.ts       Community model (city or group), map layers, starter challenges, daily prompts
-  theme/tokens.ts         Colours, Geist font families, radii, type scale
-supabase/                 Migrations (schema, RLS, trigger, bucket), their tests, local CLI config
-assets/                   Icon, splash, demo photos (Unsplash), 5 s proof clips
+  app/                     Expo Router routes (screens only)
+    (tabs)/                Feed · Pulse · Community · Me + custom tab bar with the shutter button
+    onboarding.tsx         Plant your seed
+    capture.tsx            Snap → Prove → Review → Celebrate
+    drop.tsx               Today's challenge and the readings behind it
+    leaf.tsx               Leaf assistant
+    sources.tsx            How we know
+    guide.tsx              How to · Where does it go?
+    comune.tsx             Comune search
+    post/[id].tsx          Proof detail, verifiers, comments
+    friends.tsx member/[id].tsx    Follows, search, profiles
+    community/[id].tsx     City or group page · community-ranking.tsx
+    map/[id].tsx spot/[id].tsx add-spot.tsx flag-spot.tsx saved.tsx
+    communities.tsx new-community.tsx join.tsx new-challenge.tsx
+    squad/[id].tsx new-squad.tsx league.tsx   Legacy redirects
+  components/              UI kit, logo, nature motifs, cards, map, badges, onboarding steps, guide
+  data/                    Acts, badges, seeds, SDGs, sources, waste guide, Comuni, demo media
+  hooks/                   use-pulse, use-social, use-comune, use-community-feed…
+  i18n/                    Italian / English catalogs, locale detection and persistence
+  services/                env (live APIs), drop, challenge, leaf, social, community, follows, media…
+  store/                   app-store and community-store (Zustand)
+  theme/                   Colour tokens, Geist families, radii, type scale
+supabase/                  Migrations (schema, RLS, triggers, bucket) and their tests
+tests/                     Unit tests (badges, seeds, rewards, media, theme…)
+assets/                    Icon, splash, demo photos (Unsplash), 5 s proof clips
+docs/                      Track, rules, decisions, data notes, screenshots
 ```
 
-## Design system
+</details>
 
-- **White, black and one living green.** White paper and black ink, with a brand green family in `theme/tokens.ts`: `forest` (deep canopy, for dark surfaces and green text), `leaf` (fills, icons, progress; at least 4.5:1 on white and mint), `lime` (new growth, accents on dark only) and `mint` (soft tints). Data keeps its own signal colours (air bands, source kinds, recording red).
-- **Logo** from the BeGreen Brand Kit v1.0 in `components/logo.tsx`: the leaf "B" mark and the lockup, drawn as vectors in Canopy (`#152315`). App icon, Android adaptive icon and splash are Canopy on Proof Lime (`#C8E61A`). Never lime on white, never stretch, rotate or rearrange the lockup; minimum 88 px wide for the lockup, 16 px tall for the mark.
-- **Nature motifs** in `components/nature.tsx`: a sprout for empty states, slowly drifting organic blobs and leaf-shaped corners on the Drop and Pulse cards, a switch that sprouts a leaf (after a [uiverse.io](https://uiverse.io/Creatlydev/white-vampirebat-27) toggle), leaves flying out when you verify a proof and leaf confetti on the celebration (after [React Bits](https://reactbits.dev) Click Spark and Aurora). They are decorative and hidden from screen readers.
-- **Geist Medium** for headlines, tracked tight; Geist for body copy; **Geist Mono** for metadata, labels and numbers (`SDG 13`, `PROOF 0:05`, `09:42:15`).
-- Editorial layout: hairline rules, numbered sections (`01`, `02`…), big tabular numbers.
-- Deep green is reserved for moments that matter: the Drop, your own row in the league, the celebration, the shutter. The camera stays black.
-- Haptics on every meaningful press; springs on entry; count-up numbers; a confetti burst when you post.
-- **Agenda 2030** stays quiet: small mono `SDG n` tags on acts and data, one 17-cell grid on your profile.
+## Brand & design system
 
-## Honest limits of this prototype
+<table>
+<tr>
+<td width="140" align="center"><img src="docs/readme/brand/app-icon-lime-rounded-preview-512.png" width="96" alt="BeGreen app icon"></td>
+<td>
 
-- Accounts are anonymous and tied to the phone: signing out or reinstalling loses the account (your proofs stay on the feed). Friends are the accounts you follow. With a backend they sync through `follows`; without one they stay on this phone and other people cannot be discovered. Your Comune and your groups are the other social units.
-- The daily Drop is built by the first phone that opens the app in a Comune that day. The database checks its shape and date, not its numbers; a server-side job would make it tamper-proof.
-- Moderation of proofs is still missing: “Flag proof” only asks for confirmation. Community places have flags, auto-hiding and moderators, but promoting someone to moderator (beyond a community's founder) is done in the database for now. Verifications are one per person but not yet checked against proximity or fraud patterns.
-- Community leaderboards and Comune counts use downloaded proofs, not complete server-side aggregates. City queries load up to 120 recent proofs per source; group detail initially loads up to 200 proofs. Group impact totals are server-maintained.
-- Impact figures are conservative estimates per act and are labelled that way everywhere.
-- The community map's search for BeGreen places is a keyword and intent matcher, offline, Italian and English; it isn't a language model. Map tiles and street search need a connection and rely on free OpenStreetMap/Photon services meant for light use.
-- Old squads are now groups. This needs the unified-groups migration and matching app; legacy clients are not supported after the private-media rollout.
-- ARPA / ISPRA official data isn't wired in yet, because access and terms vary by region. It's listed as “to verify”.
+![Proof Lime](https://img.shields.io/badge/Proof_Lime-%23C8E61A-C8E61A?style=for-the-badge)
+![Canopy](https://img.shields.io/badge/Canopy-%23152315-152315?style=for-the-badge)
+![Ink](https://img.shields.io/badge/Ink-%23000000-000000?style=for-the-badge)
+![Paper](https://img.shields.io/badge/Paper-%23FFFFFF-FFFFFF?style=for-the-badge)
+![Fog](https://img.shields.io/badge/Fog-%23EEF2E4-EEF2E4?style=for-the-badge)
+![Moss](https://img.shields.io/badge/Moss-%2356634F-56634F?style=for-the-badge)
 
-See **[MARKETING.md](MARKETING.md)** for the go-to-market plan.
+</td>
+</tr>
+</table>
+
+<p align="center">
+  <img src="docs/readme/screens/feed.png" alt="Feed in the light theme" width="200">
+  &nbsp;&nbsp;
+  <img src="docs/readme/screens/feed-dark.png" alt="Feed in the dark theme" width="200">
+</p>
+
+- **White paper, black ink, one living green.** Proof Lime and Canopy for the logo, icon and splash; in the app a green family (`forest`, `leaf`, `lime`, `mint`) in `src/theme/tokens.ts`. Data keeps its own signal colours (air bands, source kinds, recording red). Light and dark themes.
+- **Logo:** the leaf “B” mark and lockup from the BeGreen Brand Kit v1.0, drawn as vectors in `src/components/logo.tsx`. Never lime on white (1.4:1), never stretch, rotate or rearrange; minimum 88 px wide for the lockup, 16 px tall for the mark.
+- **Type:** Geist for headlines and body, **Geist Mono** for metadata and numbers (`SDG 13`, `PROOF 0:05`). The brand book adds Funnel Display for marketing headlines.
+- **Nature motifs:** a sprout for empty states, drifting organic blobs, a switch that sprouts a leaf, leaves flying out when you verify, leaf confetti on the celebration. Decorative and hidden from screen readers.
+- **Feel:** editorial layout, hairline rules, big tabular numbers, haptics on every meaningful press, springs on entry. Reduce Motion is respected everywhere.
+- **Voice:** short, dry, a little funny. We celebrate doing, never shame not-doing. Honest about data: “model”, “estimate”, “citizen science”.
+
+## Go-to-market
+
+<div align="center">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/readme/brand/love_your_city_white.svg">
+  <img src="docs/readme/brand/love_your_city_black.svg" alt="Love your city" width="220">
+</picture>
+</div>
+
+The strategy is a journey from scrolling to the street:
+
+| | Stage | The hook | In BeGreen |
+| :---: | --- | --- | --- |
+| <img src="docs/readme/icons/happy.svg" width="22" alt=""> | **1. Get them in** | *“Finally, sustainability isn't boring.”* Relatable, funny posts people send to friends. | Social channels; shareable proofs. Someone downloads BeGreen without thinking of themselves as an environmentalist. |
+| <img src="docs/readme/icons/calendar.svg" width="22" alt=""> | **2. The daily ritual** | *“What did everyone do today?”* | Today's challenge, *post yours to see theirs*, the daily prompt. Missing a day is never a failure. |
+| <img src="docs/readme/icons/chatbubbles.svg" width="22" alt=""> | **3. The real-world game** | *“Let's see what we can change in our city.”* | Groups, classes and neighbourhoods take on challenges: a reuse spot, a clean-up, a repair shop. |
+| <img src="docs/readme/icons/compass.svg" width="22" alt=""> | **4. The city becomes yours** | *“Your city, through the eyes of your community.”* | The community map: places, events and reports discovered through friends, not sponsored results. |
+
+Growth is **school by school, city by city**, because network effects are local: launch schools and student ambassadors in one seed city, a Comune that presents the results next to real air-quality data, then the next city. North-star metric: **verified green acts per week**. Full plan, segments, metrics and business model: [MARKETING.md](MARKETING.md).
+
+## Honest limits
+
+> [!WARNING]
+> This is a hackathon prototype. Here's what it doesn't do yet.
+
+- **Anonymous accounts** tied to the phone: signing out or reinstalling loses the account (your proofs stay on the feed). Linking email / Apple / Google is in the backlog.
+- **Today's challenge** is built by the first phone that opens the app in a Comune that day. The database checks its shape and date, not its numbers; a server-side job would make it tamper-proof.
+- **Proof moderation** is basic: “Flag proof” only asks for confirmation. Places have flags, auto-hiding and moderators, but promoting moderators beyond a group's founder is done in the database. Verifications are one per person, not yet checked for proximity or fraud.
+- **Leaderboards and counts** use downloaded proofs, not complete server-side aggregates, and say so.
+- **Impact figures** are conservative per-act estimates, labelled as such.
+- **Map search** for BeGreen places is an offline keyword and intent matcher, not a language model. Tiles and street search rely on free OpenStreetMap / Photon services meant for light use; production needs a keyed tile provider.
+- **Official data** (ARPAV, ISPRA) is a bundled extract for the Province of Vicenza; the ISPRA Catasto Rifiuti reuse licence is still marked “to verify”.
+
+Ideas for after the hackathon: [`docs/ideas.md`](docs/ideas.md).
 
 ## Team workflow
 
-1. Read [AGENTS.md](AGENTS.md); it applies to AI assistants too.
+<img src="docs/readme/icons/git-branch.svg" width="20" alt=""> Built by a team of six for **Good Vibes / FESAV 2026** (Schio, 22–24 October 2026).
+
+1. Read [AGENTS.md](AGENTS.md): it applies to AI assistants too.
 2. Track tasks and owners in [docs/team.md](docs/team.md); park new ideas in [docs/ideas.md](docs/ideas.md).
-3. Branch from an up-to-date `main` and open a PR to `main`. `npm run verify` (typecheck, lint, workflow and database tests) must pass: it's the `Verify` CI check.
-4. Get approval from a teammate before merge. If Pi CI review is configured, it runs on ready PRs and new commits by itself; comment `/PI review` on the PR only to repeat it without a push.
+3. Branch from an up-to-date `main` (`feat/12-demo`, `fix/18-login`, `docs/pitch`) and open a PR to `main`. `npm run verify` must pass.
+4. Get approval from a teammate before merging. If Pi review is configured in CI, it runs on its own on ready PRs.
 
-Hackathon track and rules: [`docs/traccia.md`](docs/traccia.md), [`docs/regolamento.md`](docs/regolamento.md). Default agent rules: [`AGENTS.md`](AGENTS.md). Optional skills in [`skills/`](skills/) (symlinked as `.agents/skills` / `.pi/skills`):
-
-| For | Skill |
+| Document | What |
 | --- | --- |
-| Stay on the official FESAV track | [hackathon-track](skills/hackathon-track/SKILL.md) |
-| Building a feature or fix | [hackathon-feature](skills/hackathon-feature/SKILL.md) |
-| Review-only on a PR | [hackathon-review](skills/hackathon-review/SKILL.md) |
-| Pitch, slides and demo (8 min) | [hackathon-pitch](skills/hackathon-pitch/SKILL.md) |
+| [docs/traccia.md](docs/traccia.md) · [docs/regolamento.md](docs/regolamento.md) | Official track and event rules |
+| [docs/decisions.md](docs/decisions.md) | Product and technical decisions |
+| [docs/presentation.md](docs/presentation.md) | Pitch and demo (8 minutes) |
+| [docs/dati-comune.md](docs/dati-comune.md) | Official per-Comune datasets |
+| [MARKETING.md](MARKETING.md) | Go-to-market plan |
+| [skills/](skills/) | Optional agent skills: track, feature, review, pitch |
 
-Out-of-track backlog: [`docs/ideas.md`](docs/ideas.md) or an Idea issue.
+## Credits
 
-Pi review setup: [docs/github-setup.md](docs/github-setup.md). Decisions: [docs/decisions.md](docs/decisions.md). Pitch: [docs/presentation.md](docs/presentation.md).
+Environmental data from **Copernicus CAMS**, **Open-Meteo**, **iNaturalist**, **GBIF**, **Sensor.Community**, **ARPAV** and **ISPRA / SNPA**. Maps © **OpenStreetMap** contributors (ODbL), street search by **Photon** (komoot). Demo photos from **Unsplash**. Icons in this README: **Ionicons** (MIT), the same set the app uses. Nature micro-interactions inspired by [uiverse.io](https://uiverse.io) and [React Bits](https://reactbits.dev).
+
+<div align="center">
+<br>
+<img src="docs/readme/brand/begreen-mark-primary-canopy-on-lime.svg" width="44" alt="BeGreen mark">
+<br>
+<sub><b>BeGreen</b> · Love your city. Show it. · Proof, not promises.</sub>
+</div>
