@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { Text, View } from "react-native";
 
 import { CommunityCover, SpotRow } from "@/components/community-ui";
-import { Button, Mono } from "@/components/ui";
+import { Button } from "@/components/ui";
 import { useI18n } from "@/i18n/use-i18n";
 import { useApp } from "@/store/app-store";
 import { comuneCommunity, previewCity, syncCommunity, useCommunity, useCommunitySpots } from "@/store/community-store";
@@ -33,7 +33,6 @@ export function TerritoryCard() {
   return (
     <View style={{ gap: 16 }}>
       <View style={{ gap: 6 }}>
-        <Mono color={C.leaf}>{t("groups.territory")}</Mono>
         <Text style={T.hero}>{city.name}</Text>
         <Text style={T.callout}>{t("groups.territoryBody")}</Text>
       </View>

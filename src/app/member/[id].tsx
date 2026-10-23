@@ -1,17 +1,21 @@
 import { Stack, useLocalSearchParams } from "expo-router";
+import { useEffect, useMemo, useState } from "react";
 import { Alert, ScrollView, Text, View } from "react-native";
 
 import { SpotRow } from "@/components/community-ui";
+import { FollowButton, FollowCounts, PhotoGrid } from "@/components/friends";
 import { TitledName } from "@/components/titled-name";
 import { Avatar, Button, Mono } from "@/components/ui";
 import { challengeProgress } from "@/data/community";
 import { useI18n } from "@/i18n/use-i18n";
-import { useApp, useAuthor } from "@/store/app-store";
+import { fetchFollows } from "@/services/social";
+import { hasBackend } from "@/services/supabase";
+import { streakOf, useApp, useAuthor } from "@/store/app-store";
 import { useCommunity } from "@/store/community-store";
 import { F } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
 
-// A member and what they added to the community: places, events, challenge contributions.
+// Someone's profile: follow them, their friends, their photos, and what they added to the community.
 export default function Member() {
   const { C, T } = useTheme();
   const { id, community } = useLocalSearchParams<{ id: string; community?: string }>();
@@ -30,6 +34,29 @@ export default function Member() {
   const joined = new Set(contributions.map((e) => e.challengeId));
   const role = members?.find((m) => m.userId === id)?.role;
   const me = id === meId;
+  const allPosts = useApp((s) => s.posts);
+  const iFollow = useApp((s) => s.following.includes(id));
+  const followsMe = useApp((s) => s.followers.includes(id));
+  const myFollowing = useApp((s) => s.following);
+  const myFollowers = useApp((s) => s.followers);
+  const [counts, setCounts] = useState<{ following: number; followers: number } | null>(null);
+  const photos = useMemo(() => allPosts.filter((p) => p.authorId === id && !p.isDemo), [allPosts, id]);
+
+  useEffect(() => {
+    if (me || !hasBackend) return;
+    let live = true;
+    fetchFollows(id)
+      .then((f) => live && setCounts({ following: f.following.length, followers: f.followers.length }))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [id, me, iFollow]);
+
+  // Offline only this phone's own follows are known.
+  const shown = me
+    ? { following: myFollowing.length, followers: myFollowers.length }
+    : (counts ?? { following: followsMe ? 1 : 0, followers: iFollow ? 1 : 0 });
 
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 20, gap: 20, paddingBottom: 50 }}>
@@ -40,7 +67,26 @@ export default function Member() {
         <Mono>
           @{u.handle}
           {role === "moderator" ? ` · ${t("community.page.moderator")}` : ""}
+          {followsMe ? ` · ${t("profile.friends.followsYou")}` : ""}
         </Mono>
+        {!me && <FollowButton user={u} size="md" />}
+      </View>
+      <FollowCounts userId={id} following={shown.following} followers={shown.followers} />
+      <View style={{ flexDirection: "row", gap: 8 }}>
+        {[
+          { n: photos.length, label: t("profile.photos.title") },
+          { n: streakOf(photos), label: t("me.streak") },
+          { n: photos.filter((p) => p.verifiedBy.length >= 3).length, label: t("me.verified") },
+        ].map((x) => (
+          <View key={x.label} style={{ flex: 1, backgroundColor: C.card, borderRadius: 16, padding: 12, gap: 4 }}>
+            <Text style={{ fontFamily: F.medium, fontSize: 24, color: C.ink }}>{x.n}</Text>
+            <Text style={T.caption}>{x.label}</Text>
+          </View>
+        ))}
+      </View>
+      <View style={{ gap: 10 }}>
+        <Mono>{t("profile.photos.title")}</Mono>
+        <PhotoGrid posts={photos} empty={me ? t("profile.photos.emptyMine") : t("profile.photos.emptyThem", { name: u.name })} />
       </View>
       <View style={{ flexDirection: "row", gap: 8 }}>
         {[

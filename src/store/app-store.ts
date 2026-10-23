@@ -26,6 +26,7 @@ import {
   countMyVerifications,
   fetchSeeds,
   fetchFeed,
+  fetchFollows,
   fetchGroupIds,
   fetchProfiles,
   fetchSquads,
@@ -35,6 +36,7 @@ import {
   publishPost,
   saveProfile,
   saveProfileDetails,
+  setFollow,
   setReaction,
 } from "@/services/social";
 import { canClaimDrop, DROP_BONUS, publishWithReward, seedsFor } from "@/services/rewards";
@@ -70,6 +72,9 @@ type State = {
   localAreas: Record<string, NonNullable<Post["location"]>>;
   localMedia: Record<string, { photo?: string; proof?: string }>;
   verifiedCount: number;
+  // The accounts you follow are your friends. Newest first.
+  following: string[];
+  followers: string[];
   nudged: Record<string, number>;
   // Lifetime Seeds of other people, from the server: how far their plants have grown.
   growth: Record<string, number>;
@@ -109,6 +114,8 @@ type Actions = {
   createSquad: (s: Pick<Squad, "name" | "kind" | "place" | "quest">) => Promise<Squad>;
   joinSquad: (code: string) => Promise<Squad | null>;
   nudge: (userId: string) => void;
+  // Follow (or unfollow) someone. Pass what you know of them so their name shows straight away.
+  follow: (userId: string, on: boolean, who?: User) => void;
   equipBadge: (id: BadgeId | null) => void;
   setLanguage: (language: Language) => void;
   reset: () => void;
@@ -136,6 +143,8 @@ const initial: State = {
   localAreas: {},
   localMedia: {},
   verifiedCount: 0,
+  following: [],
+  followers: [],
   nudged: {},
   growth: {},
   tips: {},
@@ -318,6 +327,21 @@ export const useApp = create<State & Actions>()(
         return squad;
       },
       nudge: (userId) => set({ nudged: { ...get().nudged, [userId]: Date.now() } }),
+      follow: (userId, on, who) => {
+        const s = get();
+        if (!userId || userId === s.userId || userId === DEMO_AUTHOR.id) return;
+        const following = on ? [userId, ...s.following.filter((id) => id !== userId)] : s.following.filter((id) => id !== userId);
+        followedAt = Date.now();
+        set({ following, ...(who && !s.profiles[userId] ? { profiles: { ...s.profiles, [userId]: who } } : {}) });
+        if (!hasBackend) return;
+        setFollow(s.userId, userId, on)
+          .then(() => (on ? syncSocial() : undefined))
+          .catch((e) => {
+            // Put it back the way it was.
+            useApp.setState({ following: s.following });
+            fail(e);
+          });
+      },
       equipBadge: (id) => {
         const s = get();
         const stats = badgeStatsOf(mineOf(s.posts, s.userId), s.verifiedCount);
@@ -354,6 +378,8 @@ export const useApp = create<State & Actions>()(
         localAreas: s.localAreas,
         localMedia: s.localMedia,
         verifiedCount: s.verifiedCount,
+        following: s.following,
+        followers: s.followers,
         nudged: s.nudged,
         growth: s.growth,
         tips: s.tips,
@@ -372,6 +398,8 @@ export const useApp = create<State & Actions>()(
             seed: isSeedId(merged.profile?.seed) ? merged.profile.seed : null,
           },
           growth: merged.growth ?? {},
+          following: merged.following ?? [],
+          followers: merged.followers ?? [],
           tips: merged.tips ?? {},
         };
       },
@@ -427,6 +455,7 @@ async function send(post: Post): Promise<Post> {
 }
 
 let syncing: Promise<void> | null = null;
+let followedAt = 0;
 
 export function syncSocial(): Promise<void> {
   if (!hasBackend) return Promise.resolve();
@@ -444,18 +473,23 @@ export function syncSocial(): Promise<void> {
     }
     for (const p of useApp.getState().posts.filter((x) => x.pending)) await publish(p);
 
-    const [{ mine, local }, groupIds] = await Promise.all([fetchSquads(uid, s.comune.id), fetchGroupIds(uid)]);
+    const [{ mine, local }, groupIds, follows] = await Promise.all([
+      fetchSquads(uid, s.comune.id),
+      fetchGroupIds(uid),
+      fetchFollows(uid).catch(() => ({ following: useApp.getState().following, followers: useApp.getState().followers })),
+    ]);
     const access = mediaAccessVersion();
     const [feed, verifiedCount] = await Promise.all([
       fetchFeed(
         uid,
         s.comune.id,
         groupIds,
+        follows.following,
       ),
       countMyVerifications(uid),
     ]);
     const known = { ...useApp.getState().profiles, ...feed.profiles };
-    const missing = [...new Set([...mine, ...local].flatMap((q) => q.memberIds))].filter((id) => !known[id]);
+    const missing = [...new Set([...mine, ...local].flatMap((q) => q.memberIds).concat(follows.following, follows.followers))].filter((id) => !known[id]);
     const members = await fetchProfiles(missing).catch(() => ({}));
     const growth = await fetchSeeds(Object.keys({ ...known, ...members }).filter((id) => id !== uid)).catch(() => useApp.getState().growth);
     // Keep what's still uploading, and your proofs that finished uploading after the feed was fetched.
@@ -479,6 +513,9 @@ export function syncSocial(): Promise<void> {
       localSquads: local,
       localMedia,
       verifiedCount,
+      // A follow tapped while this sync ran wins over the list it fetched.
+      following: followedAt >= startedAt ? useApp.getState().following : follows.following,
+      followers: follows.followers,
       growth,
       syncedAt: Date.now(),
     });
@@ -673,4 +710,10 @@ export function weekResetIn() {
   const n = new Date();
   const next = new Date(n.getFullYear(), n.getMonth(), n.getDate() + ((8 - n.getDay()) % 7 || 7));
   return Math.ceil((next.getTime() - n.getTime()) / D);
+}
+
+// ---------- friends ----------
+
+export function useFollowing(id?: string) {
+  return useApp((s) => !!id && s.following.includes(id));
 }

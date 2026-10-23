@@ -7,17 +7,16 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon } from "@/components/icon";
 import { TerritoryCard } from "@/components/territory-card";
 import { LoveYourCity } from "@/components/love-your-city";
-import { Button, IconButton, Logo, Mono, Press, TopCover } from "@/components/ui";
+import { Button, IconButton, Press, TopCover } from "@/components/ui";
 import { COMMUNITY_KIND_ICON, type Community } from "@/data/community";
 import { formatNumber } from "@/i18n/format";
 import { useI18n } from "@/i18n/use-i18n";
-import { useApp } from "@/store/app-store";
-import { joinCity, suggestedCommunity, syncCommunity, useCommunity, useCommunitySpots, useJoined } from "@/store/community-store";
+import { syncCommunity, useCommunity, useJoined } from "@/store/community-store";
 import { F, R } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
 
 // The Community tab: straight to the communities you're in. Two kinds, two sections:
-// your groups (friends, joined with a code, ranked) and your Comune (a real place, its map).
+// your city (a real place, its map, shown big once) and your groups (friends, joined with a code, ranked).
 
 const open = (c: Community) => router.push({ pathname: "/community/[id]", params: { id: c.id } });
 
@@ -108,65 +107,11 @@ function GroupRow({ c, index }: { c: Community; index: number }) {
   );
 }
 
-function ComuneRow({ c, index }: { c: Community; index: number }) {
-  const { C } = useTheme();
-  const { t } = useI18n();
-  const { real } = useCommunitySpots(c);
-  return (
-    <CommunityRow
-      c={c}
-      index={index}
-      subtitle={
-        <Text numberOfLines={1} style={{ fontFamily: F.regular, fontSize: 13, color: C.mute }}>
-          <MemberCount c={c} /> · {real === 1 ? t("community.hub.place") : t("community.hub.places", { count: real })}
-        </Text>
-      }
-      trailing={<Icon name="chevron" size={14} color={C.faint} />}
-    />
-  );
-}
-
-// Not in a Comune yet: yours, one tap away.
-function SuggestedComune() {
-  const { C } = useTheme();
-  const { t } = useI18n();
-  const comune = useApp((s) => s.comune);
-  const catalog = useCommunity((s) => s.catalog);
-  const [busy, setBusy] = useState(false);
-  const suggestion = suggestedCommunity(comune, catalog);
-  if (!suggestion) return null;
-  const c = suggestion.community;
-  return (
-    <CommunityRow
-      c={c}
-      index={0}
-      subtitle={<Mono color={C.leaf}>{t("community.hub.yourCity")}</Mono>}
-      trailing={
-        <Button
-          label={t("community.hub.join")}
-          kind="green"
-          size="sm"
-          icon="plus"
-          loading={busy}
-          onPress={async () => {
-            setBusy(true);
-            try {
-              if (await joinCity(c)) open(c);
-            } finally {
-              setBusy(false);
-            }
-          }}
-        />
-      }
-    />
-  );
-}
-
 export default function CommunityTab() {
   const { C, T } = useTheme();
   const { top } = useSafeAreaInsets();
   const { t } = useI18n();
-  const { cities, groups } = useJoined();
+  const { groups } = useJoined();
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
@@ -192,7 +137,9 @@ export default function CommunityTab() {
           <IconButton icon="search" label={t("community.hub.findCity")} onPress={() => router.push("/communities")} />
         </View>
 
-        <TerritoryCard />
+        <Section title={t("community.hub.yourCityTitle")} action={t("community.hub.findCity")} onAction={() => router.push("/communities")}>
+          <TerritoryCard />
+        </Section>
 
         <Section title={t("community.hub.groups")} action={groups.length ? t("community.hub.joinCode") : undefined} onAction={() => router.push("/join")}>
           {groups.map((c, i) => (
@@ -205,16 +152,8 @@ export default function CommunityTab() {
           </View>
         </Section>
 
-        <Section title={cities.length > 1 ? t("community.hub.cities") : t("community.hub.city")} action={t("community.hub.findCity")} onAction={() => router.push("/communities")}>
-          {cities.map((c, i) => (
-            <ComuneRow key={c.id} c={c} index={i} />
-          ))}
-          {cities.length === 0 && <SuggestedComune />}
-        </Section>
-
-        <View accessible accessibilityLabel="Love your city · BeGreen" style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 12, paddingTop: 6 }}>
-          <LoveYourCity height={30} />
-          <Logo size={22} />
+        <View accessible accessibilityLabel="Love your city" style={{ alignItems: "center", paddingTop: 10 }}>
+          <LoveYourCity height={46} />
         </View>
       </ScrollView>
       <TopCover />

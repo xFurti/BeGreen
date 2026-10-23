@@ -4,7 +4,9 @@ import { Alert, Pressable, ScrollView, Share, Text, TextInput, View } from "reac
 
 import { ChallengeCard, CommunityCover, communityDescription, ProofRow, PromptCard, SpotRow } from "@/components/community-ui";
 import { Icon } from "@/components/icon";
-import { GroupImpact } from "@/components/group-impact";
+import { PersonRow } from "@/components/friends";
+import { GroupImpact, ImpactHero } from "@/components/group-impact";
+import { Leaderboard, useMyRank } from "@/components/leaderboard";
 import { AvatarStack, Button, Mono, Press } from "@/components/ui";
 import { eventPhase, isCity, type Community } from "@/data/community";
 import { useCommunityFeed } from "@/hooks/use-community-feed";
@@ -82,9 +84,22 @@ function Latest({ c, limit = 6, empty }: { c: Community; limit?: number; empty: 
   );
 }
 
-function BoardLink({ c }: { c: Community }) {
+function BoardLink({ c, label }: { c: Community; label?: string }) {
   const { t } = useI18n();
-  return <Button label={t("groups.board")} kind="ghost" size="md" icon="league" onPress={() => router.push({ pathname: "/community-ranking", params: { id: c.id } })} />;
+  return <Button label={label ?? t("groups.board")} kind="ghost" size="md" icon="league" onPress={() => router.push({ pathname: "/community-ranking", params: { id: c.id } })} />;
+}
+
+// A group's leaderboard, right on its page: the top five and your own row.
+const BOARD_TOP = 5;
+function GroupBoard({ c }: { c: Community }) {
+  const { t } = useI18n();
+  const { size } = useMyRank(c);
+  return (
+    <View style={{ gap: 4 }}>
+      <Leaderboard community={c} limit={BOARD_TOP} title={t("groups.board")} />
+      {size > BOARD_TOP && <BoardLink c={c} label={t("groups.boardAll")} />}
+    </View>
+  );
 }
 
 function LeaveButton({ c }: { c: Community }) {
@@ -168,6 +183,8 @@ function CityPage({ c }: { c: Community }) {
       ) : (
         <Button label={t("community.city.join", { name: c.name })} kind="green" icon="plus" loading={busy} onPress={join} />
       )}
+
+      <ImpactHero community={c} />
 
       <View style={{ gap: 4 }}>
         <Heading title={t("community.city.experiences")} action={real ? t("community.city.onMap") : undefined} onAction={() => openMap(c)} />
@@ -280,20 +297,21 @@ function GroupPage({ c }: { c: Community }) {
       {canSee ? (
         <>
           {role && <Button label={t("groups.post")} kind="green" icon="camera" onPress={() => router.push({ pathname: "/capture", params: { group: c.id } })} />}
+          <GroupBoard c={c} />
+          <ImpactHero community={c} />
           <Challenges c={c} member={!!role} />
           <Latest c={c} empty={t("groups.noProofs")} />
           <GroupImpact community={c} />
           {role && invite && <InviteCard c={c} code={invite} />}
           <View style={{ gap: 10 }}>
             <Heading title={t("groups.members")} />
-            {(members ?? []).slice(0, 30).map((m) => (
-              <Press key={m.userId} onPress={() => router.push({ pathname: "/member/[id]", params: { id: m.userId } })}>
-                <Text style={T.body}>{author(m.userId).name}</Text>
-              </Press>
-            ))}
+            <View>
+              {(members ?? []).slice(0, 30).map((m) => (
+                <PersonRow key={m.userId} user={author(m.userId)} />
+              ))}
+            </View>
             {(members?.length ?? 0) > 30 && <Text style={T.caption}>{t("groups.moreMembers", { count: 30 })}</Text>}
           </View>
-          <BoardLink c={c} />
         </>
       ) : (
         <View style={{ alignItems: "center", gap: 10, paddingVertical: 20 }}>

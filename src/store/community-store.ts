@@ -623,13 +623,10 @@ export function useStandings(c?: Community): Standing[] {
   }, [c, posts, me, comune, members, fetched, blocked]);
 }
 
-// Your squad mates: the people BeGreen knows you know.
+// Your friends: the accounts you follow.
 export function useFriendIds(): Set<string> {
-  const members = useCommunity((s) => s.members);
-  const roles = useCommunity((s) => s.roles);
-  const catalog = useCommunity((s) => s.catalog);
-  const meId = useApp((s) => s.userId);
-  return useMemo(() => new Set(catalog.filter((c) => !isCity(c) && roles[c.id]).flatMap((c) => members[c.id] ?? []).map((m) => m.userId).filter((id) => id !== meId)), [members, roles, catalog, meId]);
+  const following = useApp((s) => s.following);
+  return useMemo(() => new Set(following), [following]);
 }
 
 // A community's places as you should see them: no one you blocked, nothing hidden (except your own).

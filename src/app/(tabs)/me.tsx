@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon, type IconName } from "@/components/icon";
+import { FollowCounts, PhotoGrid } from "@/components/friends";
 import { ImpactPanel, MemoriesPanel } from "@/components/profile-panels";
 import { ProfileMap } from "@/components/profile-map";
 import { LanguageSwitch } from "@/components/language-switch";
@@ -37,9 +38,10 @@ import { F, type Palette } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
 import { cleanProfile, validProfile } from "@/utils/profile";
-type ProfileTab = "impact" | "memories" | "map";
+type ProfileTab = "impact" | "photos" | "memories" | "map";
 const TABS = [
   { id: "impact", label: "me.impact", icon: "leaf" },
+  { id: "photos", label: "profile.photos.title", icon: "camera" },
   { id: "memories", label: "me.memories", icon: "calendar" },
   { id: "map", label: "profile.map", icon: "map" },
 ] as const;
@@ -53,6 +55,8 @@ export default function Me() {
   const posts = useMyPosts();
   const verifications = useApp((s) => s.verifiedCount);
   const comune = useApp((s) => s.comune);
+  const following = useApp((s) => s.following.length);
+  const followers = useApp((s) => s.followers.length);
   const [tab, setTab] = useState<ProfileTab>("impact");
   const [sheet, setSheet] = useState<"edit" | "settings" | null>(null);
   const [badgeOpen, setBadgeOpen] = useState(false);
@@ -130,6 +134,9 @@ export default function Me() {
             <Stat value={seeds} label={t("common.seeds")} middle />
             <Stat value={verified} label={t("me.verified")} />
           </View>
+          <View style={s.friends}>
+            <FollowCounts userId={userId} following={following} followers={followers} />
+          </View>
           <View style={s.growth}>
             <GrowthCard seed={seed} seeds={seeds} streak={streak} />
           </View>
@@ -154,6 +161,7 @@ export default function Me() {
           </View>
           <View style={s.panel}>
             {tab === "impact" && <ImpactPanel posts={posts} verifications={verifications} onBadgeOpen={setBadgeOpen} />}
+            {tab === "photos" && <PhotoGrid posts={posts} empty={t("profile.photos.emptyMine")} />}
             {tab === "memories" && <MemoriesPanel posts={posts} />}
             {tab === "map" && <ProfileMap posts={posts} />}
           </View>
@@ -399,6 +407,7 @@ function Settings({ onClose, onEdit }: { onClose: () => void; onEdit: () => void
       </View>
       <View>
         <SettingRow icon="bookmarkFill" label={`${t("community.me.saved")}${savedCount ? ` · ${savedCount}` : ""}`} onPress={() => go("/saved")} />
+        <SettingRow icon="people" label={t("profile.friends.find")} onPress={() => go("/friends")} />
         <SettingRow icon="pin" label={t("community.me.contributions")} onPress={() => go({ pathname: "/member/[id]", params: { id: userId } })} />
         <SettingRow icon="book" label={t("me.guide")} onPress={() => go("/guide")} />
         <SettingRow icon="shield" label={t("me.sources")} onPress={() => go("/sources")} />
@@ -478,6 +487,7 @@ const styles = (C: Palette) =>
     city: { flexDirection: "row", alignItems: "center", gap: 4, maxWidth: "55%" },
     subline: { fontFamily: F.regular, fontSize: 13, lineHeight: 19, color: C.mute },
     growth: { marginHorizontal: 20, marginTop: 12 },
+    friends: { marginHorizontal: 20, marginTop: 8 },
     stats: { flexDirection: "row", paddingVertical: 16, marginHorizontal: 20, marginTop: 16, backgroundColor: C.card, borderRadius: 20 },
     stat: { flex: 1, alignItems: "center", gap: 4 },
     middleStat: { borderLeftWidth: 1, borderRightWidth: 1, borderColor: C.line },
@@ -489,13 +499,13 @@ const styles = (C: Palette) =>
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
-      gap: 7,
+      gap: 5,
       height: 52,
       borderBottomWidth: 2,
       borderBottomColor: "transparent",
     },
     activeTab: { borderBottomColor: C.leaf, backgroundColor: C.mint, borderTopLeftRadius: 12, borderTopRightRadius: 12 },
-    tabText: { fontFamily: F.medium, fontSize: 14, color: C.mute },
+    tabText: { fontFamily: F.medium, fontSize: 13, color: C.mute },
     panel: { paddingHorizontal: 20, paddingTop: 24 },
     modalRoot: { flex: 1, justifyContent: "flex-end", backgroundColor: C.scrim },
     sheet: {

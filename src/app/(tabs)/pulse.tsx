@@ -5,10 +5,10 @@ import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from "react
 import Animated, { FadeIn, FadeInDown, LinearTransition } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { DailyCard } from "@/components/drop-card";
 import { SeedTip } from "@/components/seed-ui";
 import { Icon } from "@/components/icon";
-import { Blobs } from "@/components/nature";
-import { Button, IconButton, Mono, Press, SdgTags, Segmented, SourceBadge, TopCover } from "@/components/ui";
+import { IconButton, Mono, Press, SdgTags, Segmented, SourceBadge, TopCover } from "@/components/ui";
 import { ACTIONS } from "@/data/actions";
 import type { Explain } from "@/data/types";
 import { usePulse } from "@/hooks/use-pulse";
@@ -17,8 +17,6 @@ import { formatNumber, timeAgo } from "@/i18n/format";
 import { useI18n } from "@/i18n/use-i18n";
 import type { Pulse } from "@/services/env";
 import { aqiBand, type Insight, type Level } from "@/services/interpret";
-import { canClaimDrop, seedsFor } from "@/services/rewards";
-import { hasBackend } from "@/services/supabase";
 import { useApp } from "@/store/app-store";
 import { F, R, type Palette } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
@@ -220,17 +218,13 @@ function Cell({ label, value, sub, last }: { label: string; value: string; sub?:
 export default function PulseScreen() {
   const { C, T } = useTheme();
   const { top } = useSafeAreaInsets();
-  const { pulse, insights, drop, loading, refresh, ready } = usePulse();
+  const { pulse, insights, loading, refresh, ready } = usePulse();
   const explain = useApp((s) => s.explain);
   const setExplain = useApp((s) => s.setExplain);
   const { t, language } = useI18n();
   const [refreshing, setRefreshing] = useState(false);
 
-  const bad = insights.filter((i) => i.level === "bad");
-  const lever = bad[0];
   const air = pulse.air ? aqiBand(pulse.air.aqi, language) : null;
-  const da = actionCopy(t, drop.action);
-  const bonus = useApp((s) => canClaimDrop(drop, s.posts, s.userId, hasBackend));
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
@@ -304,31 +298,8 @@ export default function PulseScreen() {
               {pulse.nature && <Cell label={t("pulse.species")} value={formatNumber(pulse.nature.speciesCount, language)} sub="10 km" last />}
             </Animated.View>
 
-            <Animated.View
-              entering={FadeInDown.delay(80)}
-              style={{
-                backgroundColor: C.forest,
-                borderRadius: R.sm,
-                borderTopLeftRadius: 40,
-                borderBottomRightRadius: 40,
-                borderCurve: "continuous",
-                padding: 20,
-                gap: 18,
-                overflow: "hidden",
-              }}
-            >
-              <Blobs colors={[C.leaf, C.lime]} opacity={0.18} />
-              <Mono color={C.forestMute}>{t("pulse.todayIn", { place: pulse.place.name })}</Mono>
-              <Text style={{ fontFamily: F.medium, fontSize: 30, lineHeight: 33, letterSpacing: -1.3, color: C.white }}>
-                {lever ? t("pulse.lever", { label: lever.label.toLowerCase() }) : t("pulse.clear")}
-              </Text>
-              <Button
-                kind="inverse"
-                icon={da.icon}
-                label={t("pulse.doDrop")}
-                trailing={`+${seedsFor({ action: drop.action, isDrop: bonus })}`}
-                onPress={() => router.push({ pathname: "/capture", params: { action: drop.action } })}
-              />
+            <Animated.View entering={FadeInDown.delay(80)}>
+              <DailyCard />
             </Animated.View>
 
             <View style={{ gap: 12, paddingTop: 8 }}>

@@ -307,3 +307,14 @@ test("seeds: your own species from the catalog, growth totals from the server, f
   const free = await asAnon(`select free_handles as h from free_handles(array['cleo.seed', 'cleo.green', 'BAD HANDLE', 'dani.seed', 'dani.seed2'])`);
   assert.deepEqual(free.map((r) => r.h), ["cleo.green", "dani.seed2"]);
 });
+
+test("follows: you follow from your own account only, everyone sees the graph", async () => {
+  await as(A, `insert into follows (followee_id) values ('${B}')`);
+  await rejects(A, `insert into follows (followee_id) values ('${B}')`);
+  await rejects(A, `insert into follows (followee_id) values ('${A}')`);
+  await rejects(B, `insert into follows (follower_id, followee_id) values ('${A}', '${B}')`);
+  assert.deepEqual(await as(B, `select follower_id from follows where followee_id = '${B}'`), [{ follower_id: A }]);
+  assert.equal((await as(B, `delete from follows where follower_id = '${A}' returning follower_id`)).length, 0);
+  assert.equal((await as(A, `delete from follows where followee_id = '${B}' returning follower_id`)).length, 1);
+  assert.equal((await as(B, `select * from follows`)).length, 0);
+});

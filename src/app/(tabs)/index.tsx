@@ -1,94 +1,30 @@
-import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
-import { FlatList, RefreshControl, Text, View, type ListViewToken } from "react-native";
+import { FlatList, RefreshControl, ScrollView, Text, View, type ListViewToken } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { DropCard, useCountdown } from "@/components/drop-card";
+import { DailyCard } from "@/components/drop-card";
 import { Icon } from "@/components/icon";
 import { Sprout } from "@/components/nature";
-import { PostCard, VerifyBar } from "@/components/post-card";
+import { PostCard } from "@/components/post-card";
 import { SeedTip } from "@/components/seed-ui";
 import { Avatar, Button, Logo, Mono, Press, TextTabs } from "@/components/ui";
 import { demoPostsFor } from "@/data/demo";
-import type { Post, User } from "@/data/types";
+import type { Post } from "@/data/types";
 import { usePulse } from "@/hooks/use-pulse";
-import { actionCopy, profileName } from "@/i18n/content";
+import { profileName } from "@/i18n/content";
 import { useI18n } from "@/i18n/use-i18n";
 import { isGroupPost, postGroupId } from "@/services/groups";
-import { postedToday, streakOf, syncSocial, useApp, useAuthor, useMyPosts } from "@/store/app-store";
+import { postedToday, syncSocial, useApp, useAuthor, useMyPosts } from "@/store/app-store";
 import { useJoined } from "@/store/community-store";
 import { F, R } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
 
-type Lens = "comune" | "groups" | "everyone";
+type Lens = "all" | "friends" | "groups" | "comune";
 
 // Below this many real proofs for today's challenge, example proofs fill the Comune feed.
 const DEMO_UNDER = 3;
-
-function NotYet({ streak }: { streak: number }) {
-  const { C } = useTheme();
-  const left = useCountdown();
-  const { t } = useI18n();
-  return (
-    <View
-      style={{
-        borderRadius: R.sm,
-        borderTopRightRadius: R.xl,
-        borderBottomLeftRadius: R.xl,
-        borderCurve: "continuous",
-        backgroundColor: C.mint,
-        padding: 20,
-        gap: 18,
-        overflow: "hidden",
-      }}
-    >
-      <View pointerEvents="none" style={{ position: "absolute", right: 16, bottom: 92, opacity: 0.9 }}>
-        <Sprout size={64} />
-      </View>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-        <Mono color={C.forestInk}>{t("feed.yours")}</Mono>
-        <View style={{ flex: 1 }} />
-        <Icon name="flame" size={13} color={streak > 0 ? C.forestInk : C.faint} />
-        <Mono color={streak > 0 ? C.forestInk : C.mute}>{streak}</Mono>
-      </View>
-      <View style={{ gap: 8 }}>
-        <Text style={{ fontFamily: F.medium, fontSize: 28, lineHeight: 30, letterSpacing: -1.2, color: C.ink, paddingRight: 64 }}>
-          {t("feed.notYet")}
-        </Text>
-        <Text style={{ fontFamily: F.regular, fontSize: 15, lineHeight: 21, color: C.ink2, paddingRight: 64 }}>
-          {streak > 0 ? t("feed.streak", { count: streak, time: left.slice(0, 5) }) : t("feed.first")}
-        </Text>
-      </View>
-      <View style={{ flexDirection: "row", gap: 8 }}>
-        <Button label={t("feed.now")} kind="green" icon="camera" onPress={() => router.push("/capture")} style={{ flex: 1 }} />
-        <Button label={t("feed.ideas")} kind="inverse" icon="book" onPress={() => router.push("/guide")} />
-      </View>
-    </View>
-  );
-}
-
-function Mine({ post }: { post: Post }) {
-  const { C } = useTheme();
-  const { t } = useI18n();
-  const a = actionCopy(t, post.action);
-  return (
-    <Press
-      scale={0.985}
-      onPress={() => router.push({ pathname: "/post/[id]", params: { id: post.id } })}
-      accessibilityLabel={t("feed.todayA11y")}
-      style={{ flexDirection: "row", gap: 14, alignItems: "center" }}
-    >
-      <Image source={post.photo} style={{ width: 62, height: 78, borderRadius: 12, backgroundColor: C.card }} contentFit="cover" priority="low" />
-      <View style={{ flex: 1, gap: 6 }}>
-        <Mono color={C.leaf}>{t("feed.today")}</Mono>
-        <Text style={{ fontFamily: F.medium, fontSize: 18, letterSpacing: -0.5, color: C.ink }}>{a.label}</Text>
-        <VerifyBar post={post} />
-      </View>
-    </Press>
-  );
-}
 
 function CommunityEntry({ place }: { place: string }) {
   const { C } = useTheme();
@@ -130,34 +66,30 @@ export default function Feed() {
   const comune = useApp((s) => s.comune);
   const author = useAuthor();
   const { drop, pulse, refresh, ready } = usePulse();
+  const following = useApp((s) => s.following);
   const { t } = useI18n();
-  const [lens, setLens] = useState<Lens>("comune");
+  const [lens, setLens] = useState<Lens>("all");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const place = comune?.name ?? pulse.place.name;
 
   const unlocked = postedToday(myPosts);
   const dropTipSeen = useApp((s) => !!s.tips.drop);
-  const streak = streakOf(myPosts);
-  const today = new Date().toDateString();
-  const mineToday = myPosts.find((p) => new Date(p.createdAt).toDateString() === today);
-  const didDrop = myPosts.some((p) => p.challengeId === drop.id);
 
-  const challengePosts = useMemo(() => all.filter((p) => p.challengeId === drop.id && !p.isDemo && !isGroupPost(p)), [all, drop.id]);
-  const crowd = useMemo(() => {
-    const ids = [...new Set(challengePosts.map((p) => p.authorId))].sort((a, b) => Number(b === me) - Number(a === me));
-    return ids.map((id): User => author(id));
-  }, [challengePosts, me, author]);
+  const challengeCount = useMemo(() => all.filter((p) => p.challengeId === drop.id && !p.isDemo && !isGroupPost(p)).length, [all, drop.id]);
 
   const groupIds = useMemo(() => new Set(groups.map((s) => s.id)), [groups]);
+  const friends = useMemo(() => new Set(following), [following]);
   const posts = useMemo(() => {
     const others = all.filter((p) => p.authorId !== me && !p.isDemo);
-    if (lens === "groups") return others.filter((p) => groupIds.has(postGroupId(p) ?? ""));
-    if (lens === "everyone") return others.filter((p) => p.audience === "public");
-    const local = others.filter((p) => p.comuneId === comune?.id && !isGroupPost(p));
-    if (!ready || challengePosts.length >= DEMO_UNDER) return local;
-    return [...local, ...demoPostsFor(drop, place)];
-  }, [all, me, lens, groupIds, comune?.id, ready, challengePosts.length, drop, place]);
+    const inGroup = (p: Post) => groupIds.has(postGroupId(p) ?? "");
+    const local = (p: Post) => p.comuneId === comune?.id && !isGroupPost(p);
+    if (lens === "groups") return others.filter(inGroup);
+    if (lens === "friends") return others.filter((p) => friends.has(p.authorId));
+    const shown = lens === "comune" ? others.filter(local) : others.filter((p) => local(p) || inGroup(p) || friends.has(p.authorId) || p.audience === "public");
+    if (!ready || challengeCount >= DEMO_UNDER) return shown;
+    return [...shown, ...demoPostsFor(drop, place)];
+  }, [all, me, lens, groupIds, friends, comune?.id, ready, challengeCount, drop, place]);
 
   // FlatList forbids swapping this callback after mount, so keep one instance for the screen's lifetime.
   const [onViewable] = useState(() => ({ viewableItems }: { viewableItems: (ListViewToken & { item: Post })[] }) => {
@@ -174,26 +106,26 @@ export default function Feed() {
   const header = (
     <View style={{ gap: 14, paddingBottom: 10 }}>
       <SeedTip id="drop" text={t("seed.tips.drop", { place })} />
-      <DropCard drop={drop} done={didDrop} place={place} crowd={crowd} ready={ready} />
-      {mineToday ? (
-        <View style={{ paddingVertical: 8 }}>
-          <Mine post={mineToday} />
-        </View>
-      ) : (
-        <NotYet streak={streak} />
-      )}
+      <DailyCard />
       <CommunityEntry place={place} />
-      <View style={{ paddingTop: 18 }}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        accessibilityLabel={t("feed.lenses")}
+        style={{ marginHorizontal: -16 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 18 }}
+      >
         <TextTabs<Lens>
           value={lens}
           onChange={setLens}
           options={[
-            { value: "comune", label: place },
+            { value: "all", label: t("feed.all") },
+            { value: "friends", label: t("feed.friends") },
             { value: "groups", label: t("groups.groups") },
-            { value: "everyone", label: t("common.everyone") },
+            { value: "comune", label: place },
           ]}
         />
-      </View>
+      </ScrollView>
       {unlocked && dropTipSeen && posts.some((p) => !p.isDemo) && <SeedTip id="verify" text={t("seed.tips.verify")} />}
     </View>
   );
@@ -243,9 +175,16 @@ export default function Feed() {
             <Sprout size={56} />
             <Text style={{ fontFamily: F.medium, fontSize: 20, letterSpacing: -0.6, color: C.ink }}>{t("feed.quiet")}</Text>
             <Text style={{ fontFamily: F.regular, color: C.mute, textAlign: "center" }}>
-              {lens === "groups" ? t("groups.noProofs") : lens === "everyone" ? t("feed.quietEveryone") : t("feed.quietComune", { place })}
+              {lens === "groups"
+                ? t("groups.noProofs")
+                : lens === "friends"
+                  ? t("feed.quietFriends")
+                  : lens === "comune"
+                    ? t("feed.quietComune", { place })
+                    : t("feed.quietAll", { place })}
             </Text>
             {lens === "groups" && <Button label={t("community.title")} size="md" onPress={() => router.navigate("/(tabs)/community")} style={{ marginTop: 6 }} />}
+            {lens === "friends" && <Button label={t("profile.friends.find")} size="md" icon="people" onPress={() => router.push("/friends")} style={{ marginTop: 6 }} />}
           </Animated.View>
         }
         showsVerticalScrollIndicator={false}

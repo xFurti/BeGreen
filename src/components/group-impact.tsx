@@ -1,19 +1,58 @@
 import { router } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ScrollView, Share, Text, View } from "react-native";
 
 import { Bar, Button, Chip, Mono, SdgTags, SourceBadge } from "@/components/ui";
 import { ACTIONS, type ActionId } from "@/data/actions";
-import type { Community } from "@/data/community";
+import { isCity, type Community } from "@/data/community";
+import { useCommunityFeed } from "@/hooks/use-community-feed";
 import { useNow } from "@/hooks/use-now";
 import { usePulse } from "@/hooks/use-pulse";
 import { actionCopy, questTitle } from "@/i18n/content";
-import { formatNumber } from "@/i18n/format";
+import { formatDecimal, formatNumber, intlLocale } from "@/i18n/format";
 import { useI18n } from "@/i18n/use-i18n";
 import { monthKey } from "@/services/groups";
 import { useCommunity } from "@/store/community-store";
 import { F, R } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
+
+const impactOf = (counts: [ActionId, number][], unit: string) =>
+  counts.reduce((sum, [act, n]) => sum + (ACTIONS[act].impact.unit === unit ? ACTIONS[act].impact.value * n : 0), 0);
+
+// This month's impact of a group or a city, as one big number: seen, not pushed.
+// A group counts from its server-side tally; a city from the proofs taken there.
+export function ImpactHero({ community }: { community: Community }) {
+  const { C } = useTheme();
+  const { t, language } = useI18n();
+  const now = useNow();
+  const month = monthKey(now);
+  const tally = useCommunity((s) => s.progress[community.id]?.months[month]);
+  const feed = useCommunityFeed(community);
+  const counts = useMemo((): [ActionId, number][] => {
+    if (!isCity(community) && tally) return (Object.entries(tally) as [ActionId, number][]).filter(([, n]) => n > 0);
+    const out: Partial<Record<ActionId, number>> = {};
+    for (const it of feed) if (it.kind === "post" && monthKey(it.post.createdAt) === month) out[it.post.action] = (out[it.post.action] ?? 0) + 1;
+    return Object.entries(out) as [ActionId, number][];
+  }, [community, tally, feed, month]);
+  const acts = counts.reduce((n, [, v]) => n + v, 0);
+  const co2 = impactOf(counts, "kg CO₂e");
+  const items = Math.round(impactOf(counts, "items"));
+  const monthName = new Date(now).toLocaleDateString(intlLocale(language), { month: "long" });
+  return (
+    <View style={{ backgroundColor: C.mint, borderRadius: R.xl, borderCurve: "continuous", padding: 20, gap: 6 }}>
+      <Mono color={C.forestInk}>{t("groups.impactKicker", { month: monthName })}</Mono>
+      <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 10, flexWrap: "wrap" }}>
+        <Text selectable style={{ fontFamily: F.medium, fontSize: 64, lineHeight: 66, letterSpacing: -3, color: C.forestInk, fontVariant: ["tabular-nums"] }}>
+          {co2 < 10 && co2 > 0 ? formatDecimal(co2, language, 1) : formatNumber(Math.round(co2), language)}
+        </Text>
+        <Text style={{ fontFamily: F.medium, fontSize: 16, color: C.forestInk, paddingBottom: 10 }}>{t("groups.impactUnit")}</Text>
+      </View>
+      <Text style={{ fontFamily: F.regular, fontSize: 14, lineHeight: 20, color: C.ink2 }}>
+        {acts ? t("groups.impactLine", { count: formatNumber(acts, language), items: formatNumber(items, language) }) : t("groups.impactEmpty")}
+      </Text>
+    </View>
+  );
+}
 
 export function GroupImpact({ community }: { community: Community }) {
   const { C, T } = useTheme();
@@ -58,7 +97,7 @@ export function GroupImpact({ community }: { community: Community }) {
         <View style={{ flexDirection: "row", gap: 8 }}>
           {[[t("groups.actions"), total], [t("groups.estimatedCo2"), co2], [t("groups.items"), items]].map(([label, n]) => (
             <View key={label} style={{ flex: 1, padding: 12, gap: 6, backgroundColor: C.card, borderRadius: R.md }}>
-              <Text style={{ fontFamily: F.medium, fontSize: 25, color: C.ink }}>{formatNumber(Number(n), language)}</Text>
+              <Text style={{ fontFamily: F.medium, fontSize: 32, letterSpacing: -1, color: C.ink, fontVariant: ["tabular-nums"] }}>{formatNumber(Number(n), language)}</Text>
               <Text style={T.caption}>{label}</Text>
             </View>
           ))}

@@ -82,6 +82,7 @@ export default function RootLayout() {
           <Stack.Screen name="community/[id]" options={{ title: "" }} />
           <Stack.Screen name="spot/[id]" options={{ title: "" }} />
           <Stack.Screen name="member/[id]" options={{ title: "" }} />
+          <Stack.Screen name="friends" options={{ title: "" }} />
           <Stack.Screen name="saved" options={{ title: "" }} />
           <Stack.Screen name="map/[id]" options={{ headerShown: false, animation: "fade" }} />
           <Stack.Screen name="add-spot" options={{ presentation: "fullScreenModal", headerShown: false }} />
