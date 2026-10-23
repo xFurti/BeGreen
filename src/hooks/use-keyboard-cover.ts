@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ComponentRef } from "react";
 import { Keyboard, View, type KeyboardEvent } from "react-native";
 
-import { keyboardCover } from "@/services/keyboard-inset.mjs";
+import { keyboardCover } from "@/services/keyboard-inset";
 
 export function useKeyboardCover() {
   const root = useRef<ComponentRef<typeof View>>(null);

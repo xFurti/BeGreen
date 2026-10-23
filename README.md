@@ -85,7 +85,7 @@ Without the two environment variables below the app still runs, on this phone on
 `src/services/leaf.ts` has two modes:
 
 - **Grounded local engine (default):** answers by recognising the question's intent, using only the live Pulse numbers. It never invents a value and always cites sources. It works offline.
-- **AI backend:** set `EXPO_PUBLIC_LEAF_ENDPOINT`. The app sends `POST { question, audience, pulse, insights }` and expects `{ text, cites: SourceId[] }`. That server is where a language model reads documents, interprets proof images, identifies species and rewrites answers for the audience. **Model keys stay on the server, never in the app.** If the backend fails, the app falls back to the local engine.
+- **AI backend:** set `EXPO_PUBLIC_LEAF_ENDPOINT`. The app sends `POST { question, audience, language, pulse, insights }` (`language` is `it` or `en`) and expects `{ text, cites: SourceId[] }`. That server is where a language model reads documents, interprets proof images, identifies species and rewrites answers for the audience. **Model keys stay on the server, never in the app.** If the backend fails or ignores `language`, the app falls back to the local engine, which answers in the active language.
 
 ## Run it
 
@@ -102,6 +102,10 @@ To share the feed between phones, connect a Supabase project:
 2. Apply the schema: `npx supabase link --project-ref <ref>` and `npx supabase db push`, or paste the migration into the SQL editor.
 3. Copy `.env.example` to `.env.local` and fill in `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (Project Settings → API). Both are public; never put a secret key in the app.
 4. Restart `npx expo start`. Two phones (or a browser and a private window) on the same Comune now share the Drop, the feed and the league.
+
+## Language
+
+The interface is Italian or English. On first launch BeGreen uses Italian if the device language is Italian and English otherwise. A switch on onboarding (beside Skip) and on Me changes it immediately, keeps the current screen, and survives a restart. Signing out keeps the chosen language and returns to onboarding. Captions, comments and names people typed stay as they wrote them. Drop, Pulse explanations, My Comune and Leaf’s local answers follow the active language and keep the same measured numbers: the shared daily challenge stores its readings, and every phone writes its title and text in its own language.
 
 ```bash
 npm run typecheck
@@ -134,8 +138,9 @@ assets/                   Icon, splash, demo photos (Unsplash), 5 s proof clips
 ## Design system
 
 - **White, black and one living green.** White paper and black ink, with a brand green family in `theme/tokens.ts`: `forest` (deep canopy, for dark surfaces and green text), `leaf` (fills, icons, progress; at least 4.5:1 on white and mint), `lime` (new growth, accents on dark only) and `mint` (soft tints). Data keeps its own signal colours (air bands, source kinds, recording red).
-- **Nature motifs** in `components/nature.tsx`: the leaf on the wordmark, a sprout for empty states, slowly drifting organic blobs and leaf-shaped corners on the Drop and Pulse cards, a switch that sprouts a leaf (after a [uiverse.io](https://uiverse.io/Creatlydev/white-vampirebat-27) toggle), leaves flying out when you verify a proof and leaf confetti on the celebration (after [React Bits](https://reactbits.dev) Click Spark and Aurora). They are decorative and hidden from screen readers.
-- **Geist Medium** for the wordmark and headlines, tracked tight; Geist for body copy; **Geist Mono** for metadata, labels and numbers (`SDG 13`, `PROOF 0:05`, `09:42:15`).
+- **Logo** from the BeGreen Brand Kit v1.0 in `components/logo.tsx`: the leaf "B" mark and the lockup, drawn as vectors in Canopy (`#152315`). App icon, Android adaptive icon and splash are Canopy on Proof Lime (`#C8E61A`). Never lime on white, never stretch, rotate or rearrange the lockup; minimum 88 px wide for the lockup, 16 px tall for the mark.
+- **Nature motifs** in `components/nature.tsx`: a sprout for empty states, slowly drifting organic blobs and leaf-shaped corners on the Drop and Pulse cards, a switch that sprouts a leaf (after a [uiverse.io](https://uiverse.io/Creatlydev/white-vampirebat-27) toggle), leaves flying out when you verify a proof and leaf confetti on the celebration (after [React Bits](https://reactbits.dev) Click Spark and Aurora). They are decorative and hidden from screen readers.
+- **Geist Medium** for headlines, tracked tight; Geist for body copy; **Geist Mono** for metadata, labels and numbers (`SDG 13`, `PROOF 0:05`, `09:42:15`).
 - Editorial layout: hairline rules, numbered sections (`01`, `02`…), big tabular numbers.
 - Deep green is reserved for moments that matter: the Drop, your own row in the league, the celebration, the shutter. The camera stays black.
 - Haptics on every meaningful press; springs on entry; count-up numbers; a confetti burst when you post.

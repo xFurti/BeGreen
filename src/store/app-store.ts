@@ -3,10 +3,14 @@ import "expo-sqlite/localStorage/install";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
-import { toast } from "@/components/ui";
+import { toast } from "@/components/toast";
 import { ACTIONS, type ActionId } from "@/data/actions";
 import { DEMO_AUTHOR } from "@/data/demo";
 import type { Audience, Comune, Explain, Post, Role, Squad, User } from "@/data/types";
+import { translate, type MessageKey } from "@/i18n/catalog";
+import { deviceLanguage } from "@/i18n/device";
+import { applyPersisted } from "@/i18n/persist";
+import type { Language } from "@/i18n/schema";
 import { saveComune } from "@/services/comuni";
 import type { Drop } from "@/services/drop";
 import { DEFAULT_PLACE, type Place, type Pulse } from "@/services/env";
@@ -29,6 +33,7 @@ import { ensureSession, hasBackend } from "@/services/supabase";
 export type Profile = { name: string; handle: string; role: Role };
 
 type State = {
+  language: Language;
   onboarded: boolean;
   // Supabase user id, or a device-only id when no backend is configured.
   userId: string;
@@ -73,12 +78,14 @@ type Actions = {
   createSquad: (s: Pick<Squad, "name" | "kind" | "place" | "quest">) => Promise<Squad>;
   joinSquad: (code: string) => Promise<Squad | null>;
   nudge: (userId: string) => void;
+  setLanguage: (language: Language) => void;
   reset: () => void;
 };
 
 const localId = () => `local-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 
 const initial: State = {
+  language: deviceLanguage(),
   onboarded: false,
   userId: "",
   profile: { name: "", handle: "", role: "student" },
@@ -99,9 +106,11 @@ const initial: State = {
 
 const D = 864e5;
 
+const tr = (key: MessageKey) => translate(useApp.getState().language, key);
+
 function fail(e: unknown) {
   if (__DEV__) console.warn(e);
-  toast("Couldn’t reach BeGreen. Try again in a moment.", "refresh");
+  toast(tr("shared.offline"), "refresh");
 }
 
 const patchPost = (posts: Post[], id: string, f: (p: Post) => Post) => posts.map((p) => (p.id === id ? f(p) : p));
@@ -238,13 +247,15 @@ export const useApp = create<State & Actions>()(
         return squad;
       },
       nudge: (userId) => set({ nudged: { ...get().nudged, [userId]: Date.now() } }),
-      reset: () => set({ ...initial }),
+      setLanguage: (language) => set({ language }),
+      reset: () => set({ ...initial, language: get().language }),
     }),
     {
       name: "begreen-v2",
       storage: createJSONStorage(() => localStorage),
       // Bundled assets (numbers) are stable across reloads in the same build.
       partialize: (s): State => ({
+        language: s.language,
         onboarded: s.onboarded,
         userId: s.userId,
         profile: s.profile,
@@ -262,6 +273,10 @@ export const useApp = create<State & Actions>()(
         nudged: s.nudged,
         syncedAt: s.syncedAt,
       }),
+      merge: (persisted, current) => {
+        const raw = (persisted ?? {}) as Record<string, unknown>;
+        return { ...current, ...applyPersisted(raw, deviceLanguage()) };
+      },
     },
   ),
 );
@@ -293,7 +308,7 @@ async function send(post: Post): Promise<void> {
     // Already did today's challenge (e.g. from another phone): post it as a regular proof.
     if ((e as { code?: string }).code === "23505" && post.challengeId) return send({ ...post, challengeId: undefined, isDrop: false });
     if (__DEV__) console.warn(e);
-    toast("Saved on this phone. It’ll post when you’re back online.", "refresh");
+    toast(tr("shared.savedLocally"), "refresh");
   }
 }
 
@@ -410,10 +425,12 @@ export function useAuthor() {
   const profiles = useApp((s) => s.profiles);
   const me = useApp((s) => s.userId);
   const profile = useApp((s) => s.profile);
+  const language = useApp((s) => s.language);
   return (id: string): User => {
-    if (id === DEMO_AUTHOR.id) return DEMO_AUTHOR;
-    if (id === me) return { id, name: profile.name || "You", handle: profile.handle || "you", role: profile.role, tag: "You" };
-    return profiles[id] ?? { id, name: "BeGreen user", handle: "someone" };
+    const t = (key: MessageKey) => translate(language, key);
+    if (id === DEMO_AUTHOR.id) return { ...DEMO_AUTHOR, name: t("demo.author"), tag: t("demo.tag") };
+    if (id === me) return { id, name: profile.name || t("common.you"), handle: profile.handle || t("common.youInline"), role: profile.role, tag: t("common.you") };
+    return profiles[id] ?? { id, name: t("shared.someone"), handle: "someone" };
   };
 }
 

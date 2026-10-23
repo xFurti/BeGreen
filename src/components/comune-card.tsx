@@ -7,6 +7,10 @@ import { Mono, SourceBadge } from "@/components/ui";
 import { COMUNI, DATA_YEARS, PM10_STATIONS, PROVINCE } from "@/data/comuni";
 import type { SourceId } from "@/data/sources";
 import type { ComuneView } from "@/hooks/use-comune";
+import type { Translator } from "@/i18n/catalog";
+import { formatDecimal, formatNumber } from "@/i18n/format";
+import type { Language } from "@/i18n/schema";
+import { useI18n } from "@/i18n/use-i18n";
 import {
   askTheComune,
   betterThan,
@@ -26,26 +30,26 @@ const DOT: Record<Level, string> = { good: C.green, ok: C.amber, bad: C.red, inf
 
 type Row = { key: string; icon: IconName; label: string; value: string; unit?: string; level: Level; note: string; source: SourceId; when: string; loading?: boolean };
 
-const pct = (share?: number) => (share == null ? "" : ` Better than ${Math.round(share * 100)}% of comuni in the province.`);
-const fmt = (n: number, d = 0) => n.toLocaleString("en", { maximumFractionDigits: d, minimumFractionDigits: d });
-
-function rowsFor(view: ComuneView, pulse: Pulse | null) {
+function rowsFor(view: ComuneView, pulse: Pulse | null, t: Translator, lang: Language) {
   const rows: Row[] = [];
   const levels: Parameters<typeof askTheComune>[1] = {};
   const s = view.stats;
+  const fmt = (n: number, d = 0) => (d ? formatDecimal(n, lang, d) : formatNumber(Math.round(n), lang));
+  const pct = (share?: number) => (share == null ? "" : ` ${t("myComune.better", { pct: Math.round(share * 100) })}`);
+  const now = t("myComune.now");
 
   if (pulse?.air && !pulse.sample) {
-    const b = aqiBand(pulse.air.aqi);
+    const b = aqiBand(pulse.air.aqi, lang);
     rows.push({
       key: "aqi",
       icon: "air",
-      label: "Air today",
+      label: t("myComune.air"),
       value: String(pulse.air.aqi),
       unit: "EAQI",
       level: b.level,
-      note: `${b.label}. Model estimate on a ~10 km grid, not a station.`,
+      note: t("myComune.airNote", { band: b.label }),
       source: "cams",
-      when: "now",
+      when: now,
     });
   }
 
@@ -55,13 +59,13 @@ function rowsFor(view: ComuneView, pulse: Pulse | null) {
     rows.push({
       key: "sensor",
       icon: "people",
-      label: "Citizen sensors · PM2.5",
+      label: t("myComune.sensors"),
       value: v ? fmt(v.median, 1) : "…",
       unit: "µg/m³",
       level: v ? pm25Level(v.median) : "info",
-      note: v ? `Median of ${v.sensors} low-cost sensor${v.sensors === 1 ? "" : "s"} within 10 km. WHO daily guideline: 15.` : "Reading nearby sensors…",
+      note: v ? t(v.sensors === 1 ? "myComune.sensorsNoteOne" : "myComune.sensorsNote", { count: v.sensors }) : t("myComune.sensorsLoading"),
       source: "sensor",
-      when: "now",
+      when: now,
       loading: !v,
     });
   }
@@ -73,13 +77,14 @@ function rowsFor(view: ComuneView, pulse: Pulse | null) {
       rows.push({
         key: "pm10",
         icon: "chart",
-        label: "PM10 · official station",
+        label: t("myComune.pm10"),
         value: String(st.station.pm10Mean),
-        unit: "µg/m³ / year",
+        unit: t("myComune.pm10Unit"),
         level: levels.pm10,
-        note:
-          `${st.station.name}${st.km ? ` (${st.km} km)` : ""}: ${st.station.pm10Days} days over the daily limit. ` +
-          `EU limit from 2030: 20 µg/m³ and 18 days.`,
+        note: t("myComune.pm10Note", {
+          station: st.km ? `${st.station.name} (${t("common.km", { km: formatNumber(st.km, lang) })})` : st.station.name,
+          days: st.station.pm10Days,
+        }),
         source: "arpa",
         when: String(st.station.year),
       });
@@ -91,11 +96,13 @@ function rowsFor(view: ComuneView, pulse: Pulse | null) {
       rows.push({
         key: "co2",
         icon: "bolt",
-        label: "CO₂ emitted in the comune",
+        label: t("myComune.co2"),
         value: fmt(perHead, 1),
-        unit: "t / resident",
+        unit: t("myComune.co2Unit"),
         level: levels.emissions,
-        note: `Mostly ${sectorText(s.co2Top)} (${s.co2TopPct}%). ${s.pm10TopPct}% of local PM10 comes from ${sectorText(s.pm10Top)}.${pct(share)}`,
+        note:
+          t("myComune.co2Note", { co2Top: sectorText(s.co2Top, lang), co2Pct: s.co2TopPct ?? 0, pm10Pct: s.pm10TopPct ?? 0, pm10Top: sectorText(s.pm10Top, lang) }) +
+          pct(share),
         source: "arpa",
         when: String(DATA_YEARS.emissions),
       });
@@ -106,11 +113,11 @@ function rowsFor(view: ComuneView, pulse: Pulse | null) {
       rows.push({
         key: "soil",
         icon: "soil",
-        label: "Land sealed",
+        label: t("myComune.soil"),
         value: fmt(s.soilSealedPct, 1),
-        unit: "% of area",
+        unit: t("myComune.soilUnit"),
         level: levels.soil,
-        note: `${s.soilNewHa != null ? `${fmt(s.soilNewHa, 2)} ha newly sealed in the last year (net).` : ""}${pct(share)}`,
+        note: `${s.soilNewHa != null ? t("myComune.soilNote", { ha: fmt(s.soilNewHa, 2) }) : ""}${pct(share)}`.trim(),
         source: "ispra",
         when: String(DATA_YEARS.soil),
       });
@@ -120,11 +127,13 @@ function rowsFor(view: ComuneView, pulse: Pulse | null) {
       rows.push({
         key: "waste",
         icon: "recycle",
-        label: "Separate collection",
+        label: t("myComune.waste"),
         value: fmt(s.recyclingPct, 1),
         unit: "%",
         level: levels.recycling,
-        note: `Legal target ${RECYCLING_TARGET}%.${s.wasteKgPerCapita != null ? ` ${fmt(s.wasteKgPerCapita)} kg of urban waste per resident a year.` : ""}`,
+        note:
+          t("myComune.wasteTarget", { target: RECYCLING_TARGET }) +
+          (s.wasteKgPerCapita != null ? ` ${t("myComune.wasteKg", { kg: fmt(s.wasteKgPerCapita) })}` : ""),
         source: "rifiuti",
         when: String(DATA_YEARS.waste),
       });
@@ -137,12 +146,12 @@ function rowsFor(view: ComuneView, pulse: Pulse | null) {
     rows.push({
       key: "species",
       icon: "binoculars",
-      label: "Species recorded nearby",
+      label: t("myComune.species"),
       value: v ? (v.species >= 2000 ? "2000+" : fmt(v.species)) : "…",
       level: "info",
-      note: v ? `Within 5 km in the last 5 years, from ${fmt(v.records)} records. More records ≠ more nature.` : "Counting species records…",
+      note: v ? t("myComune.speciesNote", { records: fmt(v.records) }) : t("myComune.speciesLoading"),
       source: "gbif",
-      when: "5 yrs",
+      when: t("myComune.fiveYears"),
       loading: !v,
     });
   }
@@ -151,33 +160,34 @@ function rowsFor(view: ComuneView, pulse: Pulse | null) {
     rows.push({
       key: "areas",
       icon: "tree",
-      label: "Protected areas",
+      label: t("myComune.areas"),
       value: String(pulse.areas.length),
-      unit: "within 25 km",
+      unit: t("myComune.areasUnit"),
       level: "info",
-      note: `Closest: ${pulse.areas[0].name} (${pulse.areas[0].km} km).`,
+      note: t("myComune.areasNote", { name: pulse.areas[0].name, km: formatNumber(pulse.areas[0].km, lang) }),
       source: "osm",
-      when: "map",
+      when: t("myComune.map"),
     });
   }
 
-  return { rows, ask: s ? askTheComune(s, levels) : undefined };
+  return { rows, ask: s ? askTheComune(s, levels, lang) : undefined };
 }
 
 export function ComuneSection({ view, pulse }: { view: ComuneView; pulse: Pulse | null }) {
-  const { rows, ask } = rowsFor(view, pulse);
+  const { t, language } = useI18n();
+  const { rows, ask } = rowsFor(view, pulse, t, language);
   const name = view.stats?.name ?? view.id?.name;
 
   return (
     <View style={{ gap: 16 }}>
       <View style={{ gap: 4 }}>
-        <Text style={[T.display, { fontSize: 30 }]}>{name ?? "Finding your comune…"}</Text>
+        <Text style={[T.display, { fontSize: 30 }]}>{name ?? t("myComune.finding")}</Text>
         <Mono>
           {view.stats
-            ? `Province of ${PROVINCE} · compared with ${COMUNI.length} comuni`
+            ? t("myComune.compared", { province: PROVINCE, count: COMUNI.length })
             : view.id
-              ? "Live data only · official comune data covers the Province of Vicenza"
-              : "Approximate location (~1 km)"}
+              ? t("myComune.liveOnly", { province: PROVINCE })
+              : t("myComune.approx")}
         </Mono>
       </View>
 
@@ -204,14 +214,11 @@ export function ComuneSection({ view, pulse }: { view: ComuneView; pulse: Pulse 
 
       {ask && (
         <View style={{ backgroundColor: C.card, borderRadius: R.lg, borderCurve: "continuous", padding: 16, gap: 8 }}>
-          <Mono color={C.ink}>What to ask your Comune</Mono>
+          <Mono color={C.ink}>{t("myComune.ask")}</Mono>
           <Text style={T.callout}>{ask}</Text>
         </View>
       )}
-      <Text style={T.caption}>
-        Official data is yearly and per comune; sensors and models are live but approximate. Colours compare with legal targets or with the other
-        comuni of the province.
-      </Text>
+      <Text style={T.caption}>{t("myComune.footnote")}</Text>
     </View>
   );
 }

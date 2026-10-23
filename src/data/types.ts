@@ -30,6 +30,7 @@ export type Post = {
   photo: Media;
   proof: Media; // 5-second proof video
   caption: string;
+  captionKey?: string;
   place: string;
   createdAt: number;
   verifiedBy: string[];

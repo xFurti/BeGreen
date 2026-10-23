@@ -124,29 +124,56 @@ export function citizenPm25(readings: SensorReading[]): { median: number; sensor
   return { median: Math.round(m * 10) / 10, sensors: v.length };
 }
 
-// INEMAR macro-sector names (Italian, as published) → plain English for the card.
-const SECTOR: Record<string, string> = {
-  "Combustione non industriale": "home heating (wood stoves above all)",
-  "Trasporto su strada": "road traffic",
-  "Combustione nell'industria": "industrial combustion",
-  "Processi produttivi": "industrial processes",
-  "Trattamento e smaltimento rifiuti": "waste treatment",
-  Agricoltura: "farming",
-  "Altri trasporti e macchinari mobili": "off-road machines",
-  "Produzione energia e trasformazione combustibili": "power generation",
-  "Uso di solventi": "solvents",
-  "Altre sorgenti e assorbimenti": "other sources",
-  "Estrazione e distribuzione combustibili": "fuel distribution",
+// This module runs in plain Node tests without the app's aliases, so its two generated texts carry their own Italian.
+type Lang = "en" | "it";
+
+// INEMAR macro-sector names (Italian, as published) → plain words for the card.
+const SECTOR: Record<string, { en: string; it: string }> = {
+  "Combustione non industriale": { en: "home heating (wood stoves above all)", it: "riscaldamento domestico (soprattutto stufe a legna)" },
+  "Trasporto su strada": { en: "road traffic", it: "traffico stradale" },
+  "Combustione nell'industria": { en: "industrial combustion", it: "combustione industriale" },
+  "Processi produttivi": { en: "industrial processes", it: "processi produttivi" },
+  "Trattamento e smaltimento rifiuti": { en: "waste treatment", it: "trattamento dei rifiuti" },
+  Agricoltura: { en: "farming", it: "agricoltura" },
+  "Altri trasporti e macchinari mobili": { en: "off-road machines", it: "macchine e mezzi non stradali" },
+  "Produzione energia e trasformazione combustibili": { en: "power generation", it: "produzione di energia" },
+  "Uso di solventi": { en: "solvents", it: "solventi" },
+  "Altre sorgenti e assorbimenti": { en: "other sources", it: "altre fonti" },
+  "Estrazione e distribuzione combustibili": { en: "fuel distribution", it: "distribuzione dei combustibili" },
 };
-export const sectorText = (s?: string) => (s ? (SECTOR[s] ?? s.toLowerCase()) : "");
+export const sectorText = (s?: string, lang: Lang = "en") => (s ? (SECTOR[s]?.[lang] ?? s.toLowerCase()) : "");
+
+const ASK = {
+  en: {
+    heating: (pct?: number) => `Most PM10 here comes from home heating (${pct}%). Ask about incentives to replace old wood stoves and winter burning rules.`,
+    recycling: () => `Separate collection is below the ${RECYCLING_TARGET}% legal target. Ask for door-to-door collection and a clear waste calendar.`,
+    soil: () => "More land is sealed than in most comuni nearby. Ask that new projects reuse brownfield sites before building on fields.",
+    emissions: (sector: string) => `CO₂ per resident is high, mainly from ${sector}. Ask for the Comune's climate plan (PAESC) and its progress.`,
+    pm10: () => "PM10 is above the 2030 EU limit. Ask for safe cycling routes to schools and traffic limits on bad-air days.",
+    fine: () => "Indicators are in line with the province. Ask the Comune how it plans to meet the 2030 EU air limits, and join a local squad.",
+  },
+  it: {
+    heating: (pct?: number) =>
+      `Qui la maggior parte del PM10 viene dal riscaldamento domestico (${pct}%). Chiedi degli incentivi per sostituire le vecchie stufe a legna e delle regole sui fuochi d'inverno.`,
+    recycling: () => `La raccolta differenziata è sotto l'obiettivo di legge del ${RECYCLING_TARGET}%. Chiedi la raccolta porta a porta e un calendario chiaro.`,
+    soil: () => "Qui il suolo consumato è più che nella maggior parte dei comuni vicini. Chiedi che i nuovi progetti riusino aree dismesse prima di costruire sui campi.",
+    emissions: (sector: string) => `La CO₂ per residente è alta, soprattutto da ${sector}. Chiedi il piano clima del Comune (PAESC) e a che punto è.`,
+    pm10: () => "Il PM10 supera il limite UE del 2030. Chiedi percorsi ciclabili sicuri verso le scuole e limiti al traffico nei giorni di aria cattiva.",
+    fine: () => "Gli indicatori sono in linea con la provincia. Chiedi al Comune come pensa di rispettare i limiti UE sull'aria del 2030, e unisciti a una squad locale.",
+  },
+};
 
 // The one thing to ask the Comune: driven by the weakest official indicator.
-export function askTheComune(c: ComuneStats, levels: Partial<Record<"pm10" | "emissions" | "soil" | "recycling", Level>>): string {
-  if (levels.pm10 === "bad" && c.pm10Top === "Combustione non industriale")
-    return `Most PM10 here comes from home heating (${c.pm10TopPct}%). Ask about incentives to replace old wood stoves and winter burning rules.`;
-  if (levels.recycling === "bad") return `Separate collection is below the ${RECYCLING_TARGET}% legal target. Ask for door-to-door collection and a clear waste calendar.`;
-  if (levels.soil === "bad") return "More land is sealed than in most comuni nearby. Ask that new projects reuse brownfield sites before building on fields.";
-  if (levels.emissions === "bad") return `CO₂ per resident is high, mainly from ${sectorText(c.co2Top)}. Ask for the Comune's climate plan (PAESC) and its progress.`;
-  if (levels.pm10 === "bad") return "PM10 is above the 2030 EU limit. Ask for safe cycling routes to schools and traffic limits on bad-air days.";
-  return "Indicators are in line with the province. Ask the Comune how it plans to meet the 2030 EU air limits, and join a local squad.";
+export function askTheComune(
+  c: ComuneStats,
+  levels: Partial<Record<"pm10" | "emissions" | "soil" | "recycling", Level>>,
+  lang: Lang = "en",
+): string {
+  const a = ASK[lang];
+  if (levels.pm10 === "bad" && c.pm10Top === "Combustione non industriale") return a.heating(c.pm10TopPct);
+  if (levels.recycling === "bad") return a.recycling();
+  if (levels.soil === "bad") return a.soil();
+  if (levels.emissions === "bad") return a.emissions(sectorText(c.co2Top, lang));
+  if (levels.pm10 === "bad") return a.pm10();
+  return a.fine();
 }

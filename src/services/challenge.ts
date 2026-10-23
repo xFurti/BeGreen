@@ -1,6 +1,7 @@
 import type { ActionId } from "@/data/actions";
 import type { SourceId } from "@/data/sources";
 import type { Comune } from "@/data/types";
+import type { Language } from "@/i18n/schema";
 import { saveComune } from "@/services/comuni";
 import { buildDrop, challengeId, type Drop } from "@/services/drop";
 import type { Pulse } from "@/services/env";
@@ -33,9 +34,9 @@ async function load(id: string): Promise<Drop | null> {
 // Today's challenge for a Comune. The first person to open the app today builds it
 // from the Comune's live readings; everyone after reads the same row.
 // A sample (offline) Pulse never becomes the shared challenge.
-export async function ensureChallenge(comune: Comune, pulse: Pulse): Promise<Drop> {
+export async function ensureChallenge(comune: Comune, pulse: Pulse, lang: Language): Promise<Drop> {
   const id = challengeId(comune.id);
-  const built = { ...buildDrop(pulse, id), offline: pulse.sample };
+  const built = { ...buildDrop(pulse, id, lang), offline: pulse.sample };
   if (!supabase) return built;
   try {
     if (!(await supabase.auth.getSession()).data.session) return built;

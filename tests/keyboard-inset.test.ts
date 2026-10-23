@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { composerInset, keyboardCover } from "../src/services/keyboard-inset.mjs";
+import { composerInset, keyboardCover } from "../src/services/keyboard-inset.ts";
 
 test("sotto l'header la barra sale di tutta la tastiera", () => {
   const header = 96;

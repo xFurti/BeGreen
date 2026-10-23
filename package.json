@@ -20,6 +20,7 @@
     "expo-image-picker": "~58.0.10",
     "expo-linear-gradient": "~58.0.3",
     "expo-linking": "~58.0.14",
+    "expo-localization": "~58.0.5",
     "expo-location": "~58.0.18",
     "expo-router": "~58.0.25",
     "expo-splash-screen": "~58.0.11",
@@ -52,7 +53,7 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "lint": "expo lint",
-    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test .github/scripts/*.test.cjs tests/*.test.mjs tests/*.test.ts supabase/tests/*.test.mjs",
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test .github/scripts/*.test.cjs tests/*.test.ts supabase/tests/*.test.mjs && node --import ./scripts/register-alias.mjs --test src/i18n/i18n.test.ts",
     "verify": "npm run typecheck && npm run lint && npm test"
   },
   "private": true
