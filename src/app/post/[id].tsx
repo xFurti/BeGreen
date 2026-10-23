@@ -1,6 +1,6 @@
 import { Stack, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { Alert, KeyboardAvoidingView, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -10,6 +10,8 @@ import { ProofMedia } from "@/components/proof-media";
 import { Avatar, Mono, SdgTags, Tag } from "@/components/ui";
 import { ACTIONS } from "@/data/actions";
 import { SDGS } from "@/data/sdgs";
+import { useKeyboardCover } from "@/hooks/use-keyboard-cover";
+import { composerInset } from "@/services/keyboard-inset.mjs";
 import { useAllPosts, useApp } from "@/store/app-store";
 import { C, F, R, T } from "@/theme/tokens";
 import { haptic, timeAgo } from "@/utils/format";
@@ -17,6 +19,7 @@ import { haptic, timeAgo } from "@/utils/format";
 export default function PostDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { bottom } = useSafeAreaInsets();
+  const { ref: keyboardRoot, cover } = useKeyboardCover();
   const post = useAllPosts().find((p) => p.id === id);
   const meName = useApp((s) => s.profile.name);
   const comment = useApp((s) => s.comment);
@@ -42,7 +45,7 @@ export default function PostDetail() {
   };
 
   return (
-    <KeyboardAvoidingView behavior={process.env.EXPO_OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={100} style={{ flex: 1, backgroundColor: C.bg }}>
+    <View ref={keyboardRoot} collapsable={false} style={{ flex: 1, backgroundColor: C.bg }}>
       <Stack.Screen options={{ title: a.name }} />
       <ScrollView contentContainerStyle={{ padding: 16, gap: 20, paddingBottom: 30 }} contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled">
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
@@ -150,7 +153,7 @@ export default function PostDetail() {
           alignItems: "center",
           paddingHorizontal: 16,
           paddingTop: 10,
-          paddingBottom: bottom + 10,
+          paddingBottom: composerInset(bottom, cover),
           borderTopWidth: 1,
           borderTopColor: C.line,
           backgroundColor: C.bg,
@@ -174,6 +177,6 @@ export default function PostDetail() {
           <Icon name="send" size={17} color={text.trim() ? C.lime : C.faint} />
         </Pressable>
       </View>
-    </KeyboardAvoidingView>
+    </View>
   );
 }

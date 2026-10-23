@@ -4,7 +4,7 @@ import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { KeyboardAvoidingView, Pressable, ScrollView, Share, Text, TextInput, View } from "react-native";
+import { Pressable, ScrollView, Share, Text, TextInput, View } from "react-native";
 import Animated, {
   Easing,
   FadeIn,
@@ -30,6 +30,7 @@ import { Button, Chip, IconButton, Mono, Press, SdgTags, Segmented, useCountUp }
 import { ACTION_LIST, ACTIONS, type ActionId } from "@/data/actions";
 import { DEMO_BY_ACTION } from "@/data/seed";
 import type { Audience, Media } from "@/data/types";
+import { useKeyboardCover } from "@/hooks/use-keyboard-cover";
 import { usePulse } from "@/hooks/use-pulse";
 import { persistMedia } from "@/services/media";
 import { leagueOf, postedToday, sdgsOf, streakOf, useApp } from "@/store/app-store";
@@ -231,6 +232,7 @@ function Done(r: Result) {
 export default function Capture() {
   const params = useLocalSearchParams<{ action?: ActionId }>();
   const { top, bottom } = useSafeAreaInsets();
+  const { ref: keyboardRoot, cover } = useKeyboardCover();
   const { drop, pulse } = usePulse();
   const [perm, requestPerm] = useCameraPermissions();
   const cam = useRef<CameraView>(null);
@@ -386,7 +388,7 @@ export default function Capture() {
     const a = ACTIONS[action];
     const isDropAct = action === drop.action;
     return (
-      <KeyboardAvoidingView behavior={process.env.EXPO_OS === "ios" ? "padding" : undefined} style={{ flex: 1, backgroundColor: C.bg }}>
+      <View ref={keyboardRoot} collapsable={false} style={{ flex: 1, backgroundColor: C.bg, paddingBottom: cover }}>
         <View
           style={{
             paddingTop: top + 6,
@@ -515,10 +517,10 @@ export default function Capture() {
             <LeafSwitch value={shareSpot} onValueChange={setShareSpot} label="Show my area" />
           </View>
         </ScrollView>
-        <View style={{ paddingHorizontal: 16, paddingBottom: bottom + 10, paddingTop: 8 }}>
+        <View style={{ paddingHorizontal: 16, paddingBottom: cover > 0 ? 10 : bottom + 10, paddingTop: 8 }}>
           <Button label="Post BeGreen" kind="green" trailing={`+${a.seeds + (isDropAct ? 10 : 0)}`} onPress={post} />
         </View>
-      </KeyboardAvoidingView>
+      </View>
     );
   }
 
