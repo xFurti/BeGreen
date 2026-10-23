@@ -20,6 +20,7 @@ type State = {
   verified: Record<string, true>;
   reacted: Record<string, string>;
   comments: Record<string, Comment[]>;
+  flagged: Record<string, true>;
   squads: Squad[];
   bonusSeeds: number;
   nudged: Record<string, number>;
@@ -43,6 +44,7 @@ type Actions = {
   verify: (postId: string) => void;
   react: (postId: string, emoji: string) => void;
   comment: (postId: string, text: string) => void;
+  flag: (postId: string) => void;
   createSquad: (s: Pick<Squad, "name" | "kind" | "place">) => Squad;
   joinSquad: (code: string) => Squad | null;
   nudge: (userId: string) => void;
@@ -59,6 +61,7 @@ const initial: State = {
   verified: {},
   reacted: {},
   comments: {},
+  flagged: {},
   squads: SEED_SQUADS,
   bonusSeeds: 0,
   nudged: {},
@@ -141,6 +144,10 @@ export const useApp = create<State & Actions>()(
         const c: Comment = { id: `c-${Date.now()}`, authorId: ME_ID, text, createdAt: Date.now() };
         set({ comments: { ...get().comments, [postId]: [...(get().comments[postId] ?? []), c] } });
       },
+      flag: (postId) => {
+        if (get().flagged[postId]) return;
+        set({ flagged: { ...get().flagged, [postId]: true } });
+      },
       createSquad: ({ name, kind, place }) => {
         const s: Squad = {
           id: `s-${Date.now()}`,
@@ -182,6 +189,7 @@ export const useApp = create<State & Actions>()(
         verified: s.verified,
         reacted: s.reacted,
         comments: s.comments,
+        flagged: s.flagged,
         squads: s.squads,
         bonusSeeds: s.bonusSeeds,
         nudged: s.nudged,

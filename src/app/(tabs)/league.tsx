@@ -216,7 +216,7 @@ export default function League() {
                 <RacerRow key={r.id} r={r} rank={i + 1} index={i} />
               ))}
             </View>
-            <Text style={[T.caption, { textAlign: "center" }]}>Seeds from verified proofs this week. Fake proofs get flagged and lose them.</Text>
+            <Text style={[T.caption, { textAlign: "center" }]}>Seeds from verified proofs this week. Flagging a proof marks it on this device.</Text>
           </View>
         )}
 

@@ -185,6 +185,7 @@ export const PostCard = memo(function PostCard({
   const meName = useApp((s) => s.profile.name);
   const react = useApp((s) => s.react);
   const mine = useApp((s) => s.reacted[post.id]);
+  const flagged = useApp((s) => !!s.flagged[post.id]);
   const a = author(post.authorId, meName);
   const action = ACTIONS[post.action];
   const open = () => router.push({ pathname: "/post/[id]", params: { id: post.id } });
@@ -200,6 +201,7 @@ export const PostCard = memo(function PostCard({
           </Mono>
         </View>
         {post.isDrop && <Tag label="DROP" solid />}
+        {flagged && <Tag label="FLAGGED" />}
       </View>
 
       <ProofMedia
