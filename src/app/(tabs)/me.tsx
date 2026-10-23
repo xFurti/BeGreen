@@ -22,7 +22,7 @@ import { formatDecimal, formatNumber, monthName, weekdayInitials } from "@/i18n/
 import { useI18n } from "@/i18n/use-i18n";
 import { supabase } from "@/services/supabase";
 import { badgeStatsOf, dropStaleBadge, sdgsOf, seedsOf, streakOf, useApp, useLeague, useMyPosts, type ThemePref } from "@/store/app-store";
-import { F, R } from "@/theme/tokens";
+import { F } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
 

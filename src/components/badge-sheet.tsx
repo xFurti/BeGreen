@@ -1,18 +1,20 @@
 import { Image } from "expo-image";
 import { useRef, type ComponentRef } from "react";
-import { Modal, Pressable, ScrollView, Text, View } from "react-native";
+import { AccessibilityInfo, Modal, Platform, Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Bar, Button, IconButton } from "@/components/ui";
 import { BADGE_ART } from "@/data/badge-art";
 import type { Badge, BadgeStats } from "@/data/badges";
 import { useI18n } from "@/i18n/use-i18n";
-import { C, F, R, T } from "@/theme/tokens";
+import { F, R } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
 
 export function BadgeTile({ badge: b, stats, equipped, size, onOpen }: {
   badge: Badge; stats: BadgeStats; equipped: boolean; size: number; onOpen: () => void;
 }) {
+  const { C } = useTheme();
   const { t } = useI18n();
   const earned = b.earned(stats);
   const progress = b.progress ? t(b.progress.key, { n: Math.min(b.progress.of(stats), b.progress.goal), goal: b.progress.goal }) : t(b.requirement);
@@ -36,21 +38,27 @@ export function BadgeSheet({ badge: b, stats, equipped, onEquip, onUnequip, onCl
   badge: Badge; stats: BadgeStats; equipped: boolean; onEquip: () => void; onUnequip: () => void; onClose: () => void;
 }) {
   const titleRef = useRef<ComponentRef<typeof View>>(null);
+  const { C, T } = useTheme();
   const { bottom, top } = useSafeAreaInsets();
   const { t } = useI18n();
   const earned = b.earned(stats);
   const progress = b.progress;
   const current = progress ? Math.min(progress.of(stats), progress.goal) : 0;
   return (
-    <Modal transparent animationType="fade" visible onRequestClose={onClose} onShow={() => titleRef.current?.focus()}>
-      <View style={{ flex: 1, justifyContent: "flex-end", paddingTop: top + 16, backgroundColor: "rgba(0,0,0,0.45)" }}>
-        <Pressable accessible={false} onPress={onClose} style={{ position: "absolute", inset: 0 }} />
+    <Modal transparent animationType="fade" visible onRequestClose={onClose} onShow={() => {
+      const title = titleRef.current;
+      if (!title) return;
+      if (Platform.OS === "web") title.focus();
+      else AccessibilityInfo.sendAccessibilityEvent(title, "focus");
+    }}>
+      <View style={{ flex: 1, justifyContent: "flex-end", paddingTop: top + 16, backgroundColor: C.scrim }}>
+        <View accessible={false} onStartShouldSetResponder={() => true} onResponderRelease={onClose} style={{ position: "absolute", inset: 0 }} />
         <View role="dialog" accessibilityViewIsModal aria-modal accessibilityLabel={t("badges.sheetA11y", { badge: t(b.name) })}
           style={{ maxHeight: "90%", width: "100%", maxWidth: 560, alignSelf: "center", backgroundColor: C.bg, borderTopLeftRadius: 28, borderTopRightRadius: 28 }}>
           <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: bottom + 24, gap: 20 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-              <View ref={titleRef} tabIndex={-1} style={{ flex: 1 }}>
-                <Text accessibilityRole="header" style={T.title}>{t("badges.details")}</Text>
+              <View ref={titleRef} accessible accessibilityRole="header" accessibilityLabel={t("badges.sheetA11y", { badge: t(b.name) })} tabIndex={-1} style={{ flex: 1 }}>
+                <Text style={T.title}>{t("badges.details")}</Text>
               </View>
               <IconButton icon="close" label={t("common.close")} onPress={onClose} />
             </View>
@@ -62,6 +70,7 @@ export function BadgeSheet({ badge: b, stats, equipped, onEquip, onUnequip, onCl
             </View>
             {progress && (
               <View accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: progress.goal, now: current }}
+                aria-valuemin={0} aria-valuemax={progress.goal} aria-valuenow={current}
                 accessibilityLabel={t(progress.key, { n: current, goal: progress.goal })} style={{ gap: 10 }}>
                 <Bar value={current / progress.goal} />
                 <Text style={T.callout}>{t(progress.key, { n: current, goal: progress.goal })}</Text>
