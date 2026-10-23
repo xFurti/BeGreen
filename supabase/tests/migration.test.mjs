@@ -106,6 +106,19 @@ test("posts: shared in the Comune, one challenge proof each, peers verify", asyn
   await react("🔥");
   assert.equal((await as(A, `select emoji from reactions where post_id = '${p.id}'`))[0].emoji, "🔥");
   await as(B, `insert into comments (post_id, text) values ('${p.id}', 'nice')`);
+
+  // Only the author can delete it: RLS makes anyone else's delete a no-op, and
+  // verifications, reactions and comments cascade away with the row.
+  await as(B, `delete from posts where id = '${p.id}'`);
+  assert.equal((await as(A, `select id from posts where id = '${p.id}'`)).length, 1);
+  await as(A, `delete from posts where id = '${p.id}'`);
+  const gone = (await db.query(
+    `select (select count(*) from posts where id = '${p.id}')::int as post,
+       (select count(*) from verifications where post_id = '${p.id}')::int as verifications,
+       (select count(*) from reactions where post_id = '${p.id}')::int as reactions,
+       (select count(*) from comments where post_id = '${p.id}')::int as comments`,
+  )).rows[0];
+  assert.deepEqual(gone, { post: 0, verifications: 0, reactions: 0, comments: 0 });
 });
 
 test("squads: points come from the server, squad posts stay in the squad", async () => {

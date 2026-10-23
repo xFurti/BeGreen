@@ -24,6 +24,7 @@ import { mediaAccessVersion } from "@/services/storage-media";
 import {
   addComment,
   addVerification,
+  deletePost,
   countMyVerifications,
   fetchSeeds,
   fetchFeed,
@@ -112,6 +113,7 @@ type Actions = {
   react: (postId: string, emoji: string) => void;
   comment: (postId: string, text: string) => void;
   flag: (postId: string) => void;
+  removePost: (postId: string) => void;
   createSquad: (s: Pick<Squad, "name" | "kind" | "place" | "quest">) => Promise<Squad>;
   joinSquad: (code: string) => Promise<Squad | null>;
   nudge: (userId: string) => void;
@@ -292,6 +294,26 @@ export const useApp = create<State & Actions>()(
         if (!post || post.isDemo || post.authorId === s.userId || s.flagged[postId]) return;
         set({ flagged: { ...s.flagged, [postId]: true } });
       },
+      // Your own proof, gone locally at once and on the server when it was already shared.
+      removePost: (postId) => {
+        const s = get();
+        const post = s.posts.find((p) => p.id === postId);
+        if (!post || post.isDemo || post.authorId !== s.userId) return;
+        const strip = <T,>(m: Record<string, T>) => {
+          const next = { ...m };
+          delete next[postId];
+          return next;
+        };
+        set({
+          posts: s.posts.filter((p) => p.id !== postId),
+          reacted: strip(s.reacted),
+          flagged: strip(s.flagged),
+          localMedia: strip(s.localMedia),
+          localAreas: strip(s.localAreas),
+        });
+        dropStaleBadge();
+        if (hasBackend && !post.pending) deletePost(postId).catch(fail);
+      },
       createSquad: async ({ name, kind, place, quest }) => {
         const s = get();
         const code =
@@ -453,6 +475,11 @@ async function send(post: Post): Promise<Post> {
       });
       toast(tr("shared.challengeAlreadyDone"), "info");
     });
+    // Deleted while it was still uploading: take the fresh server copy down too.
+    if (!useApp.getState().posts.some((p) => p.id === post.id)) {
+      await deletePost(saved.id).catch(() => undefined);
+      return saved;
+    }
     published.set(saved.id, Date.now());
     // Keep the local files on screen: no flicker while the uploaded copies load.
     const photo = typeof post.photo === "string" && post.photo.startsWith("file:") ? post.photo : undefined;

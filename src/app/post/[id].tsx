@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { DropTag } from "@/components/drop-tag";
 import { Icon } from "@/components/icon";
-import { VERIFY_GOAL, VerifyBar } from "@/components/post-card";
+import { PostMenu, VERIFY_GOAL, VerifyBar } from "@/components/post-card";
 import { ProofMedia } from "@/components/proof-media";
 import { TitledName } from "@/components/titled-name";
 import { FollowButton, openMember } from "@/components/friends";
@@ -65,7 +65,7 @@ export default function PostDetail() {
     <View ref={keyboardRoot} collapsable={false} style={{ flex: 1, backgroundColor: C.bg }}>
       <Stack.Screen options={{ title: a.name }} />
       <ScrollView contentContainerStyle={{ padding: 16, gap: 20, paddingBottom: 30 }} contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled">
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12, zIndex: 3 }}>
           <Press
             scale={0.98}
             disabled={post.isDemo}
@@ -84,6 +84,7 @@ export default function PostDetail() {
           {!post.isDemo && <FollowButton user={a} />}
           {post.isDemo && <Tag label={t("common.demo")} />}
           {post.isDrop && <DropTag post={post} />}
+          <PostMenu post={post} onDeleted={() => router.back()} />
         </View>
 
         <ProofMedia
