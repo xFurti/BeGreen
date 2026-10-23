@@ -60,23 +60,25 @@ function CommunityRow({
   const { C } = useTheme();
   return (
     <Animated.View entering={FadeInDown.delay(index * 50).springify().damping(20)}>
-      <Press
-        scale={0.985}
-        onPress={() => open(c)}
-        accessibilityLabel={c.name}
-        style={{ flexDirection: "row", alignItems: "center", gap: 14, padding: 14, borderRadius: R.lg, borderCurve: "continuous", backgroundColor: C.card }}
-      >
-        <View style={{ width: 46, height: 46, borderRadius: 14, backgroundColor: C.forest, alignItems: "center", justifyContent: "center" }}>
-          <Icon name={COMMUNITY_KIND_ICON[c.kind]} size={20} color={C.lime} />
-        </View>
-        <View style={{ flex: 1, gap: 3 }}>
-          <Text numberOfLines={1} style={{ fontFamily: F.medium, fontSize: 17, letterSpacing: -0.4, color: C.ink }}>
-            {c.name}
-          </Text>
-          {subtitle}
-        </View>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 14, padding: 14, borderRadius: R.lg, borderCurve: "continuous", backgroundColor: C.card }}>
+        <Press
+          scale={0.985}
+          onPress={() => open(c)}
+          accessibilityLabel={c.name}
+          style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 14 }}
+        >
+          <View style={{ width: 46, height: 46, borderRadius: 14, backgroundColor: C.forest, alignItems: "center", justifyContent: "center" }}>
+            <Icon name={COMMUNITY_KIND_ICON[c.kind]} size={20} color={C.lime} />
+          </View>
+          <View style={{ flex: 1, gap: 3 }}>
+            <Text numberOfLines={1} style={{ fontFamily: F.medium, fontSize: 17, letterSpacing: -0.4, color: C.ink }}>
+              {c.name}
+            </Text>
+            {subtitle}
+          </View>
+        </Press>
         {trailing}
-      </Press>
+      </View>
     </Animated.View>
   );
 }

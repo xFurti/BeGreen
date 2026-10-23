@@ -1,5 +1,6 @@
 import type { Media } from "@/data/types";
 import { proofPath } from "@/services/storage-path";
+import { MEDIA_LIFETIME } from "@/services/social-refresh";
 import { SUPABASE_URL, supabase } from "@/services/supabase";
 
 const cache = new Map<string, { url: string; until: number }>();
@@ -15,12 +16,12 @@ export async function signedMedia(values: Media[]): Promise<Map<Media, Media>> {
   const paths = [...new Set(values.flatMap((v) => typeof v === "string" ? proofPath(v, SUPABASE_URL) ?? [] : []))];
   const missing = paths.filter((p) => (cache.get(`${uid}:${p}`)?.until ?? 0) < Date.now());
   if (missing.length) {
-    const { data, error } = await supabase.storage.from("proofs").createSignedUrls(missing, 300);
+    const { data, error } = await supabase.storage.from("proofs").createSignedUrls(missing, MEDIA_LIFETIME.expiresInSeconds);
     if (error) throw error;
     if (cache.size > 1500) cache.clear();
     for (const item of data ?? []) {
       if (!item.path || !item.signedUrl || item.error) throw new Error("Media not accessible");
-      cache.set(`${uid}:${item.path}`, { url: item.signedUrl, until: Date.now() + 240e3 });
+      cache.set(`${uid}:${item.path}`, { url: item.signedUrl, until: Date.now() + MEDIA_LIFETIME.reuseForMs });
     }
   }
   for (const value of values) {

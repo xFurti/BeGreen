@@ -487,6 +487,7 @@ export function syncCommunity(extra?: string): Promise<void> {
     for (const p of useCommunity.getState().spots.filter((x) => x.pending)) await publishSpot(p);
 
     const [roles, blocked] = await Promise.all([api.fetchMemberships(uid), api.fetchBlocks()]);
+    if (uid !== useApp.getState().userId) return;
     for (const id of Object.keys(useCommunity.getState().roles)) if (!roles[id]) purgeGroupAccess(id);
     useCommunity.setState({ roles });
     const access = mediaAccessVersion();

@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { AppState } from "react-native";
 
 import { subscribeFeed } from "@/services/social";
+import { socialRefresh } from "@/services/social-refresh";
 import { hasBackend } from "@/services/supabase";
 import { syncSocial, useApp } from "@/store/app-store";
 import { syncCommunity } from "@/store/community-store";
@@ -21,17 +22,11 @@ export function useSocialSync() {
       return;
     }
     syncAll();
-    const refresh = setInterval(() => { if (AppState.currentState === "active") void syncAll(); }, 120e3);
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const soon = () => {
-      clearTimeout(timer);
-      clearInterval(refresh);
-      timer = setTimeout(syncAll, 800);
-    };
-    const unsubscribe = subscribeFeed(soon);
+    const refresh = socialRefresh(syncAll, () => AppState.currentState === "active");
+    const unsubscribe = subscribeFeed(refresh.soon);
     const sub = AppState.addEventListener("change", (s) => s === "active" && syncAll());
     return () => {
-      clearTimeout(timer);
+      refresh.stop();
       unsubscribe();
       sub.remove();
     };
