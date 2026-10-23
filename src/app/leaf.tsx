@@ -50,6 +50,8 @@ export default function Leaf() {
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState(false);
   const scroller = useRef<ScrollViewInstance>(null);
+  const [composerHeight, setComposerHeight] = useState(0);
+  const underComposer = process.env.EXPO_OS === "ios" ? composerHeight : 0;
   const nextId = useRef(1);
   const place = pulse.place.name;
 
@@ -84,36 +86,54 @@ export default function Leaf() {
 
   return (
     <View ref={keyboardRoot} collapsable={false} style={{ flex: 1 }}>
-      {/* In a form sheet iOS adopts the first ScrollView as the sheet's own scroller, so the header lives inside it. On Android the sheet is a bottom sheet and keeps the drag unless this list joins nested scrolling. */}
+      {/* In a form sheet iOS adopts the first ScrollView as the sheet's own scroller, so the header lives inside it.
+          react-native-screens also stretches that ScrollView to the whole sheet, under the composer: on iOS the
+          content is padded by the composer's measured height, or the last answer and its chips can't be reached.
+          On Android the sheet is a bottom sheet and keeps the drag unless this list joins nested scrolling. */}
       <ScrollView
         ref={scroller}
         nestedScrollEnabled={process.env.EXPO_OS === "android"}
         style={{ flex: 1 }}
         stickyHeaderIndices={[0]}
-        contentContainerStyle={{ paddingBottom: 24 }}
+        contentContainerStyle={{ paddingBottom: underComposer + 24 }}
+        scrollIndicatorInsets={{ bottom: underComposer }}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={{ paddingHorizontal: 20, paddingTop: 18, paddingBottom: 10, backgroundColor: C.bg, flexDirection: "row", alignItems: "center", gap: 10 }}>
-          <Avatar size={28} />
-          <Text style={{ fontFamily: F.semibold, fontSize: 18, letterSpacing: -0.3, color: C.ink }}>Leaf</Text>
-          <View style={{ flex: 1 }} />
-          <Press
-            onPress={() => router.push("/comune")}
-            accessibilityLabel={t("leaf.openComune", { place })}
-            style={{ flexDirection: "row", alignItems: "center", gap: 5, height: 30, paddingLeft: 10, paddingRight: 8, borderRadius: R.pill, backgroundColor: C.card }}
-          >
-            <Icon name="location" size={12} color={C.forestInk} />
-            <Text numberOfLines={1} style={{ fontFamily: F.medium, fontSize: 13, color: C.ink, flexShrink: 1 }}>
-              {pulse.sample ? t("leaf.sample", { place }) : t("leaf.updated", { place, time: updatedAt })}
-            </Text>
-            <Icon name="chevron" size={11} color={C.mute} />
-          </Press>
+        {/* A sticky header's own style moves to RN's wrapper and the child gets `flex: 1`, so the row lives one level down. */}
+        <View style={{ paddingHorizontal: 20, paddingTop: 18, paddingBottom: 10, backgroundColor: C.bg }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <Avatar size={28} />
+            <Text style={{ fontFamily: F.semibold, fontSize: 18, letterSpacing: -0.3, color: C.ink }}>Leaf</Text>
+            <View style={{ flex: 1 }} />
+            <Press
+              onPress={() => router.push("/comune")}
+              accessibilityLabel={t("leaf.openComune", { place })}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 5,
+                height: 30,
+                paddingLeft: 10,
+                paddingRight: 8,
+                borderRadius: R.pill,
+                backgroundColor: C.card,
+              }}
+            >
+              <Icon name="location" size={12} color={C.forestInk} />
+              <Text numberOfLines={1} style={{ fontFamily: F.medium, fontSize: 13, color: C.ink, flexShrink: 1 }}>
+                {pulse.sample ? t("leaf.sample", { place }) : t("leaf.updated", { place, time: updatedAt })}
+              </Text>
+              <Icon name="chevron" size={11} color={C.mute} />
+            </Press>
+          </View>
         </View>
 
         <View style={{ paddingHorizontal: 20, paddingTop: 10, gap: 22 }}>
           {/* Leaf opens on today's verdict for this place, not on a greeting: the numbers come first. */}
           <Animated.View entering={FadeInDown.springify()} style={{ gap: 12 }}>
-            <Text style={{ fontFamily: F.semibold, fontSize: 24, lineHeight: 30, letterSpacing: -0.5, color: C.ink }}>{todayVerdict(insights, place, language)}</Text>
+            <Text style={{ fontFamily: F.semibold, fontSize: 24, lineHeight: 30, letterSpacing: -0.5, color: C.ink }}>
+              {todayVerdict(insights, place, language)}
+            </Text>
             {today.length > 0 && (
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
                 {today.map((i) => (
@@ -148,11 +168,23 @@ export default function Leaf() {
         </View>
       </ScrollView>
 
-      <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: composerInset(bottom, cover), backgroundColor: C.bg, gap: 8 }}>
+      <View
+        onLayout={(e) => setComposerHeight(e.nativeEvent.layout.height)}
+        style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: composerInset(bottom, cover), backgroundColor: C.bg, gap: 8 }}
+      >
         <Press
           onPress={cycleAudience}
           accessibilityLabel={`${t("leaf.audience.a11y")}: ${t(`leaf.audience.${audience}`)}`}
-          style={{ alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 12, height: 30, borderRadius: R.pill, backgroundColor: C.card }}
+          style={{
+            alignSelf: "flex-start",
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 6,
+            paddingHorizontal: 12,
+            height: 30,
+            borderRadius: R.pill,
+            backgroundColor: C.card,
+          }}
         >
           <Text style={{ fontFamily: F.regular, fontSize: 13, color: C.mute }}>{t("leaf.audience.label")}</Text>
           <Text style={{ fontFamily: F.semibold, fontSize: 13, color: C.forestInk }}>{t(`leaf.audience.${audience}`)}</Text>
@@ -187,7 +219,14 @@ export default function Leaf() {
             accessibilityLabel={t("leaf.send")}
             disabled={!canSend}
             onPress={() => ask(q)}
-            style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: canSend ? C.forest : C.card, alignItems: "center", justifyContent: "center" }}
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: 24,
+              backgroundColor: canSend ? C.forest : C.card,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
           >
             <Icon name="send" size={17} color={canSend ? C.lime : C.faint} />
           </Press>
@@ -200,7 +239,16 @@ export default function Leaf() {
 function Avatar({ size }: { size: number }) {
   const { C } = useTheme();
   return (
-    <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: C.forest, alignItems: "center", justifyContent: "center" }}>
+    <View
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        backgroundColor: C.forest,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
       <LeafMark size={size / 2} color={C.lime} vein={C.forest} />
     </View>
   );
@@ -212,7 +260,16 @@ function Suggestion({ icon, label, onPress }: { icon: IconName; label: string; o
     <Press
       onPress={onPress}
       accessibilityLabel={label}
-      style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderRadius: R.md, borderWidth: 1, borderColor: C.band }}
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+        paddingHorizontal: 14,
+        paddingVertical: 13,
+        borderRadius: R.md,
+        borderWidth: 1,
+        borderColor: C.band,
+      }}
     >
       <Icon name={icon} size={18} color={C.forestInk} />
       <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 15, letterSpacing: -0.15, color: C.forestInk }}>{label}</Text>
@@ -227,7 +284,16 @@ function Chip({ label, onPress, icon }: { label: string; onPress: () => void; ic
     <Press
       onPress={onPress}
       accessibilityLabel={label}
-      style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: R.pill, borderWidth: 1, borderColor: C.band }}
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: R.pill,
+        borderWidth: 1,
+        borderColor: C.band,
+      }}
     >
       {icon && <Icon name={icon} size={13} color={C.forestInk} />}
       <Text style={{ fontFamily: F.medium, fontSize: 13.5, color: C.forestInk }}>{label}</Text>
@@ -238,7 +304,17 @@ function Chip({ label, onPress, icon }: { label: string; onPress: () => void; ic
 function Fact({ f }: { f: LeafFact }) {
   const { C } = useTheme();
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 10, paddingVertical: 6, borderRadius: R.sm, backgroundColor: C.card }}>
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: R.sm,
+        backgroundColor: C.card,
+      }}
+    >
       {f.level && <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: dot(C)[f.level] }} />}
       <Text style={{ fontFamily: F.regular, fontSize: 13, color: C.mute }}>{f.label}</Text>
       <Text style={{ fontFamily: F.semibold, fontSize: 13, color: C.ink }}>
@@ -330,7 +406,9 @@ function Answer({
       {latest && answer && (
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
           {answer.tailored && others.map((a) => <Chip key={a} icon="people" label={t(`leaf.reask.${a}`)} onPress={() => onReask(a)} />)}
-          {answer.followUps?.map((f) => <Chip key={f} label={f} onPress={() => onAsk(f)} />)}
+          {answer.followUps?.map((f) => (
+            <Chip key={f} label={f} onPress={() => onAsk(f)} />
+          ))}
         </View>
       )}
     </Animated.View>
