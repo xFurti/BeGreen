@@ -25,7 +25,7 @@ const READINGS: { key: string; label: MessageKey; unit?: string; pct?: boolean; 
   { key: "rain7", label: "dropSheet.readings.rain7", unit: "mm" },
   { key: "dryDays", label: "dropSheet.readings.dryDays" },
   { key: "soilMoisture", label: "dropSheet.readings.soil", pct: true },
-  { key: "species", label: "dropSheet.readings.species", unitKey: "dropSheet.readings.speciesUnit" },
+  { key: "plantSpecies", label: "dropSheet.readings.species", unitKey: "dropSheet.readings.speciesUnit" },
   { key: "area", label: "dropSheet.readings.area" },
 ];
 

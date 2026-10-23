@@ -37,11 +37,17 @@ Le protezioni dei branch nelle repo private richiedono un piano GitHub compatibi
 
 ## Workflow
 
-`CI` esegue `Verify` sulle PR verso `main` e su `main`. `Pi PR Review` usa `pull_request_target` per apertura e uscita dal draft, e `issue_comment` per `/PI review`.
+`CI` esegue `Verify` sulle PR verso `main` e su `main`. `Pi PR Review` usa `pull_request_target` per apertura, uscita dal draft e nuovi commit, e `issue_comment` per `/PI review`. I draft restano esclusi.
 
-Prima di accedere al secret, il workflow controlla via API che la PR sia aperta, pronta, interna alla repository e diretta a `main`. Per i comandi controlla anche il permesso effettivo dell'autore. Carica soltanto file e istruzioni del branch predefinito, senza checkout o esecuzione del codice della PR. Il modello dispone solo degli strumenti per leggere diff, thread e CI e pubblicare una review. Il token del job ha `contents: read`, `issues: write` e `pull-requests: write`.
+Prima di accedere al secret, il workflow controlla via API che la PR sia aperta, pronta, interna alla repository e diretta a `main`. Per i comandi controlla anche il permesso effettivo dell'autore. Il codice eseguito, l'estensione e le istruzioni della skill provengono soltanto dal branch predefinito; il corpo della skill viene inserito nel prompt. Non viene eseguito il codice della PR.
 
-La review è limitata al diff e ai suoi strumenti di lettura: se il contesto o il diff sono incompleti deve dichiararlo. Non è un'esecuzione dei test. Se la PR cambia durante la review, il workflow fallisce e richiede una nuova esecuzione. Nessuna sessione viene condivisa in gist o pubblicata fuori dalla repo.
+Il modello legge diff, thread, CI e file di contesto e pubblica una review. Il tool `read_review_file` legge via API soltanto testo UTF-8 dalla repository e dallo SHA fissati dal workflow, senza checkout, accesso al filesystem locale o esecuzione. Restituisce al massimo 300 righe per chiamata, con `nextLine` per paginare, e rifiuta file oltre 200 kB. I file letti sono dati non fidati, non istruzioni operative.
+
+Il token del job ha `contents: read`, `checks: read`, `actions: read`, `issues: write` e `pull-requests: write`. Entrambi i permessi CI sono necessari a `get_ci_status`; un controllo preliminare ne verifica l'accesso prima di chiamare il modello. Non sono necessari nuovi secrets o PAT.
+
+Se il contesto o il diff sono incompleti, la review deve dichiararlo. Non è un'esecuzione dei test. Se la PR cambia durante la review, il workflow fallisce; il nuovo commit avvia una nuova esecuzione. `/PI review` permette di ripeterla anche senza push. Nessuna sessione viene condivisa in gist o pubblicata fuori dalla repo. Un check verde conferma la pubblicazione sullo SHA richiesto, non l'assenza di bug né un'approvazione umana.
+
+Le modifiche al workflow e all'estensione diventano operative dopo il merge su `main`, perché le esecuzioni caricano sempre il codice fidato del branch predefinito. Per recuperare le review fallite prima della configurazione delle chiavi o rimaste su vecchi SHA, richiedere `/PI review` sulle PR aperte dopo il merge.
 
 La Pi Action è fissata alla release `v2.30.1`; gli input e la lista degli strumenti seguono la [documentazione ufficiale](https://github.com/shaftoe/pi-coding-agent-action/tree/v2.30.1). La review AI è aggiuntiva; il merge è protetto da CI e approvazione umana, non dal risultato del modello.
 

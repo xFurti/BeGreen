@@ -28,7 +28,7 @@ async function prepare({ github, context, core }) {
     number = issue.number;
     focus = command.focus;
   } else if (context.eventName === "pull_request_target" &&
-      ["opened", "ready_for_review"].includes(context.payload.action)) {
+      ["opened", "ready_for_review", "synchronize"].includes(context.payload.action)) {
     number = context.payload.pull_request.number;
   } else {
     return;

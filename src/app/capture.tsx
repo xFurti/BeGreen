@@ -729,7 +729,9 @@ export default function Capture() {
           {isProof && !noCamera ? (
             <RecordRing progress={progress} />
           ) : (
-            <View style={{ position: "absolute", width: 88, height: 88, borderRadius: 44, borderWidth: 4, borderColor: C.white }} />
+            <Svg width={88} height={88} pointerEvents="none" style={{ position: "absolute" }}>
+              <Circle cx={44} cy={44} r={41} stroke={C.white} strokeWidth={4} fill="none" />
+            </Svg>
           )}
           <Animated.View style={shutterStyle}>
             <View

@@ -17,6 +17,6 @@ Concordate chi segue problema/utenti, esperienza, sviluppo, integrazione, verifi
 
 Apri una issue con risultato atteso e criterio di completamento. Assegna un referente; per lavori che toccano gli stessi file concordate prima i confini. Le issue possono essere in proposta, pronte, in corso, in review o completate.
 
-Ogni branch nasce da `main` aggiornato. Apri presto una PR draft se serve coordinamento; quando è pronta richiedi review. Integra `main` se la PR resta indietro. Dopo altri commit usa `/PI review` per aggiornare la review AI.
+Ogni branch nasce da `main` aggiornato. Apri presto una PR draft se serve coordinamento; quando è pronta richiedi review. Integra `main` se la PR resta indietro. La review AI si aggiorna sui nuovi commit delle PR pronte; usa `/PI review` per richiederla di nuovo senza push.
 
 Chi approva una PR deve essere diverso dall'autore. Le proposte future restano in `docs/ideas.md` o nelle issue, fuori dal percorso critico della demo finché il team non le seleziona.

@@ -40,7 +40,7 @@ export type Species = {
   group?: string;
 };
 
-export type NatureData = { speciesCount: number; top: Species[]; locale?: "it" | "en" };
+export type NatureData = { speciesCount: number; top: Species[]; locale?: "it" | "en"; taxon?: "Plantae" };
 
 export type Area = { id: number; name: string; title?: string; km: number };
 
@@ -162,12 +162,13 @@ export async function fetchNature(p: Place, locale: "it" | "en" = "en"): Promise
   const d1 = new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10);
   const j = await getJSON<any>(
     `https://api.inaturalist.org/v1/observations/species_counts?lat=${p.lat}&lng=${p.lon}&radius=10` +
-      `&d1=${d1}&quality_grade=research&per_page=12&locale=${locale}`,
+      `&d1=${d1}&quality_grade=research&iconic_taxa=Plantae&per_page=12&locale=${locale}`,
   );
   return {
     speciesCount: j.total_results ?? 0,
+    taxon: "Plantae",
     locale,
-    top: (j.results ?? []).map((r: any) => ({
+    top: (j.results ?? []).filter((r: any) => r.taxon?.iconic_taxon_name === "Plantae").map((r: any) => ({
       id: r.taxon.id,
       name: r.taxon.name,
       common: r.taxon.preferred_common_name || undefined,
@@ -273,9 +274,10 @@ export const SAMPLE_PULSE: Pulse = {
   soil: { moisture: 0.14, weekAgo: 0.22 },
   nature: {
     speciesCount: 287,
+    taxon: "Plantae",
     top: [
-      { id: 1, name: "Sciurus carolinensis", common: "Eastern Gray Squirrel", count: 26, group: "Mammalia" },
-      { id: 2, name: "Columba palumbus", common: "Common Wood Pigeon", count: 19, group: "Aves" },
+      { id: 1, name: "Bellis perennis", common: "Common Daisy", count: 26, group: "Plantae" },
+      { id: 2, name: "Taraxacum officinale", common: "Common Dandelion", count: 19, group: "Plantae" },
       { id: 3, name: "Hedera helix", common: "Common Ivy", count: 14, group: "Plantae" },
     ],
   },

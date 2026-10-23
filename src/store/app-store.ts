@@ -349,7 +349,8 @@ async function send(post: Post): Promise<Post> {
     return saved;
   } catch (e) {
     if (__DEV__) console.warn(e);
-    toast(tr("shared.savedLocally"), "refresh");
+    const detail = e instanceof Error ? e.message : String(e);
+    toast(__DEV__ ? `${tr("shared.savedLocally")} — ${detail.slice(0, 160)}` : tr("shared.savedLocally"), "refresh");
     return current;
   }
 }

@@ -39,14 +39,14 @@ BeGreen is built for the brief **“2. La mia sostenibilità”**: it takes sust
 | Starts from the local environment | Pulse + the Drop, from the Comune the user picks (GPS only suggests it) |
 | Links knowledge to concrete action | Every Pulse card ends in an action button; the Drop turns today's worst indicator into today's mission |
 | Air, water, soil, biodiversity, consumption, mobility, community | Pulse cards (air, water, soil, nature, protected areas) and the 10 action types, each tagged with its areas; the report shows how many of the 7 a squad covers |
-| Protected areas, species, nature observations | iNaturalist species list with photos and attribution; OpenStreetMap protected areas nearby |
+| Protected areas, species, nature observations | iNaturalist plant species list with photos and attribution; OpenStreetMap protected areas nearby |
 | Air quality, weather, local climate | CAMS European AQI with a 24 h chart, pollutant breakdown and dominant pollutant; current weather |
 | Soil and landscape changes | Top-soil moisture and its trend; class and Comune text points to land-sealing and land-use cartography (access marked “to verify”) |
 | Individual behaviour and group activity | Personal proofs, squad quests, city league, Community Report |
 | AI to understand measurements and documents | Leaf turns raw numbers into plain language and plugs into an LLM backend (see below) |
 | Answers that cite sources | Every Leaf answer carries source badges; every Pulse card carries its source |
 | Interpreting images | Proof photo + video verified by peers today; the backend contract covers image interpretation (species ID, proof checks) |
-| Explanations adapted to the reader | Me / My class / Comune on Pulse, in Leaf and in the defaults set from your role |
+| Explanations adapted to the reader | Me / My class / Comune on Pulse, in Leaf, in the Explain it for block on Me and in the defaults set from your role |
 | Sources aren't equivalent | Five source kinds, colour-coded everywhere; each data card's text names its limits (e.g. “model, ~10 km grid, not an ARPA station”) |
 | Some access and terms still to verify | The `verified: false` flag in `src/data/sources.ts` shows a ⚠︎ in *How we know* (ISPRA Catasto Rifiuti reuse licence) |
 
@@ -56,16 +56,20 @@ BeGreen is built for the brief **“2. La mia sostenibilità”**: it takes sust
 | --- | --- | --- |
 | Air quality (EAQI, PM2.5, PM10, NO₂, O₃, 24 h forecast) | Copernicus CAMS via Open-Meteo | Model |
 | Weather, rain over the past 7 days and next 3, soil moisture | Open-Meteo | Model |
-| Species seen within 10 km in the last 30 days (research grade) | iNaturalist API | Citizen science |
+| Plant species seen within 10 km in the last 30 days (research grade) | iNaturalist API | Citizen science |
 | Protected areas and nature reserves within 25 km | OpenStreetMap via Overpass | Open map |
 | Citizen PM2.5 sensors within 10 km (median of the latest readings) | Sensor.Community | Citizen science |
-| Species recorded within 5 km in the last 5 years | GBIF API | Citizen science |
+| Plant species recorded within 5 km in the last 5 years | GBIF API | Citizen science |
 | Italian Comuni (search, coordinates) | Open-Meteo geocoding (GeoNames) | Open map |
 | PM10 annual mean and exceedance days per station (2025), emissions per comune (INEMAR 2019) | ARPAV open data (bundled CSV extract) | Official |
 | Land sealed per comune (2024) and separate collection per comune (2024) | ISPRA/SNPA, ISPRA Catasto Rifiuti (bundled extract) | Official |
 | Acts, quests, reports | BeGreen (aggregated, anonymised) | Community |
 
 Official per-comune data is a bundled extract for the Province of Vicenza, matched to the Comune you picked by name (or, failing that, by the nearest centroid); datasets, joins and thresholds are documented in `docs/dati-comune.md`.
+
+Nature and Leaf show plants only (iNaturalist `iconic_taxa=Plantae`; GBIF `taxonKey=6`). An empty result is shown as 0 recorded plant species, not as an absence of plants. The `spot` action keeps its ID and existing proofs, with plant-focused instructions. Older mixed-species caches are refreshed; existing shared Drops keep their identity and omit the old mixed count.
+
+Biodiversity questions use Leaf's grounded local engine even when an AI endpoint is configured, so its answers stay within the plants shown in Pulse.
 
 Each source loads separately, so one outage never empties the Pulse. If everything is offline, the app shows clearly labelled sample data, and a Drop built from sample data is never saved as the Comune's challenge.
 
@@ -162,7 +166,7 @@ See **[MARKETING.md](MARKETING.md)** for the go-to-market plan.
 1. Read [AGENTS.md](AGENTS.md); it applies to AI assistants too.
 2. Track tasks and owners in [docs/team.md](docs/team.md); park new ideas in [docs/ideas.md](docs/ideas.md).
 3. Branch from an up-to-date `main` and open a PR to `main`. `npm run verify` (typecheck, lint, workflow and database tests) must pass: it's the `Verify` CI check.
-4. Comment `/PI review` on the PR for an AI review, fix what it finds, then get approval from a teammate.
+4. Pi reviews ready PRs when opened and after new commits. Comment `/PI review` to repeat it without a push, fix what it finds, then get approval from a teammate.
 
 Shared agent skills live in [`skills/`](skills/) (linked from `.agents/skills` for Codex and `.pi/skills` for Pi):
 
