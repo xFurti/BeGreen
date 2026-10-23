@@ -120,8 +120,11 @@ test("ogni schermata con TextInput usa useKeyboardCover e nessuna lascia Keyboar
     if (file.includes(`${path.sep}legacy-`)) continue;
     const content = readFileSync(file, "utf8");
     const rel = path.relative(root, file).replaceAll("\\", "/");
-    // I sotto-passi di onboarding vivono dentro lo ScrollView di src/app/onboarding.tsx, che usa useKeyboardCover.
-    if (/<TextInput\b/.test(content) && !rel.startsWith("src/components/onboarding/") && !/\buseKeyboardCover\b/.test(content)) {
+    // I passi di onboarding stanno in onboarding.tsx; i campi data/ora in add-spot.tsx.
+    // Entrambi gli schermi usano useKeyboardCover. Il controllo sotto tiene i campi evento su add-spot.
+    const coveredByParent =
+      rel.startsWith("src/components/onboarding/") || rel === "src/components/event-schedule-fields.tsx";
+    if (/<TextInput\b/.test(content) && !coveredByParent && !/\buseKeyboardCover\b/.test(content)) {
       missingCover.push(rel);
     }
     if (/<KeyboardAvoidingView\b/.test(content)) {
@@ -131,4 +134,8 @@ test("ogni schermata con TextInput usa useKeyboardCover e nessuna lascia Keyboar
 
   assert.deepEqual(missingCover, []);
   assert.deepEqual(brokenAvoidingView, []);
+
+  const addSpot = readFileSync(path.join(root, "src/app/add-spot.tsx"), "utf8");
+  assert.match(addSpot, /useKeyboardCover/);
+  assert.match(addSpot, /<EventScheduleFields\b/);
 });
