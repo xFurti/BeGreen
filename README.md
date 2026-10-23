@@ -11,29 +11,29 @@ BeGreen is built for the brief **“2. La mia sostenibilità”**: it takes sust
 1. **The Drop:** each day everyone in a Comune gets the same challenge, built from that Comune's live data and stored on the shared backend, so the whole town sees one mission and one proof each counts for it. Example: air is “Poor” → *Leave the car. Own the street.* Unlike BeReal there's no random alarm. You post it when you actually do it.
 2. **Snap the thing:** a photo of the bike, the bin, the bottle or the plant.
 3. **Prove it:** a 5-second video of the act itself. It plays inside the photo, in the inset tile.
-4. **People verify:** others in your Comune or squad check your proof; 3 verifications turn it into a *Verified* proof. You can't verify your own.
+4. **People verify:** people allowed to see your proof in your city or chosen group check it; 3 verifications turn it into a *Verified* proof. You can't verify your own.
 5. **Post yours to see theirs:** today's feed stays blurred until you've done your own green act.
 
 ## Screens
 
 | Screen | What it does |
 | --- | --- |
-| **Onboarding** | Four-slide story (Proof, not promises / Your city, decoded / Beat your friends. Save the planet. / 17 goals, one tiny act at a time), then name, public handle, role (Student · Teacher · Association · Comune) and your Comune. Starting creates an anonymous account (no email, no password) with that profile. |
-| **Comune** | Search any Italian Comune (or use your location to suggest it). Pulse, the Drop, the feed and the league all follow the Comune you pick. Change it any time from Pulse or Me. |
-| **Feed** | Today's Drop with a live countdown to midnight and the real people in your Comune who already did it, your post for today (or a streak-saver prompt), your rank in this week's Comune race, and *Comune* / Squads / Everyone lenses. While fewer than 3 people have done today's Drop, example proofs for it (marked **DEMO**, never verifiable or counted) fill the Comune lens. Proof clips autoplay once as each post scrolls into view. Double-tap to react, verify, comment. |
-| **Capture** | Full-screen camera with two steps: photo, then a recording of up to 5 seconds with a progress ring. You can stop it once the camera has 2 seconds of video. If the clip fails, you stay on Prove and can record again. Then review: choose the act, write a caption (or tap a caption idea), pick who sees it (your Comune / Squad / Everyone) and whether to show your area. Doing the Drop's act claims today's challenge, once. The celebration shows Seeds, streak, who you just passed in the league, new Agenda 2030 goals and the feed unlock, with a share button. A **?** opens the how-to for the act. |
+| **Onboarding** | Four-slide story (Proof, not promises / Your city, decoded / Small steps, together / 17 goals, one tiny act at a time), then name, public handle, role and your Comune. Starting creates an anonymous account (no email, no password). |
+| **Comune** | Search any Italian Comune (or use your location to suggest it). Pulse, the Drop, the feed and Community's territory preview follow this choice. |
+| **Feed** | Today's Drop, a countdown, local participants, your daily proof and an entry to Community. Lenses: *Comune / Groups / Everyone*. Group proofs appear only in their chosen group, not automatically in every group the author belongs to. Example proofs remain marked **DEMO**, never verifiable or counted. |
+| **Capture** | Photo → 2–5 second proof → review. Choose your Comune, Everyone or one group; a missing group blocks submission rather than publishing elsewhere. The group’s public/private visibility is explained. Completion celebrates Seeds, streak, contribution and Agenda 2030 goals, not rank or overtakes. Pending uploads keep their selected destination and are identified as local. |
 | **Pulse** | Live local data for air, weather, water, soil, nature and protected areas. Every card has a **source badge** and an **“Explain it for: Me / My class / Comune”** switch, plus a button that turns the insight into an action. |
 | **Leaf** | An assistant that answers questions about your area using only the data you can see, and cites its sources. It adapts to the audience. |
 | **How we know** | Explains each kind of source (official, model, citizen science, open map, community): what it is, what it's good for, where to be careful. It also flags data whose access or terms still need checking. |
-| **Community** | Replaces the League tab and opens straight on the communities you're in, with the **Love your city** mark on top. Two kinds: **Your groups** (friends, a class, a crew: joined with a code, each row shows your rank this week; **New group** and **Join with code** right there) and **Your city** (a real place, shown on its real map; not in one yet → your Comune's city, one tap to join). Search finds any Italian city. |
+| **Community** | Territory first: your selected Comune, its real map and recent local contributions, followed by your groups and other cities. Group rows show visibility and membership, not rank. Create a group or join with a code; search finds any Italian city. |
 | **Community map** | The real OpenStreetMap map of the area (streets, places, rivers, railway), pannable and zoomable to street level, with BeGreen pins in seven layers: discover, repair & reuse, gardens & groups, swap & share, events & challenges, reports, moments. Search that understands questions (“Dove posso riparare una bici?”, “eventi questo weekend”) and finds real streets and places in the area, layer chips, filters (distance, upcoming events, most saved, new this week, open reports, from friends, family-friendly once verified), a legend, clustering, and a card for the pin you tap with directions. |
 | **Add a place** | Photo-first, five steps: what (discovery, useful place, event, challenge/experience, report, moment), photo (optional), a few words and the category (date and time for events), where (your location only suggests it; exact or ~200 m; a moment can stay off the map), who sees it (everyone or members only). An exact public spot needs an explicit confirmation. |
 | **Place page** | Photo, category, status (verified / from the community / to verify / open or resolved / upcoming or ended), who added it and when, last update, address and directions, love, save, share, “I'm going” for events, the proofs taken there (and “add a proof here”), comments, and the trust tools: report out of date / wrong / not OK, propose a correction, “this looks fixed”, block the author; authors mark resolved/done or “still right”; moderators verify, hide, delete. |
-| **Community page** | A **city** leads with its real map and *Happening here* (upcoming events, then places), then the daily prompt, challenges, this week's leaderboard and the latest proofs. A **group** leads with its leaderboard (members ranked by this week's Seeds), then the invite code to share, the latest proofs and challenges. Both can be explored before joining; private groups show only their name until you join with the code. |
+| **Community page** | A **city** leads with its map, local experiences, prompts, challenges and proofs. A **group** leads with shared actions and challenges, then its impact report, preserved legacy goal, invitation and members. Both offer a separate weekly leaderboard. Private group content requires membership. |
 | **Challenges** | Collective challenges with a goal and a deadline, from starter ideas (discover 5 places, reuse, organise a swap, a second-hand shop, clean-up, a neglected area, a walk with a discovery) or your own. Contribute with a place or just “I did it”; progress, contributors (a thank-you list, not a leaderboard) and a result summary. Plus the **daily prompt**: one optional question for everyone, no streak. |
-| **League** | Still there, no longer a tab: this week's friendly race in your Comune, squads with quests and join-by-code, and the squads ranking. Reached from the feed. |
+| **Weekly leaderboard** | Optional secondary screen inside a city or group. No app-wide rank in Feed, Me or completion. Uses the most recent loaded proofs from the last 7 days; the UI labels it as a sample. |
 | **How to** | For people who don't know where to start: a searchable **“Where does it go?”** lookup (pizza box, Tetra Pak, receipts…), the six Italian waste streams, and three steps for every act. |
-| **Squad page** | Quest progress, invite code, and a **Community Report**: anonymised acts by type, estimated impact, which of the 7 areas are covered, today's local context. It can be shared with a school or Comune. |
+| **Old squad links** | `/squad/:id` redirects to its migrated group, `/new-squad` to group creation and `/league` to Community. Historical screen implementations are retained outside the router in `components/legacy-*`; they are not imported by the app. |
 | **Me** | Streak, Seeds, verified count, **Agenda 2030** grid (which of the 17 UN goals your proofs moved, plus days left to 2030), estimated impact, a Memories calendar, badges with a requirement each and one you equip as a title next to your name (also in the feed and in League), saved places, your contributions, settings. |
 
 ## How the brief is covered
@@ -77,11 +77,11 @@ Each source loads separately, so one outage never empties the Pulse. If everythi
 
 ## Shared backend (Supabase)
 
-Profiles, posts, verifications, reactions, comments, squads and the daily challenges live on [Supabase](https://supabase.com) (Postgres + Storage + Realtime), so everyone sees the same feed. The schema and its row level security rules are in [`supabase/migrations`](supabase/migrations); [`supabase/tests`](supabase/tests) checks them on an in-memory Postgres as part of `npm test`.
+Profiles, posts, verifications, reactions, comments, communities, group progress and daily challenges live on [Supabase](https://supabase.com) (Postgres + Storage + Realtime). The schema and row level security rules are in [`supabase/migrations`](supabase/migrations); [`supabase/tests`](supabase/tests) checks them on an in-memory Postgres as part of `npm test`.
 
 - **Accounts** are anonymous Supabase users with a public name and handle. Every rule is enforced in the database: you write only your own rows, can't verify your own proof, can't claim the same Drop twice, and squad points are added by a trigger, not by the app.
 - **The Drop** is one row per Comune per day (`<comune id>:<date>`). The first phone to open the app that day builds it from the Comune's live data and inserts it; everyone else reads the same row.
-- **Media** go to the public `proofs` bucket, each user in their own folder: photos are JPEGs with a 1280 px long side, clips are 480p when the camera supports it, library clips over ~1.5 MB are refused, and native uploads stream directly from disk. The feed avoids fetching media while locked, plays each proof clip once, and disk-caches photos. Demo captures store a reference to the bundled clip instead of uploading it.
+- **Media** use the private `proofs` bucket, each user in their own folder. The app stores durable object references and reads authorized media through five-minute signed URLs, including files previously referenced by public URLs. Photos are JPEGs up to 1280 px, clips are 480p when supported, library clips over ~1.5 MB are refused, and native uploads stream from disk. Demo captures reference bundled assets.
 - **Live updates:** the feed refreshes when someone posts, verifies, reacts or comments.
 
 Without the two environment variables below the app still runs, on this phone only: your proofs stay local and the feed shows the example proofs for today's Drop.
@@ -91,11 +91,23 @@ Without the two environment variables below the app still runs, on this phone on
 BeGreen doesn't ask people to already care about sustainability: the Community tab is where people, groups and places meet. It links **people** (posts, reactions, shared challenges), **groups** (classes, associations, neighbourhoods, squads) and the **territory** (a map the community builds).
 
 - **Two kinds of community.** A **city** is a real place: Alto Vicentino is bundled and seeded, and any Italian Comune can be found by name (Open-Meteo geocoding) and joined; the first person to join starts it. A **group** is personal: friends, a class, a crew. Creating one takes a name and private/public; it gets an invite code, any member can share it, and the code alone is enough to join (`join_by_code`). Private groups show only their name until you join. The founder is the first moderator.
-- **Leaderboards** rank this week's Seeds (last 7 days, same rule as the League). A group ranks its members wherever they post, members without proofs included; a city ranks whoever posted there. It's computed on the phone from the proofs it downloads.
+- **Leaderboards** are secondary. A group counts only explicitly shared group proofs, including migrated squad proofs; a city excludes reserved group proofs. Seeds and personal milestones remain independent of rank. The board is computed from downloaded proofs, not a complete server aggregate.
 - **The map is real**: OpenStreetMap's standard tiles (© OpenStreetMap contributors, ODbL) in Web Mercator, with pins positioned by the same projection (`src/services/geo.ts`), and street/place search through Photon (komoot), limited to the community's area. Both are free and keyless for light use; a production build should swap `TILE_URL` in `community-map.tsx` for a keyed tile provider.
 - **Trust and privacy**: verified places are distinguished from community additions; two “out of date / wrong” flags mark a place *to verify* (the author's edit clears it), three “not OK” flags hide it until a moderator checks, two “looks fixed” flags resolve a report. Flags are private to moderators. Nobody's real-time position is shown; a precise public spot needs explicit confirmation, and any spot can be shared as approximate (~200 m). Blocking hides someone's places, posts and comments. Last update and verification dates are shown on every place.
 - **Empty and quiet states**: no fake places, not even examples: the map is real, so only real pins go on it. An empty city says so and offers to add the first place. Location unavailable or denied → search a street or move the map.
 - All of it lives in `supabase/migrations/20261025000000_community.sql` (tables, RLS, the flag trigger, join/create/verify functions) and `20261026000000_community_groups.sql` (the `friends` kind, codes for every group, `join_by_code`), and is covered by `supabase/tests`. Without a backend everything works on the phone only.
+
+### Migrating existing squads to groups
+
+`20261028000000_unified_groups.sql` copies existing squads into private groups with stable `squad:<uuid>` IDs, preserves memberships and join dates, and links existing posts without recreating their IDs or interactions. It retains the old tables, quest progress, points and existing monthly totals. New monthly totals live in `group_progress.months`; months that the old system already discarded cannot be reconstructed by this migration.
+
+Old invite codes remain valid aliases. If an old code collides with another group's code, joining asks the person to select the intended group; it never silently chooses one. Existing creators who already left a squad are not automatically re-enrolled. Device-only squads migrate once into the local Community store, without resetting the profile or proof history.
+
+The migration protects group posts and their comments, reactions, verifications and media. Group membership, not legacy squad membership, controls access. Leaving clears cached group content and media authorization; the author retains their own proofs. Signed URLs already issued remain valid until expiry, and previously downloaded files cannot be revoked.
+
+**Coordinated rollout required:** test against a disposable copy first, then apply the migration and distribute the matching app together after human approval. The bucket becomes private, so old app versions that only use public media URLs are not compatible. No storage objects are moved or deleted. Existing public CDN copies may outlive the database change; this does not retroactively make previously shared media secret. The automated tests exercise Postgres/RLS through PGlite, not Supabase Storage's HTTP/CDN behavior. Do not apply this migration to the live backend merely to preview the UI.
+
+Local visual demo: run `EXPO_NO_DOTENV=1 npm run web -- --port 8092`, finish onboarding, open Community, explore the city, create a private group, and share a demo proof explicitly into it. Check that the proof appears in that group, that the leaderboard requires a separate action, and that `/league` redirects to Community.
 
 ## The AI layer (Leaf)
 
@@ -120,7 +132,7 @@ To share the feed between phones, connect a Supabase project:
 1. Create a project (or run `eas integrations:supabase:connect`), then in **Authentication → Sign In / Providers** turn on **Allow anonymous sign-ins**.
 2. Apply the schema: `npx supabase link --project-ref <ref>` and `npx supabase db push`, or paste the migration into the SQL editor.
 3. Copy `.env.example` to `.env.local` and fill in `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (Project Settings → API). Both are public; never put a secret key in the app.
-4. Restart `npx expo start`. Two phones (or a browser and a private window) on the same Comune now share the Drop, the feed and the league.
+4. Restart `npx expo start`. Two phones (or a browser and a private window) share the Drop, the feed and their joined communities.
 
 ## Language
 
@@ -137,7 +149,8 @@ npm run lint
 src/
   app/                    Expo Router routes (screens only)
     (tabs)/               Feed · Pulse · Community · Me + custom tab bar with the shutter button
-    community/[id].tsx    Community page: a city (map first) or a group (leaderboard first)
+    community/[id].tsx    Community page: territory or shared group activity, goals and impact
+    community-ranking.tsx Secondary weekly leaderboard
     map/[id].tsx          Full-screen community map
     spot/[id].tsx         A place or experience: info, trust tools, proofs, comments
     add-spot.tsx          Add to the map: what → photo → words → where → who sees it
@@ -145,7 +158,7 @@ src/
     new-challenge.tsx flag-spot.tsx saved.tsx member/[id].tsx league.tsx
     capture.tsx           Snap → Prove → Review → Celebrate
     post/[id].tsx         Post detail, verifiers, comments, flagging
-    squad/[id].tsx        Quest + Community Report
+    squad/[id].tsx        Compatibility redirect to the migrated group
     guide.tsx             How-to: waste lookup, bins, steps per act
     comune.tsx            Comune search / pick
     drop.tsx leaf.tsx sources.tsx new-squad.tsx onboarding.tsx
@@ -178,10 +191,10 @@ assets/                   Icon, splash, demo photos (Unsplash), 5 s proof clips
 - Accounts are anonymous and tied to the phone: signing out or reinstalling loses the account (your proofs stay on the feed). There are no friends or follows yet; the social unit is your Comune and your squads.
 - The daily Drop is built by the first phone that opens the app in a Comune that day. The database checks its shape and date, not its numbers; a server-side job would make it tamper-proof.
 - Moderation of proofs is still missing: “Flag proof” only asks for confirmation. Community places have flags, auto-hiding and moderators, but promoting someone to moderator (beyond a community's founder) is done in the database for now. Verifications are one per person but not yet checked against proximity or fraud patterns.
-- The league and the Comune counts are computed from the proofs the app downloads (last 8 days in your Comune), not from a server-side aggregate.
+- Community leaderboards and Comune counts use downloaded proofs, not complete server-side aggregates. City queries load up to 120 recent proofs per source; group detail initially loads up to 200 proofs. Group impact totals are server-maintained.
 - Impact figures are conservative estimates per act and are labelled that way everywhere.
 - The community map's search for BeGreen places is a keyword and intent matcher, offline, Italian and English; it isn't a language model. Map tiles and street search need a connection and rely on free OpenStreetMap/Photon services meant for light use.
-- Squads (League) and groups (Community) overlap: both are friends joined with a code. Groups don't have quests or squad-only posts yet.
+- Old squads are now groups. This needs the unified-groups migration and matching app; legacy clients are not supported after the private-media rollout.
 - ARPA / ISPRA official data isn't wired in yet, because access and terms vary by region. It's listed as “to verify”.
 
 See **[MARKETING.md](MARKETING.md)** for the go-to-market plan.

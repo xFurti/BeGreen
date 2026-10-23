@@ -45,8 +45,8 @@ import { persistMedia, proofWithinBudget } from "@/services/media";
 import { canStopProof, displaySeconds, noteProgress, outcomeFromRecording, PROOF_SECONDS } from "@/services/proof-recording.mjs";
 import { canClaimDrop, DROP_BONUS, seedsFor } from "@/services/rewards";
 import { hasBackend } from "@/services/supabase";
-import { leagueOf, mineOf, postedToday, sdgsOf, streakOf, useApp, useAuthor } from "@/store/app-store";
-import { linkableSpotId, useCommunity } from "@/store/community-store";
+import { mineOf, postedToday, sdgsOf, streakOf, useApp } from "@/store/app-store";
+import { linkableSpotId, syncCommunity, useCommunity, useJoined } from "@/store/community-store";
 import { F, R } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
@@ -164,10 +164,8 @@ type Result = {
   isDrop: boolean;
   action: ActionId;
   photo: Media;
-  rankBefore: number;
-  rankAfter: number;
-  passed: string[];
-  next?: { name: string; gap: number };
+  destination: string;
+  pending: boolean;
   newGoals: number[];
 };
 
@@ -268,12 +266,6 @@ function Done(r: Result) {
     scale.set(withSpring(1, { damping: 12, stiffness: 160 }));
   }, [scale]);
   const big = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
-  const climbed = r.rankBefore - r.rankAfter;
-  const rankSub = r.passed.length
-    ? t("capture.passed", { names: `${r.passed.slice(0, 2).join(" & ")}${r.passed.length > 2 ? ` +${r.passed.length - 2}` : ""}` })
-    : r.next
-      ? t("capture.moreToPass", { gap: r.next.gap, name: r.next.name })
-      : t("capture.defend");
 
   return (
     <Animated.View
@@ -408,10 +400,10 @@ function Done(r: Result) {
             delay={180}
           />
           <StatCard
-            icon="league"
-            badge={climbed > 0 ? `↑${climbed}` : `#${r.rankAfter}`}
-            title={t("capture.rank", { rank: r.rankAfter })}
-            sub={rankSub}
+            icon="people"
+            badge="+1"
+            title={r.pending ? t("groups.pending") : t("groups.destination", { name: r.destination })}
+            sub={t(r.pending ? "groups.pendingBody" : "groups.contribution")}
             delay={260}
           />
         </View>
@@ -441,11 +433,13 @@ function PublishBar({
   seeds,
   isDrop,
   posting,
+  disabled,
   onPress,
 }: {
   seeds: number;
   isDrop: boolean;
   posting: boolean;
+  disabled?: boolean;
   onPress: () => void;
 }) {
   const { C } = useTheme();
@@ -480,7 +474,7 @@ function PublishBar({
   return (
     <Press
       onPress={onPress}
-      disabled={posting}
+      disabled={posting || disabled}
       scale={0.98}
       accessibilityLabel={`${t("capture.post")} +${seeds}`}
       style={{
@@ -549,7 +543,7 @@ function PublishBar({
 export default function Capture() {
   // The camera steps and the Done screen are dark in both themes; only the review follows it.
   const { C, T, scheme } = useTheme();
-  const params = useLocalSearchParams<{ action?: ActionId; spot?: string }>();
+  const params = useLocalSearchParams<{ action?: ActionId; spot?: string; group?: string }>();
   const { top, bottom } = useSafeAreaInsets();
   const { ref: keyboardRoot, cover } = useKeyboardCover();
   const { drop, pulse } = usePulse();
@@ -578,20 +572,21 @@ export default function Capture() {
   const [actsOpen, setActsOpen] = useState(false);
   const [order] = useState(() => [ACTIONS[action], ...ACTION_LIST.filter((x) => x.id !== action)]);
   const [caption, setCaption] = useState("");
-  const [audience, setAudience] = useState<Audience>("comune");
+  const { groups } = useJoined();
+  const [initialGroup] = useState(() => params.group ?? groups.find((g) => g.id === useCommunity.getState().spots.find((s) => s.id === params.spot)?.communityId)?.id);
+  const [audience, setAudience] = useState<Audience>(initialGroup ? "group" : "comune");
   const [shareSpot, setShareSpot] = useState(true);
-  const squads = useApp((s) => s.squads);
   const comune = useApp((s) => s.comune);
-  const [squadId, setSquadId] = useState<string | undefined>(squads[0]?.id);
+  const [groupId, setGroupId] = useState<string | undefined>(initialGroup);
+  const selectedGroup = groups.find((g) => g.id === groupId);
   const addPost = useApp((s) => s.addPost);
-  const author = useAuthor();
   // The community place this proof was taken at: from its page, or picked here.
   const [spotId, setSpotId] = useState<string | undefined>(params.spot);
   const primaryCommunity = useCommunity((s) => s.primary);
   const savedSpots = useCommunity((s) => s.saved);
   const allSpots = useCommunity((s) => s.spots);
   const spotChoices = allSpots
-    .filter((x) => !x.hidden && x.lat != null && (x.id === params.spot || x.communityId === primaryCommunity))
+    .filter((x) => !x.hidden && x.lat != null && (audience === "group" ? x.communityId === groupId : !groups.some((g) => g.id === x.communityId) && (x.id === params.spot || x.communityId === primaryCommunity)))
     .sort((a, b) => Number(b.id === params.spot) - Number(a.id === params.spot) || (savedSpots[b.id] ?? 0) - (savedSpots[a.id] ?? 0) || b.createdAt - a.createdAt)
     .slice(0, 8);
   const [result, setResult] = useState<Result | null>(null);
@@ -601,6 +596,8 @@ export default function Capture() {
   const dropOpen = useApp((s) => canClaimDrop(drop, s.posts, s.userId, hasBackend));
   const [posting, setPosting] = useState(false);
   const submitting = useRef(false);
+
+  useEffect(() => { void syncCommunity(params.group); }, [params.group]);
 
   useEffect(() => {
     if (realCamera && perm && !perm.granted && perm.canAskAgain) requestPerm();
@@ -731,6 +728,10 @@ export default function Capture() {
 
   const post = async () => {
     if (!photo || !proof || submitting.current) return;
+    if (audience === "group" && !selectedGroup) {
+      toast(t("groups.chooseGroup"));
+      return;
+    }
     submitting.current = true;
     setPosting(true);
     try {
@@ -738,27 +739,22 @@ export default function Capture() {
       const before = mineOf(s.posts, s.userId);
       const wasUnlocked = postedToday(before);
       const goalsBefore = sdgsOf(before);
-      const leagueBefore = leagueOf(s.posts, s.userId, s.comune?.id, author);
       const isDrop = action === drop.action && canClaimDrop(drop, s.posts, s.userId, hasBackend);
-      const toSquad = audience === "squad" && squadId ? squadId : undefined;
       const posted = await addPost({
         action,
         photo: typeof photo === "string" ? persistMedia(photo) : photo,
         proof: typeof proof === "string" ? persistMedia(proof) : proof,
         caption: caption.trim(),
-        audience: audience === "squad" && !toSquad ? "comune" : audience,
+        audience,
         place: shareSpot ? place : HIDDEN_PLACE,
         // The Comune centre is an area reference, never the location of the act.
         location: shareSpot && comune ? {lat: comune.lat, lon: comune.lon} : undefined,
         challengeId: isDrop ? drop.id : undefined,
-        squadId: toSquad,
-        spotId: linkableSpotId(spotId),
+        groupId: audience === "group" ? groupId : undefined,
+        spotId: spotChoices.some((s) => s.id === spotId) ? linkableSpotId(spotId) : undefined,
       });
       const now = useApp.getState();
       const after = mineOf(now.posts, now.userId);
-      const leagueAfter = leagueOf(now.posts, now.userId, now.comune?.id, author);
-      const rankBefore = leagueBefore.findIndex((r) => r.me) + 1;
-      const rankAfter = leagueAfter.findIndex((r) => r.me) + 1;
       setResult({
         seeds: seedsFor(posted),
         streak: streakOf(after),
@@ -766,13 +762,13 @@ export default function Capture() {
         isDrop: !!posted.isDrop,
         action,
         photo,
-        rankBefore,
-        rankAfter,
-        passed: leagueAfter.slice(rankAfter, rankBefore).map((r) => r.name),
-        next: rankAfter > 1 ? { name: leagueAfter[rankAfter - 2].name, gap: leagueAfter[rankAfter - 2].points - leagueAfter[rankAfter - 1].points } : undefined,
+        destination: audience === "group" ? selectedGroup!.name : audience === "public" ? t("common.everyone") : place,
+        pending: !!posted.pending,
         newGoals: ACTIONS[action].sdgs.filter((g) => !goalsBefore.has(g)),
       });
       setStep("done");
+    } catch {
+      toast(t(audience === "group" ? "groups.chooseGroup" : "shared.checkConnection"));
     } finally {
       submitting.current = false;
       setPosting(false);
@@ -795,7 +791,7 @@ export default function Capture() {
     const totalSeeds = seedsFor({ action, isDrop: isDropAct });
     const audienceOptions: { value: Audience; icon: IconName; label: string }[] = [
       { value: "comune", icon: "building", label: t("common.comune") },
-      { value: "squad", icon: "people", label: t("common.squad") },
+      { value: "group", icon: "people", label: t("groups.group") },
       { value: "public", icon: "globe", label: t("common.everyone") },
     ];
     return (
@@ -1180,19 +1176,22 @@ export default function Capture() {
                       </View>
                     )}
 
-                    {audience === "squad" &&
-                      (squads.length ? (
+                    {audience === "group" &&
+                      (groups.length ? (
                         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-                          {squads.map((s) => (
-                            <Chip key={s.id} label={s.name} icon="people" active={s.id === squadId} onPress={() => setSquadId(s.id)} />
+                          {groups.map((s) => (
+                            <Chip key={s.id} label={s.name} icon="people" active={s.id === groupId} onPress={() => setGroupId(s.id)} />
                           ))}
                         </View>
                       ) : (
                         <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 8, paddingHorizontal: 4 }}>
                           <Icon name="info" size={14} color={C.mute} />
-                          <Text style={[T.caption, { flex: 1 }]}>{t("capture.noSquad", { place })}</Text>
+                          <Text style={[T.caption, { flex: 1 }]}>{t("groups.noGroups")}</Text>
                         </View>
                       ))}
+                    {audience === "group" && <Text style={T.caption}>{selectedGroup
+                      ? t(selectedGroup.visibility === "private" ? "groups.groupPrivate" : "groups.groupPublic", { name: selectedGroup.name })
+                      : t("groups.chooseGroup")}</Text>}
                   </Animated.View>
                 </View>
 
@@ -1245,7 +1244,7 @@ export default function Capture() {
         </ScrollView>
 
         <View style={{ paddingHorizontal: 16, paddingBottom: cover > 0 ? 10 : bottom + 10, paddingTop: 8 }}>
-          <PublishBar seeds={totalSeeds} isDrop={isDropAct} posting={posting} onPress={post} />
+          <PublishBar seeds={totalSeeds} isDrop={isDropAct} posting={posting} disabled={audience === "group" && !selectedGroup} onPress={post} />
         </View>
       </View>
     );

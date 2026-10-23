@@ -15,11 +15,17 @@ export function useSocialSync() {
   const onboarded = useApp((s) => s.onboarded);
 
   useEffect(() => {
-    if (!hasBackend || !onboarded || !comuneId) return;
+    if (!onboarded || !comuneId) return;
+    if (!hasBackend) {
+      void syncCommunity();
+      return;
+    }
     syncAll();
+    const refresh = setInterval(() => { if (AppState.currentState === "active") void syncAll(); }, 120e3);
     let timer: ReturnType<typeof setTimeout> | undefined;
     const soon = () => {
       clearTimeout(timer);
+      clearInterval(refresh);
       timer = setTimeout(syncAll, 800);
     };
     const unsubscribe = subscribeFeed(soon);

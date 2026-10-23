@@ -24,7 +24,10 @@ import { translate, type MessageKey } from "@/i18n/catalog";
 import { NO_FILTERS, type MapFilters } from "@/services/community-search";
 import * as api from "@/services/community";
 import { bboxAround } from "@/services/geo";
+import { isGroupPost, localSquadGroup, monthKey, postGroupId, type GroupProgress } from "@/services/groups";
 import { standings, type Standing } from "@/services/leaderboard";
+import { seedsFor } from "@/services/rewards";
+import { clearMediaAccess, mediaAccessVersion } from "@/services/storage-media";
 import { hasBackend } from "@/services/supabase";
 import { useApp } from "@/store/app-store";
 
@@ -54,6 +57,8 @@ type State = {
   syncedAt: Record<string, number>;
   // A place published from this phone: its local id, which screens and proofs may still hold, to the server's.
   aliases: Record<string, string>;
+  progress: Record<string, GroupProgress>;
+  migratedSquads: string[];
 };
 
 export type NewSpot = Omit<Spot, "id" | "authorId" | "createdAt" | "updatedAt" | "saves" | "going" | "reactions" | "comments" | "status"> & {
@@ -64,7 +69,7 @@ export type NewSpot = Omit<Spot, "id" | "authorId" | "createdAt" | "updatedAt" |
 type Actions = {
   join: (id: string, invite?: string) => Promise<boolean>;
   // A group's invite code alone: the id of the community it opened, or null.
-  joinByCode: (code: string) => Promise<string | null>;
+  joinByCode: (code: string, target?: string) => Promise<string | null>;
   leave: (id: string) => Promise<void>;
   create: (c: Omit<Community, "id">) => Promise<Community>;
   addSpot: (s: NewSpot) => Spot;
@@ -102,6 +107,8 @@ const initial: State = {
   filters: NO_FILTERS,
   syncedAt: {},
   aliases: {},
+  progress: {},
+  migratedSquads: [],
 };
 
 const localId = () => `local-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
@@ -129,10 +136,11 @@ export const useCommunity = create<State & Actions>()(
         void syncCommunity(id);
         return true;
       },
-      joinByCode: async (raw) => {
+      joinByCode: async (raw, target) => {
         const code = raw.trim().toUpperCase();
         if (code.length < 4) return null;
-        const id = hasBackend ? await api.joinByCode(code) : (Object.entries(get().invites).find(([, c]) => c === code)?.[0] ?? null);
+        const matches = Object.entries(get().invites).filter(([, c]) => c === code).map(([id]) => id);
+        const id = hasBackend ? await api.joinByCode(code, target) : (target && matches.includes(target) ? target : matches.length === 1 ? matches[0] : null);
         if (!id) return null;
         set({ roles: { ...get().roles, [id]: get().roles[id] ?? "member" }, primary: get().primary ?? id, invites: { ...get().invites, [id]: code } });
         await syncCommunity(id);
@@ -143,6 +151,7 @@ export const useCommunity = create<State & Actions>()(
         const roles = { ...get().roles };
         delete roles[id];
         set({ roles, primary: get().primary === id ? (Object.keys(roles)[0] ?? null) : get().primary });
+        purgeGroupAccess(id);
       },
       create: async (input) => {
         const id = communityIdFor(input.name);
@@ -155,6 +164,8 @@ export const useCommunity = create<State & Actions>()(
           roles: { ...get().roles, [id]: "moderator" },
           primary: get().primary ?? id,
           ...(invite ? { invites: { ...get().invites, [id]: invite } } : {}),
+          members: { ...get().members, [id]: [{ userId: me(), role: "moderator" }] },
+          progress: { ...get().progress, [id]: { points: 0, quest: null, months: {} } },
         });
         return c;
       },
@@ -271,7 +282,10 @@ export const useCommunity = create<State & Actions>()(
         if (hasBackend) api.setBlocked(me(), userId, on).catch(fail);
       },
       setFilters: (f) => set({ filters: { ...get().filters, ...f } }),
-      reset: () => set(initial),
+      reset: () => {
+        clearMediaAccess();
+        set(initial);
+      },
     }),
     {
       name: "begreen-community-v1",
@@ -285,6 +299,58 @@ export const useCommunity = create<State & Actions>()(
     },
   ),
 );
+
+export function migrateLocalGroups() {
+  if (hasBackend) return;
+  const app = useApp.getState();
+  for (const squad of app.squads) {
+    const s = useCommunity.getState();
+    if (s.migratedSquads.includes(squad.id)) continue;
+    const { community, progress } = localSquadGroup(squad, app.comune);
+    useCommunity.setState({
+      catalog: [...s.catalog.filter((c) => c.id !== community.id), community],
+      roles: { ...s.roles, [community.id]: "moderator" },
+      members: { ...s.members, [community.id]: squad.memberIds.map((userId) => ({ userId, role: userId === app.userId ? "moderator" : "member" })) },
+      invites: { ...s.invites, [community.id]: squad.code },
+      progress: { ...s.progress, [community.id]: progress },
+      migratedSquads: [...s.migratedSquads, squad.id],
+    });
+  }
+}
+
+export function recordGroupPost(p: Post) {
+  const id = postGroupId(p);
+  if (!id) return;
+  const s = useCommunity.getState();
+  const old = s.progress[id] ?? { points: 0, quest: null, months: {} };
+  const month = monthKey(p.createdAt);
+  const monthly = old.months[month] ?? {};
+  const quest = old.quest;
+  const expired = quest && Date.parse(quest.endsAt) <= p.createdAt;
+  useCommunity.setState({ progress: { ...s.progress, [id]: {
+    points: old.points + seedsFor(p),
+    months: { ...old.months, [month]: { ...monthly, [p.action]: (monthly[p.action] ?? 0) + 1 } },
+    quest: quest ? {
+      ...quest,
+      endsAt: expired ? new Date(p.createdAt + 7 * 864e5).toISOString() : quest.endsAt,
+      progress: (expired ? 0 : quest.progress) + (quest.action === p.action ? 1 : 0),
+    } : null,
+  } } });
+}
+
+function purgeGroupAccess(id: string) {
+  clearMediaAccess();
+  const s = useCommunity.getState();
+  const omit = <T,>(values: Record<string, T>) => Object.fromEntries(Object.entries(values).filter(([key]) => key !== id));
+  const app = useApp.getState();
+  useApp.setState({ posts: app.posts.filter((p) => postGroupId(p) !== id || p.authorId === app.userId) });
+  useCommunity.setState({
+    members: omit(s.members), postIds: omit(s.postIds), invites: omit(s.invites), progress: omit(s.progress),
+    spots: s.spots.filter((p) => p.communityId !== id || p.authorId === app.userId),
+    challenges: s.challenges.filter((c) => c.communityId !== id),
+    entries: s.entries.filter((e) => !s.challenges.some((c) => c.id === e.challengeId && c.communityId === id)),
+  });
+}
 
 // Stable, readable ids: "comune-6542283", "classe-4b-schio-k3f".
 export function communityIdFor(name: string, suffix = Math.random().toString(36).slice(2, 5)) {
@@ -410,14 +476,21 @@ let syncing: Promise<void> | null = null;
 
 // Refreshes the catalog, your memberships and the communities you're in (plus `extra`, one you're exploring).
 export function syncCommunity(extra?: string): Promise<void> {
-  if (!hasBackend) return Promise.resolve();
+  if (!hasBackend) {
+    migrateLocalGroups();
+    return Promise.resolve();
+  }
   if (syncing) return syncing.then(() => (extra && !useCommunity.getState().syncedAt[extra] ? syncCommunity(extra) : undefined));
   syncing = (async () => {
     const uid = useApp.getState().userId;
     if (!uid || !useApp.getState().onboarded) return;
     for (const p of useCommunity.getState().spots.filter((x) => x.pending)) await publishSpot(p);
 
-    const [catalog, roles, blocked] = await Promise.all([api.fetchCommunities(), api.fetchMemberships(uid), api.fetchBlocks()]);
+    const [roles, blocked] = await Promise.all([api.fetchMemberships(uid), api.fetchBlocks()]);
+    for (const id of Object.keys(useCommunity.getState().roles)) if (!roles[id]) purgeGroupAccess(id);
+    useCommunity.setState({ roles });
+    const access = mediaAccessVersion();
+    const catalog = await api.fetchCommunities([...Object.keys(roles), ...(extra ? [extra] : [])]);
     const state = useCommunity.getState();
     const merged = [...catalog, ...state.catalog.filter((c) => !catalog.some((x) => x.id === c.id) && (roles[c.id] || previews.has(c.id)))];
     // The page you opened comes first, so the limit below never drops it.
@@ -442,6 +515,7 @@ export function syncCommunity(extra?: string): Promise<void> {
     let entries = s.entries.filter((e) => keptChallenges.has(e.challengeId));
     const members = { ...s.members };
     const postIds = { ...s.postIds };
+    const progress = { ...s.progress };
     const saved = { ...s.saved };
     const going = { ...s.going };
     const reacted = { ...s.reacted };
@@ -454,6 +528,8 @@ export function syncCommunity(extra?: string): Promise<void> {
       entries = [...entries, ...d.entries];
       members[id] = d.members;
       postIds[id] = d.posts.map((p) => p.id);
+      if (d.progress) progress[id] = d.progress;
+      else delete progress[id];
       for (const sp of d.spots) {
         if (d.saved.has(sp.id)) saved[sp.id] = saved[sp.id] ?? Date.now();
         else delete saved[sp.id];
@@ -467,6 +543,7 @@ export function syncCommunity(extra?: string): Promise<void> {
       profiles = { ...profiles, ...d.profiles };
     }
     const now = Date.now();
+    if (uid !== useApp.getState().userId || access !== mediaAccessVersion()) return;
     useCommunity.setState({
       catalog: [...BUNDLED_COMMUNITIES.filter((b) => !merged.some((c) => c.id === b.id)), ...merged],
       roles,
@@ -477,17 +554,19 @@ export function syncCommunity(extra?: string): Promise<void> {
       entries,
       members,
       postIds,
+      progress,
       saved,
       going,
       reacted,
       myFlags,
-      invites: { ...s.invites, ...invites },
+      invites,
       syncedAt: { ...s.syncedAt, ...Object.fromEntries(ids.map((id) => [id, now])) },
     });
     // Proofs taken in the community join the shared feed cache, so they can be verified and reacted to.
     const app = useApp.getState();
+    const refreshed = new Map(posts.map((p) => [p.id, p]));
     const known = new Set(app.posts.map((p) => p.id));
-    useApp.setState({ posts: [...app.posts, ...posts.filter((p) => !known.has(p.id))], profiles: { ...app.profiles, ...profiles } });
+    useApp.setState({ posts: [...app.posts.map((p) => refreshed.get(p.id) ?? p), ...posts.filter((p) => !known.has(p.id))], profiles: { ...app.profiles, ...profiles } });
   })()
     .catch((e) => {
       if (__DEV__) console.warn(e);
@@ -533,22 +612,23 @@ export function useStandings(c?: Community): Standing[] {
     const inArea = new Set(fetched ?? []);
     const ids = (members ?? []).map((m) => m.userId).filter((id) => !blocked.includes(id));
     if (!isCity(c)) {
-      const team = new Set([me, ...ids]);
-      return standings(posts, { me, members: ids, counts: (p) => team.has(p.authorId) && p.audience !== "squad" });
+      return standings(posts, { me, members: ids, counts: (p) => postGroupId(p) === c.id && !blocked.includes(p.authorId) });
     }
     const mineHere = !!comune && c.comuni.some((n) => norm2(n) === norm2(comune.name));
     return standings(posts, {
       me,
-      counts: (p) => !blocked.includes(p.authorId) && p.audience !== "squad" && (inArea.has(p.id) || (mineHere && p.comuneId === comune!.id)),
+      counts: (p) => !blocked.includes(p.authorId) && !isGroupPost(p) && (inArea.has(p.id) || (mineHere && p.comuneId === comune!.id)),
     });
   }, [c, posts, me, comune, members, fetched, blocked]);
 }
 
 // Your squad mates: the people BeGreen knows you know.
 export function useFriendIds(): Set<string> {
-  const squads = useApp((s) => s.squads);
+  const members = useCommunity((s) => s.members);
+  const roles = useCommunity((s) => s.roles);
+  const catalog = useCommunity((s) => s.catalog);
   const meId = useApp((s) => s.userId);
-  return useMemo(() => new Set(squads.flatMap((q) => q.memberIds).filter((id) => id !== meId)), [squads, meId]);
+  return useMemo(() => new Set(catalog.filter((c) => !isCity(c) && roles[c.id]).flatMap((c) => members[c.id] ?? []).map((m) => m.userId).filter((id) => id !== meId)), [members, roles, catalog, meId]);
 }
 
 // A community's places as you should see them: no one you blocked, nothing hidden (except your own).

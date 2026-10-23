@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon, type IconName } from "@/components/icon";
 import { LanguageSwitch } from "@/components/language-switch";
 import { Blobs, LeafScatter } from "@/components/nature";
-import { Avatar, Button, Chip, Logo, Mono, Press } from "@/components/ui";
+import { Avatar, Bar, Button, Chip, Logo, Mono, Press } from "@/components/ui";
 import { HERO_PHOTOS } from "@/data/demo";
 import { SDG_LIST } from "@/data/sdgs";
 import { SOURCE_KINDS } from "@/data/sources";
@@ -177,10 +177,12 @@ function RacePreview({ active }: { active: boolean }) {
       clearTimeout(b);
     };
   }, [active]);
-  const rows = [...base.map((b) => ({ ...b, me: false })), { id: "me", name: "common.you" as MessageKey, pts: mine, me: true }].sort((x, y) => y.pts - x.pts);
+  const rows = [...base.map((b) => ({ ...b, me: false })), { id: "me", name: "common.you" as MessageKey, pts: mine, me: true }];
   return (
     <View style={{ paddingTop: 10 }}>
-      {rows.map((r, i) => (
+      <Mono color={C.leaf}>{t("groups.goal")}</Mono>
+      <Bar value={mine / 400} />
+      {rows.map((r) => (
         <Animated.View
           key={r.id}
           layout={LinearTransition.springify().damping(16)}
@@ -197,15 +199,12 @@ function RacePreview({ active }: { active: boolean }) {
             borderBottomColor: C.line,
           }}
         >
-          <Mono color={r.me ? C.lime : C.mute} style={{ width: 20 }}>
-            {String(i + 1).padStart(2, "0")}
-          </Mono>
+          <Icon name="leaf" color={r.me ? C.lime : C.leaf} size={20} />
           <Avatar name={r.me ? t("common.you") : t(r.name)} size={34} invert={r.me} />
           <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3, color: r.me ? C.white : C.ink }}>
             {r.me ? t("common.you") : t(r.name)}
           </Text>
-          {r.me && i === 0 && <Icon name="crown" size={14} color={C.lime} />}
-          <Text style={{ fontFamily: F.medium, fontSize: 17, color: r.me ? C.white : C.ink, fontVariant: ["tabular-nums"] }}>{r.pts}</Text>
+          {r.pts >= 230 && <Icon name="check" size={16} color={r.me ? C.lime : C.leaf} />}
         </Animated.View>
       ))}
     </View>

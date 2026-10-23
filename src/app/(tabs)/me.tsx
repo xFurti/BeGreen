@@ -27,7 +27,7 @@ import { formatNumber } from "@/i18n/format";
 import { useI18n } from "@/i18n/use-i18n";
 import { HandleTaken } from "@/services/social";
 import { supabase } from "@/services/supabase";
-import { badgeStatsOf, dropStaleBadge, seedsOf, streakOf, useApp, useLeague, useMyPosts, type ThemePref } from "@/store/app-store";
+import { badgeStatsOf, dropStaleBadge, seedsOf, streakOf, useApp, useMyPosts, type ThemePref } from "@/store/app-store";
 import { useCommunity } from "@/store/community-store";
 import { earnedBadges } from "@/data/badges";
 import { F, type Palette } from "@/theme/tokens";
@@ -55,7 +55,6 @@ export default function Me() {
   const [badgeOpen, setBadgeOpen] = useState(false);
   const streak = streakOf(posts);
   const verified = posts.filter((p) => p.verifiedBy.length >= 3).length;
-  const rank = useLeague().findIndex((r) => r.me) + 1;
   const place = comune?.name ?? t("comune.yours");
   const earnedKey = earnedBadges(badgeStatsOf(posts, verifications)).join();
   useEffect(() => {
@@ -63,7 +62,7 @@ export default function Me() {
   }, [profile.badgeId, earnedKey]);
   const share = async () => {
     try {
-      await Share.share({ message: t("me.shareTextIn", { streak, rank, place }) });
+      await Share.share({ message: t("groups.profileShare", { streak, count: posts.length, place }) });
     } catch {
       toast(t("profile.shareFailed"));
     }
@@ -104,7 +103,7 @@ export default function Me() {
             <View style={s.nameBlock}>
               <TitledName name={profileName(profile.name, t)} badgeId={profile.badgeId} align="center" lines={2} style={s.name} />
               <Text style={s.subline}>
-                @{profile.handle} · {t("me.rankIn", { rank, place })}
+                @{profile.handle} · {t("groups.profilePlace", { place })}
               </Text>
             </View>
             <View style={s.identityTags}>
