@@ -7,22 +7,16 @@ import { Icon } from "@/components/icon";
 import { LeafBurst } from "@/components/nature";
 import { ProofMedia } from "@/components/proof-media";
 import { Avatar, Mono, Press, SdgTags, Tag } from "@/components/ui";
-import { ME_ID, USERS } from "@/data/seed";
 import type { Post } from "@/data/types";
 import { actionCopy, placeLabel, textOf } from "@/i18n/content";
 import { compact, timeAgo } from "@/i18n/format";
 import { useI18n } from "@/i18n/use-i18n";
-import { useApp } from "@/store/app-store";
+import { useApp, useAuthor } from "@/store/app-store";
 import { C, F, R, shadow } from "@/theme/tokens";
 import { haptic } from "@/utils/format";
 
 export const VERIFY_GOAL = 3;
 export const REACTIONS = ["💚", "🔥", "😂", "😮", "🌍"];
-
-export function author(id: string, meName: string, you = "You") {
-  if (id === ME_ID) return { id, name: meName || you, handle: "you", avatar: undefined, tag: you };
-  return USERS[id];
-}
 
 function Dots({ n, dark }: { n: number; dark?: boolean }) {
   return (
@@ -39,13 +33,13 @@ function Dots({ n, dark }: { n: number; dark?: boolean }) {
 
 export function VerifyBar({ post }: { post: Post }) {
   const verify = useApp((s) => s.verify);
-  const meName = useApp((s) => s.profile.name);
+  const me = useApp((s) => s.userId);
+  const author = useAuthor();
   const { t } = useI18n();
-  const you = t("common.you");
   const n = post.verifiedBy.length;
   const done = n >= VERIFY_GOAL;
-  const mine = post.authorId === ME_ID;
-  const iVerified = post.verifiedBy.includes(ME_ID);
+  const mine = post.authorId === me;
+  const iVerified = post.verifiedBy.includes(me);
   // Survives the switch from the Verify button to the verified label, so the leaves finish flying.
   const [burst, setBurst] = useState(0);
   const leaves = burst > 0 && (
@@ -54,8 +48,26 @@ export function VerifyBar({ post }: { post: Post }) {
     </View>
   );
 
+  if (post.isDemo) {
+    return (
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+        <Icon name="info" size={14} color={C.mute} />
+        <Text style={{ fontFamily: F.regular, fontSize: 13, color: C.mute }}>{t("post.example")}</Text>
+      </View>
+    );
+  }
+
+  if (mine && post.pending) {
+    return (
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+        <Icon name="refresh" size={13} color={C.mute} />
+        <Text style={{ fontFamily: F.medium, fontSize: 13, color: C.ink2 }}>{t("post.notShared")}</Text>
+      </View>
+    );
+  }
+
   if (done) {
-    const names = post.verifiedBy.slice(0, 2).map((id) => author(id, meName, you)?.name ?? "?");
+    const names = post.verifiedBy.slice(0, 2).map((id) => author(id).name);
     return (
       <Animated.View entering={FadeIn} style={{ flexDirection: "row", alignItems: "center", gap: 6, flexShrink: 1 }}>
         {leaves}
@@ -186,12 +198,10 @@ export const PostCard = memo(function PostCard({
   lockHint?: boolean;
   index?: number;
 }) {
-  const meName = useApp((s) => s.profile.name);
   const react = useApp((s) => s.react);
   const mine = useApp((s) => s.reacted[post.id]);
   const { t, language } = useI18n();
-  const you = t("common.you");
-  const a = author(post.authorId, meName, you);
+  const a = useAuthor()(post.authorId);
   const action = actionCopy(t, post.action);
   const caption = textOf(post.caption, post.captionKey, language);
   const open = () => router.push({ pathname: "/post/[id]", params: { id: post.id } });
@@ -206,6 +216,7 @@ export const PostCard = memo(function PostCard({
             {placeLabel(post.place, t)} · {timeAgo(post.createdAt, language)}
           </Mono>
         </View>
+        {post.isDemo && <Tag label={t("common.demo")} />}
         {post.isDrop && <Tag label={t("common.drop")} solid />}
       </View>
 
@@ -241,11 +252,15 @@ export const PostCard = memo(function PostCard({
             <View style={{ flex: 1 }}>
               <VerifyBar post={post} />
             </View>
-            <Reactions post={post} />
-            <Pressable onPress={open} hitSlop={6} accessibilityLabel={t("post.comments")} style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-              <Icon name="chatOutline" size={14} color={C.mute} />
-              <Text style={{ fontFamily: F.medium, fontSize: 13, color: C.mute, fontVariant: ["tabular-nums"] }}>{post.comments.length}</Text>
-            </Pressable>
+            {!post.isDemo && (
+              <>
+                <Reactions post={post} />
+                <Pressable onPress={open} hitSlop={6} accessibilityLabel={t("post.comments")} style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+                  <Icon name="chatOutline" size={14} color={C.mute} />
+                  <Text style={{ fontFamily: F.medium, fontSize: 13, color: C.mute, fontVariant: ["tabular-nums"] }}>{post.comments.length}</Text>
+                </Pressable>
+              </>
+            )}
           </View>
         </View>
       )}

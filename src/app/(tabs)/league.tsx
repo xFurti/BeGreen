@@ -7,18 +7,17 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon } from "@/components/icon";
 import { Avatar, AvatarStack, Bar, Button, IconButton, Mono, Press, SectionHeader, TextTabs, toast, TopCover } from "@/components/ui";
 import { ACTIONS } from "@/data/actions";
-import { LEAGUE, USERS } from "@/data/seed";
 import { KIND } from "@/data/squad-kinds";
 import type { Squad } from "@/data/types";
 import type { MessageKey } from "@/i18n/catalog";
 import { questTitle, squadKindLabel } from "@/i18n/content";
 import { compact, formatNumber } from "@/i18n/format";
 import { useI18n } from "@/i18n/use-i18n";
-import { nudgedRecently, useApp, useLeague, weekResetIn, type Racer } from "@/store/app-store";
+import { nudgedRecently, useApp, useAuthor, useLeague, weekResetIn, type Racer } from "@/store/app-store";
 import { C, F, R, T } from "@/theme/tokens";
 import { haptic } from "@/utils/format";
 
-type View_ = "friends" | "squads" | "schools";
+type View_ = "people" | "squads" | "ranking";
 
 const NUDGE_KEYS = ["league.n1", "league.n2", "league.n3", "league.n4"] as const satisfies readonly MessageKey[];
 
@@ -128,7 +127,8 @@ function RacerRow({ r, rank, index }: { r: Racer; rank: number; index: number })
 
 function SquadCard({ s, index }: { s: Squad; index: number }) {
   const { t, language } = useI18n();
-  const pct = s.quest.progress / s.quest.goal;
+  const author = useAuthor();
+  const pct = Math.min(1, s.quest.progress / s.quest.goal);
   return (
     <Animated.View entering={FadeInDown.delay(index * 70).springify().damping(20)}>
       <Press
@@ -148,14 +148,16 @@ function SquadCard({ s, index }: { s: Squad; index: number }) {
         <View style={{ gap: 8 }}>
           <View style={{ flexDirection: "row", alignItems: "baseline" }}>
             <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.medium, fontSize: 14, color: C.ink }}>
-              {questTitle(t, s.quest.title)}
+              {questTitle(t, s.quest.title, s.quest.action)}
             </Text>
             <Mono color={C.ink}>{Math.round(pct * 100)}%</Mono>
           </View>
           <Bar value={pct} />
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingTop: 4 }}>
-            <AvatarStack people={s.memberIds.slice(0, 4).map((id) => ({ avatar: USERS[id]?.avatar, name: USERS[id]?.name ?? t("common.you") }))} size={22} />
-            <Text style={{ flex: 1, fontFamily: F.regular, fontSize: 13, color: C.mute }}>{t("league.members", { count: formatNumber(s.memberCount, language) })}</Text>
+            <AvatarStack people={s.memberIds.slice(0, 4).map(author)} size={22} />
+            <Text style={{ flex: 1, fontFamily: F.regular, fontSize: 13, color: C.mute }}>
+              {s.memberCount === 1 ? t("league.member") : t("league.members", { count: formatNumber(s.memberCount, language) })}
+            </Text>
             <Icon name={ACTIONS[s.quest.action].icon} size={13} color={C.mute} />
             <Mono>{t("league.left", { days: s.quest.endsInDays })}</Mono>
           </View>
@@ -168,11 +170,16 @@ function SquadCard({ s, index }: { s: Squad; index: number }) {
 export default function League() {
   const { top } = useSafeAreaInsets();
   const squads = useApp((s) => s.squads);
+  const localSquads = useApp((s) => s.localSquads);
+  const place = useApp((s) => s.comune?.name ?? s.place.name);
   const join = useApp((s) => s.joinSquad);
   const league = useLeague();
   const [code, setCode] = useState("");
-  const [tab, setTab] = useState<View_>("friends");
+  const [joining, setJoining] = useState(false);
+  const [tab, setTab] = useState<View_>("people");
   const { t, language } = useI18n();
+  const mySquadIds = new Set(squads.map((s) => s.id));
+  const ranking = [...localSquads].sort((a, b) => b.points - a.points);
 
   const myRank = league.findIndex((r) => r.me) + 1;
   const ahead = league[myRank - 2];
@@ -197,19 +204,21 @@ export default function League() {
           value={tab}
           onChange={setTab}
           options={[
-            { value: "friends", label: t("common.friends") },
+            { value: "people", label: place },
             { value: "squads", label: t("common.squads"), count: squads.length },
-            { value: "schools", label: t("common.schools") },
+            { value: "ranking", label: t("league.ranking") },
           ]}
         />
 
-        {tab === "friends" && (
+        {tab === "people" && (
           <View style={{ gap: 18 }}>
-            <Podium top3={league.slice(0, 3)} />
+            {league.length > 1 && <Podium top3={league.slice(0, 3)} />}
             <View style={{ backgroundColor: C.card, borderRadius: R.lg, padding: 16, flexDirection: "row", alignItems: "center", gap: 12 }}>
               <Text style={{ fontFamily: F.medium, fontSize: 32, letterSpacing: -1.4, color: C.ink }}>#{myRank}</Text>
               <Text style={{ flex: 1, fontFamily: F.regular, fontSize: 14, lineHeight: 19, color: C.ink2 }}>
-                {ahead ? (
+                {league.length < 2 ? (
+                  t("league.alone", { place })
+                ) : ahead ? (
                   <>
                     {t("league.seedsToPass", { gap: ahead.points - me.points, name: ahead.name })}
                   </>
@@ -224,7 +233,7 @@ export default function League() {
                 <RacerRow key={r.id} r={r} rank={i + 1} index={i} />
               ))}
             </View>
-            <Text style={[T.caption, { textAlign: "center" }]}>{t("league.footnote")}</Text>
+            <Text style={[T.caption, { textAlign: "center" }]}>{t("league.footnoteComune", { place })}</Text>
           </View>
         )}
 
@@ -233,7 +242,22 @@ export default function League() {
             {squads.map((s, i) => (
               <SquadCard key={s.id} s={s} index={i} />
             ))}
-            <View style={{ flexDirection: "row", gap: 8, alignItems: "center", backgroundColor: C.card, borderRadius: R.pill, padding: 5, paddingLeft: 18 }}>
+            {squads.length === 0 && (
+              <Text style={T.callout}>
+                No squads yet. Start one for your class, association or Comune, or join with a code from your teacher or captain.
+              </Text>
+            )}
+            <View
+              style={{
+                flexDirection: "row",
+                gap: 8,
+                alignItems: "center",
+                backgroundColor: C.card,
+                borderRadius: R.pill,
+                padding: 5,
+                paddingLeft: 18,
+              }}
+            >
               <TextInput
                 value={code}
                 onChangeText={setCode}
@@ -244,25 +268,33 @@ export default function League() {
               />
               <Button
                 size="sm"
-                label={t("league.join")}
-                disabled={code.trim().length < 4}
-                onPress={() => {
-                  const s = join(code);
-                  if (s) router.push({ pathname: "/squad/[id]", params: { id: s.id } });
-                  else Alert.alert(t("league.noSquad"), t("league.noSquadBody"));
-                  setCode("");
+                label={joining ? "…" : t("league.join")}
+                disabled={code.trim().length < 4 || joining}
+                onPress={async () => {
+                  setJoining(true);
+                  try {
+                    const s = await join(code);
+                    if (s) router.push({ pathname: "/squad/[id]", params: { id: s.id } });
+                    else Alert.alert(t("league.noSquad"), t("league.noSquadBody"));
+                    setCode("");
+                  } catch {
+                    Alert.alert(t("squad.joinFail"), t("shared.checkConnection"));
+                  } finally {
+                    setJoining(false);
+                  }
                 }}
               />
             </View>
           </View>
         )}
 
-        {tab === "schools" && (
+        {tab === "ranking" && (
           <View style={{ gap: 4 }}>
-            <SectionHeader title={t("league.city")} action="Milano" />
-            <Text style={[T.caption, { marginBottom: 10 }]}>{t("league.cityBody")}</Text>
-            {LEAGUE.map((l, i) => {
-              const mine = l.name === "Liceo Volta";
+            <SectionHeader title={t("league.town")} action={place} />
+            <Text style={[T.caption, { marginBottom: 10 }]}>{t("league.townBody", { place })}</Text>
+            {ranking.length === 0 && <Text style={T.callout}>{t("league.townEmpty", { place })}</Text>}
+            {ranking.map((l, i) => {
+              const mine = mySquadIds.has(l.id);
               return (
                 <Animated.View
                   key={l.id}
@@ -283,16 +315,21 @@ export default function League() {
                   <Mono color={mine ? C.lime : C.mute} style={{ width: 22 }}>
                     {String(i + 1).padStart(2, "0")}
                   </Mono>
-                  <View style={{ flex: 1, gap: 2 }}>
+                  <Press
+                    scale={0.99}
+                    onPress={() => router.push({ pathname: "/squad/[id]", params: { id: l.id } })}
+                    accessibilityLabel={l.name}
+                    style={{ flex: 1, gap: 2 }}
+                  >
                     <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3, color: mine ? C.white : C.ink }}>{l.name}</Text>
-                    {mine && <Text style={{ fontFamily: F.regular, fontSize: 12, color: C.forestMute }}>{t("league.yourSchool")}</Text>}
-                  </View>
+                    <Text style={{ fontFamily: F.regular, fontSize: 12, color: mine ? C.forestMute : C.mute }}>
+                      {mine ? `${t("league.yourSquad")} · ` : ""}
+                      {squadKindLabel(t, l.kind)} · {l.memberCount === 1 ? t("league.member") : t("league.members", { count: formatNumber(l.memberCount, language) })}
+                    </Text>
+                  </Press>
                   <Text style={{ fontFamily: F.medium, fontSize: 16, color: mine ? C.white : C.ink, fontVariant: ["tabular-nums"] }}>
                     {formatNumber(l.points, language)}
                   </Text>
-                  <Mono color={l.delta > 0 ? (mine ? C.lime : C.green) : l.delta < 0 ? C.red : C.mute} style={{ width: 28, textAlign: "right" }}>
-                    {l.delta > 0 ? `↑${l.delta}` : l.delta < 0 ? `↓${-l.delta}` : "–"}
-                  </Mono>
                 </Animated.View>
               );
             })}

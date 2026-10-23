@@ -25,7 +25,7 @@ export const generatedMessages = defineMessages(
       },
       pickup: {
         title: "Show {name} some love.",
-        why: "{name} is {km} km from you. Grab a bag and a friend — litter there ends up in soil, water and animals.",
+        why: "{name} is {km} km from {city}. Grab a bag and a friend — litter there ends up in soil, water and animals.",
         metric: "{km} km away",
       },
       refill: {
@@ -66,7 +66,7 @@ export const generatedMessages = defineMessages(
         class:
           "European Air Quality Index {aqi}/100 → “{band}”. Driver right now: {name} at {value} {unit}. Lesson idea: plot the next 24 h (peak {peak} at {hour}:00) and explain why NO₂ follows rush hours while O₃ follows sunshine.",
         comune:
-          "Modelled EAQI {aqi} ({band}). PM2.5 {pm25}, PM10 {pm10}, NO₂ {no2}, O₃ {o3} µg/m³. Source is the CAMS ensemble on a ~10 km grid: indicative, not a substitute for ARPA reference stations. Community response: {carFree} verified car-free trips logged in {area} this month.",
+          "Modelled EAQI {aqi} ({band}). PM2.5 {pm25}, PM10 {pm10}, NO₂ {no2}, O₃ {o3} µg/m³. Source is the CAMS ensemble on a ~10 km grid: indicative, not a substitute for ARPA reference stations. Community response: {carFree} car-free proofs posted on BeGreen in {area} this month.",
         actRide: "Ride it",
         actCarFree: "Go car-free",
       },
@@ -184,7 +184,7 @@ export const generatedMessages = defineMessages(
       },
       pickup: {
         title: "Prenditi cura di {name}.",
-        why: "{name} è a {km} km da te. Prendi un sacco e un amico: i rifiuti lì finiscono nel suolo, nell’acqua e negli animali.",
+        why: "{name} è a {km} km da {city}. Prendi un sacco e un amico: i rifiuti lì finiscono nel suolo, nell’acqua e negli animali.",
         metric: "a {km} km",
       },
       refill: {
@@ -225,7 +225,7 @@ export const generatedMessages = defineMessages(
         class:
           "Indice europeo della qualità dell’aria {aqi}/100 → “{band}”. A spingere adesso: {name} a {value} {unit}. Idea per la lezione: disegnate le prossime 24 h (picco {peak} alle {hour}:00) e spiegate perché NO₂ segue le ore di punta e O₃ segue il sole.",
         comune:
-          "EAQI modellizzato {aqi} ({band}). PM2.5 {pm25}, PM10 {pm10}, NO₂ {no2}, O₃ {o3} µg/m³. La fonte è l’ensemble CAMS su una griglia di circa 10 km: indicativo, non sostituisce le stazioni di riferimento ARPA. Risposta della comunità: {carFree} spostamenti senza auto verificati registrati a {area} questo mese.",
+          "EAQI modellizzato {aqi} ({band}). PM2.5 {pm25}, PM10 {pm10}, NO₂ {no2}, O₃ {o3} µg/m³. La fonte è l’ensemble CAMS su una griglia di circa 10 km: indicativo, non sostituisce le stazioni di riferimento ARPA. Risposta della comunità: {carFree} prove senza auto pubblicate su BeGreen a {area} questo mese.",
         actRide: "Pedala",
         actCarFree: "Senza auto",
       },

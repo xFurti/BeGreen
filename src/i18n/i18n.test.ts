@@ -7,7 +7,7 @@ import { formatNumber, monthName, timeAgo, weekdayInitials } from "@/i18n/format
 import { languageFromTag } from "@/i18n/locale";
 import { applyPersisted, normalizeQuestTitle } from "@/i18n/persist";
 import { SAMPLE_PULSE } from "@/services/env";
-import { buildDrop } from "@/services/drop";
+import { buildDrop, localizeDrop } from "@/services/drop";
 import { buildInsights } from "@/services/interpret";
 import { answerLocally } from "@/services/leaf";
 
@@ -105,14 +105,26 @@ describe("generated copy", () => {
   const community = { carFree: 7421, areaName: "Municipio 3" };
 
   it("keeps the measured numbers when the Drop changes language", () => {
-    const en = buildDrop(SAMPLE_PULSE, "en");
-    const it = buildDrop(SAMPLE_PULSE, "it");
+    const en = buildDrop(SAMPLE_PULSE, "c:2026-10-23", "en");
+    const it = buildDrop(SAMPLE_PULSE, "c:2026-10-23", "it");
     assert.equal(en.action, it.action);
     assert.notEqual(en.title, it.title);
     assert.deepEqual(numbers(`${en.why} ${en.metric}`), numbers(`${it.why} ${it.metric}`));
     assert.match(en.metric, /31\.2/);
     assert.match(it.metric, /31,2/);
     assert.match(it.title, /auto|strada/i);
+  });
+
+  it("reads a shared Drop in each person's language from its stored readings", () => {
+    const fromItalianPhone = buildDrop(SAMPLE_PULSE, "c:2026-10-23", "it");
+    const readInEnglish = localizeDrop(fromItalianPhone, "en");
+    const builtInEnglish = buildDrop(SAMPLE_PULSE, "c:2026-10-23", "en");
+    assert.equal(readInEnglish.title, builtInEnglish.title);
+    assert.equal(readInEnglish.why, builtInEnglish.why);
+    assert.equal(readInEnglish.metric, builtInEnglish.metric);
+    assert.equal(localizeDrop({ ...fromItalianPhone, data: {} }, "en").title, fromItalianPhone.title);
+    const { city: _city, ...withoutCity } = fromItalianPhone.data;
+    assert.match(localizeDrop({ ...fromItalianPhone, data: withoutCity }, "en", "Segrate").why, /Segrate/);
   });
 
   it("explains the same pulse in both languages", () => {

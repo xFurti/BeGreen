@@ -5,17 +5,20 @@ import { Alert, Pressable, ScrollView, Share, Text, useWindowDimensions, View } 
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { ComuneSection } from "@/components/comune-card";
 import { Icon, type IconName } from "@/components/icon";
 import { LanguageSwitch } from "@/components/language-switch";
 import { Avatar, IconButton, Logo, Mono, Press, SectionHeader, TopCover, useCountUp } from "@/components/ui";
 import { ACTIONS } from "@/data/actions";
 import { daysTo2030, SDG_LIST } from "@/data/sdgs";
 import type { Post } from "@/data/types";
+import { useComune } from "@/hooks/use-comune";
 import type { MessageKey } from "@/i18n/catalog";
 import { profileName, sdgTitle } from "@/i18n/content";
 import { formatDecimal, formatNumber, monthName, weekdayInitials } from "@/i18n/format";
 import { useI18n } from "@/i18n/use-i18n";
-import { sdgsOf, seedsOf, streakOf, useApp, useLeague } from "@/store/app-store";
+import { supabase } from "@/services/supabase";
+import { sdgsOf, seedsOf, streakOf, useApp, useLeague, useMyPosts } from "@/store/app-store";
 import { C, F, R, T } from "@/theme/tokens";
 import { haptic } from "@/utils/format";
 
@@ -185,20 +188,23 @@ function Stat({ value, label, first }: { value: number; label: string; first?: b
 export default function Me() {
   const { top } = useSafeAreaInsets();
   const profile = useApp((s) => s.profile);
-  const posts = useApp((s) => s.myPosts);
-  const bonus = useApp((s) => s.bonusSeeds);
-  const verifiedCount = useApp((s) => Object.keys(s.verified).length);
+  const posts = useMyPosts();
+  const verifiedCount = useApp((s) => s.verifiedCount);
+  const comune = useApp((s) => s.comune);
   const explain = useApp((s) => s.explain);
   const setExplain = useApp((s) => s.setExplain);
   const reset = useApp((s) => s.reset);
   const { t, language } = useI18n();
+  const pulse = useApp((s) => s.pulse);
+  const comuneView = useComune();
   const league = useLeague();
   const rank = league.findIndex((r) => r.me) + 1;
 
   const { width } = useWindowDimensions();
   const badgeSize = Math.floor((width - 40 - 16) / 3);
   const streak = streakOf(posts);
-  const seeds = seedsOf(posts, bonus);
+  const seeds = seedsOf(posts, verifiedCount);
+  const place = comune?.name ?? t("comune.yours");
   const imp = impact(posts);
   const kinds = new Set(posts.map((p) => p.action));
   const goals = sdgsOf(posts);
@@ -221,13 +227,13 @@ export default function Me() {
             <IconButton
               icon="share"
               label={t("me.share")}
-              onPress={() => Share.share({ message: t("me.shareText", { streak, rank }) })}
+              onPress={() => Share.share({ message: t("me.shareTextIn", { streak, rank, place }) })}
             />
           </View>
           <View style={{ gap: 6 }}>
             <Text style={[T.hero, { fontSize: 40, lineHeight: 42 }]}>{profileName(profile.name, t)}</Text>
             <Mono>
-              @{profile.handle || "you"} · {t(ROLE_LABEL[profile.role])} · {t("me.rank", { rank })}
+              @{profile.handle || t("common.youInline")} · {t(ROLE_LABEL[profile.role])} · {t("me.rankIn", { rank, place })}
             </Mono>
           </View>
           <View style={{ flexDirection: "row" }}>
@@ -242,8 +248,13 @@ export default function Me() {
           <Agenda posts={posts} />
         </Animated.View>
 
+        <Animated.View entering={FadeInDown.delay(120)} style={{ gap: 16 }}>
+          <SectionHeader index="02" title={t("myComune.title")} action={t("myComune.sources")} onAction={() => router.push("/sources")} />
+          <ComuneSection view={comuneView} pulse={pulse} />
+        </Animated.View>
+
         <View style={{ gap: 16 }}>
-          <SectionHeader index="02" title={t("me.impact")} action={t("me.howCount")} onAction={() => router.push("/sources")} />
+          <SectionHeader index="03" title={t("me.impact")} action={t("me.howCount")} onAction={() => router.push("/sources")} />
           <View style={{ flexDirection: "row", flexWrap: "wrap", borderTopWidth: 1, borderTopColor: C.line }}>
             <Imp value={formatDecimal(imp.co2, language, 1)} label={t("me.co2")} />
             <Imp value={formatNumber(imp.items, language)} label={t("me.items")} right />
@@ -254,12 +265,12 @@ export default function Me() {
         </View>
 
         <View style={{ gap: 16 }}>
-          <SectionHeader index="03" title={t("me.memories")} action={monthName(new Date(), language)} />
+          <SectionHeader index="04" title={t("me.memories")} action={monthName(new Date(), language)} />
           <Calendar posts={posts} />
         </View>
 
         <View style={{ gap: 16 }}>
-          <SectionHeader index="04" title={t("me.badges")} action={`${badges.filter((b) => b.on).length}/${badges.length}`} />
+          <SectionHeader index="05" title={t("me.badges")} action={`${badges.filter((b) => b.on).length}/${badges.length}`} />
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             {badges.map((b) => (
               <View
@@ -282,6 +293,7 @@ export default function Me() {
         </View>
 
         <View style={{ borderTopWidth: 1, borderTopColor: C.line }}>
+          <Row icon="location" label={t("common.comune")} value={comune?.name} onPress={() => router.push("/comune")} />
           <View style={{ flexDirection: "row", alignItems: "center", gap: 14, minHeight: 56, borderBottomWidth: 1, borderBottomColor: C.line }}>
             <Icon name="globe" size={16} color={C.ink} />
             <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2 }}>{t("language.row")}</Text>
@@ -298,14 +310,15 @@ export default function Me() {
           <Row icon="sparkle" label={t("common.askLeaf")} onPress={() => router.push("/leaf")} />
           <Row
             icon="refresh"
-            label={t("me.reset")}
+            label={t("me.signOut")}
             onPress={() =>
-              Alert.alert(t("me.resetTitle"), t("me.resetBody"), [
+              Alert.alert(t("me.signOutTitle"), supabase ? t("me.signOutBody") : t("me.signOutLocal"), [
                 { text: t("common.cancel"), style: "cancel" },
                 {
-                  text: t("me.resetConfirm"),
+                  text: t("me.signOutConfirm"),
                   style: "destructive",
-                  onPress: () => {
+                  onPress: async () => {
+                    await supabase?.auth.signOut().catch(() => {});
                     reset();
                     router.replace("/onboarding");
                   },

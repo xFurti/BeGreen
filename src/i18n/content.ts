@@ -48,7 +48,11 @@ export function squadKindLabel(t: Translator, kind: SquadKind) {
   return t(`ref.squadKinds.${kind}`);
 }
 
-export function questTitle(t: Translator, stored: string) {
+// A new squad's first quest follows the Comune's Drop: stored as "actWeek" and named after its act.
+export const ACT_WEEK = "actWeek";
+
+export function questTitle(t: Translator, stored: string, action?: ActionId) {
+  if (stored === ACT_WEEK && action) return t("ref.quests.actWeek", { act: t(`actions.${action}.label`) });
   const key = normalizeQuestTitle(stored);
   const path = `ref.quests.${key}`;
   return hasMessage(path) ? t(path) : stored;

@@ -1,4 +1,3 @@
-import * as Location from "expo-location";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
@@ -8,19 +7,30 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Icon, type IconName } from "@/components/icon";
 import { LanguageSwitch } from "@/components/language-switch";
-import { Blobs, LeafScatter, LeafSwitch } from "@/components/nature";
-import { Avatar, Button, Chip, Logo, Mono } from "@/components/ui";
+import { Blobs, LeafScatter } from "@/components/nature";
+import { Avatar, Button, Chip, Logo, Mono, Press } from "@/components/ui";
+import { HERO_PHOTOS } from "@/data/demo";
 import { SDG_LIST } from "@/data/sdgs";
-import { HERO_PHOTOS, USERS } from "@/data/seed";
 import { SOURCE_KINDS } from "@/data/sources";
 import type { Role } from "@/data/types";
-import { sourceKindCopy } from "@/i18n/content";
 import type { MessageKey } from "@/i18n/catalog";
+import { sourceKindCopy } from "@/i18n/content";
 import { useI18n } from "@/i18n/use-i18n";
-import { locate } from "@/hooks/use-pulse";
-import { useApp } from "@/store/app-store";
+import { comuneLabel } from "@/services/comuni";
+import { HandleTaken } from "@/services/social";
+import { hasBackend } from "@/services/supabase";
+import { registerProfile, useApp } from "@/store/app-store";
 import { C, F, R, T } from "@/theme/tokens";
 import { haptic } from "@/utils/format";
+
+const HANDLE = /^[a-z0-9._]{2,24}$/;
+const toHandle = (name: string) =>
+  name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9._]/g, "")
+    .slice(0, 24);
 
 const ROLES: { value: Role; icon: IconName; label: MessageKey; hint: MessageKey }[] = [
   { value: "student", icon: "school", label: "roles.student", hint: "roles.studentHint" },
@@ -140,11 +150,11 @@ function DataPreview() {
 // You start last, then climb. Competition, explained in one animation.
 function RacePreview({ active }: { active: boolean }) {
   const { t } = useI18n();
-  const base = [
-    { id: "giulia", pts: 345 },
-    { id: "aisha", pts: 270 },
-    { id: "elena", pts: 205 },
-    { id: "marco", pts: 160 },
+  const base: { id: string; name: MessageKey; pts: number }[] = [
+    { id: "a", name: "onboarding.race.classmate", pts: 345 },
+    { id: "b", name: "onboarding.race.neighbour", pts: 270 },
+    { id: "c", name: "onboarding.race.teacher", pts: 205 },
+    { id: "d", name: "onboarding.race.squadMate", pts: 160 },
   ];
   const [mine, setMine] = useState(120);
   useEffect(() => {
@@ -162,7 +172,7 @@ function RacePreview({ active }: { active: boolean }) {
       clearTimeout(b);
     };
   }, [active]);
-  const rows = [...base.map((b) => ({ ...b, me: false })), { id: "me", pts: mine, me: true }].sort((x, y) => y.pts - x.pts);
+  const rows = [...base.map((b) => ({ ...b, me: false })), { id: "me", name: "common.you" as MessageKey, pts: mine, me: true }].sort((x, y) => y.pts - x.pts);
   return (
     <View style={{ paddingTop: 10 }}>
       {rows.map((r, i) => (
@@ -185,9 +195,9 @@ function RacePreview({ active }: { active: boolean }) {
           <Mono color={r.me ? C.lime : C.mute} style={{ width: 20 }}>
             {String(i + 1).padStart(2, "0")}
           </Mono>
-          {r.me ? <Avatar name={t("common.you")} size={34} invert /> : <Avatar src={USERS[r.id].avatar} name={USERS[r.id].name} size={34} />}
+          <Avatar name={r.me ? t("common.you") : t(r.name)} size={34} invert={r.me} />
           <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3, color: r.me ? C.white : C.ink }}>
-            {r.me ? t("common.you") : USERS[r.id].name}
+            {r.me ? t("common.you") : t(r.name)}
           </Text>
           {r.me && i === 0 && <Icon name="crown" size={14} color={C.lime} />}
           <Text style={{ fontFamily: F.medium, fontSize: 17, color: r.me ? C.white : C.ink, fontVariant: ["tabular-nums"] }}>{r.pts}</Text>
@@ -234,13 +244,17 @@ export default function Onboarding() {
   const pager = useRef<ScrollViewInstance>(null);
   const [page, setPage] = useState(0);
   const [name, setName] = useState("");
+  const [handle, setHandle] = useState("");
+  const [handleEdited, setHandleEdited] = useState(false);
   const [role, setRole] = useState<Role>("student");
-  const [demo, setDemo] = useState(true);
-  const [loc, setLoc] = useState<"idle" | "asking" | "on" | "off">("idle");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const finish = useApp((s) => s.finishOnboarding);
-  const setPlace = useApp((s) => s.setPlace);
+  const comune = useApp((s) => s.comune);
   const { t } = useI18n();
   const inner = width - 40;
+  const h = handleEdited ? handle : toHandle(name);
+  const canStart = name.trim().length > 0 && HANDLE.test(h) && !!comune && !busy;
 
   const go = (i: number) => {
     haptic.tap();
@@ -248,21 +262,21 @@ export default function Onboarding() {
     setPage(i);
   };
 
-  const askLocation = async () => {
-    setLoc("asking");
-    const r = await Location.requestForegroundPermissionsAsync().catch(() => null);
-    if (r?.granted) {
-      const here = await locate();
-      if (here) setPlace(here);
-      setLoc("on");
-    } else setLoc("off");
-  };
-
-  const start = () => {
-    haptic.success();
-    const n = name.trim();
-    finish({ name: n, handle: n.toLowerCase().replace(/[^a-z0-9]/g, "") || "you", role }, demo);
-    router.replace("/");
+  const start = async () => {
+    if (!canStart) return;
+    const profile = { name: name.trim(), handle: h, role };
+    setBusy(true);
+    setError(null);
+    try {
+      await registerProfile(profile, comune);
+      haptic.success();
+      finish(profile);
+      router.replace("/");
+    } catch (e) {
+      setError(e instanceof HandleTaken ? t("onboarding.handleTaken", { handle: h }) : t("onboarding.offline"));
+    } finally {
+      setBusy(false);
+    }
   };
 
   const slides = [
@@ -360,6 +374,39 @@ export default function Onboarding() {
             }}
           />
 
+          <View style={{ gap: 8 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 4,
+                borderBottomWidth: 1,
+                borderBottomColor: HANDLE.test(h) ? C.line : C.red,
+              }}
+            >
+              <Text style={{ fontFamily: F.monoMedium, fontSize: 17, color: C.mute }}>@</Text>
+              <TextInput
+                value={h}
+                onChangeText={(v) => {
+                  setHandleEdited(true);
+                  setHandle(
+                    v
+                      .toLowerCase()
+                      .replace(/[^a-z0-9._]/g, "")
+                      .slice(0, 24),
+                  );
+                }}
+                placeholder={t("onboarding.handle")}
+                placeholderTextColor={C.faint}
+                autoCapitalize="none"
+                autoCorrect={false}
+                accessibilityLabel={t("onboarding.handleA11y")}
+                style={{ flex: 1, height: 46, fontSize: 17, fontFamily: F.monoMedium, color: C.ink }}
+              />
+            </View>
+            <Text style={T.caption}>{t("onboarding.handleHint")}</Text>
+          </View>
+
           <View style={{ gap: 12 }}>
             <Mono color={C.forest}>{t("onboarding.joining")}</Mono>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
@@ -371,37 +418,37 @@ export default function Onboarding() {
           </View>
 
           <View style={{ borderTopWidth: 1, borderTopColor: C.line }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: C.line }}>
+            <Press
+              scale={0.99}
+              onPress={() => router.push("/comune")}
+              accessibilityLabel={comune ? t("comune.change", { name: comune.name }) : t("onboarding.chooseA11y")}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 14,
+                paddingVertical: 16,
+                borderBottomWidth: 1,
+                borderBottomColor: C.line,
+              }}
+            >
               <Icon name="location" size={17} color={C.leaf} />
               <View style={{ flex: 1, gap: 2 }}>
-                <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2 }}>{t("onboarding.local")}</Text>
-                <Text style={{ fontFamily: F.regular, color: C.mute, fontSize: 13 }}>
-                  {loc === "on" ? t("onboarding.localOn") : loc === "off" ? t("onboarding.localOff") : t("onboarding.localIdle")}
-                </Text>
+                <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2 }}>{comune ? comuneLabel(comune) : t("comune.yourTitle")}</Text>
+                <Text style={{ fontFamily: F.regular, color: C.mute, fontSize: 13 }}>{comune ? t("onboarding.comuneSet") : t("onboarding.comunePick")}</Text>
               </View>
-              {loc === "on" ? (
-                <Icon name="checkSeal" size={20} color={C.leaf} />
-              ) : (
-                <Button size="sm" label={loc === "asking" ? "…" : t("onboarding.allow")} onPress={askLocation} />
-              )}
-            </View>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: C.line }}>
-              <Icon name="sparkle" size={17} color={C.leaf} />
-              <View style={{ flex: 1, gap: 2 }}>
-                <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2 }}>{t("onboarding.demo")}</Text>
-                <Text style={{ fontFamily: F.regular, color: C.mute, fontSize: 13 }}>{t("onboarding.demoHint")}</Text>
-              </View>
-              <LeafSwitch value={demo} onValueChange={setDemo} label={t("onboarding.demo")} />
-            </View>
+              {comune ? <Icon name="checkSeal" size={20} color={C.leaf} /> : <Mono color={C.ink}>{t("onboarding.choose")}</Mono>}
+            </Press>
           </View>
+          {!hasBackend && <Text style={T.caption}>{t("onboarding.offlineProto")}</Text>}
         </ScrollView>
       </ScrollView>
 
-      <View style={{ paddingHorizontal: 20, paddingBottom: bottom + 12, paddingTop: 8 }}>
+      <View style={{ paddingHorizontal: 20, paddingBottom: bottom + 12, paddingTop: 8, gap: 10 }}>
+        {page === last && error && <Text style={[T.caption, { color: C.red, textAlign: "center" }]}>{error}</Text>}
         {page < last ? (
           <Button label={page === 0 ? t("onboarding.letsGo") : t("common.next")} onPress={() => go(page + 1)} />
         ) : (
-          <Button label={t("onboarding.start")} kind="green" icon="leaf" onPress={start} />
+          <Button label={busy ? t("onboarding.joiningNow") : t("onboarding.start")} kind="green" icon="leaf" disabled={!canStart} onPress={start} />
         )}
       </View>
     </KeyboardAvoidingView>

@@ -5,7 +5,7 @@ import { Text, View } from "react-native";
 import { Icon } from "@/components/icon";
 import { Blobs, LeafMark } from "@/components/nature";
 import { AvatarStack, LiveDot, Mono, Press, SdgTags } from "@/components/ui";
-import { USERS } from "@/data/seed";
+import type { User } from "@/data/types";
 import { actionCopy } from "@/i18n/content";
 import { formatNumber } from "@/i18n/format";
 import { useI18n } from "@/i18n/use-i18n";
@@ -30,19 +30,18 @@ export function useCountdown() {
   return t;
 }
 
-const crowd = ["giulia", "aisha", "nico"].map((id) => USERS[id]);
-
 export function DropCard({
   drop,
   done,
   place,
-  doneCount,
+  crowd,
   ready = true,
 }: {
   drop: Drop;
   done: boolean;
   place: string;
-  doneCount: number;
+  // Real people in this Comune who already did today's challenge.
+  crowd: User[];
   ready?: boolean;
 }) {
   const { t, language } = useI18n();
@@ -97,12 +96,16 @@ export function DropCard({
           </View>
           <View style={{ height: 1, backgroundColor: C.forestLine }} />
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-            <AvatarStack people={crowd} size={22} ring={C.forest} />
+            {crowd.length > 0 && <AvatarStack people={crowd.slice(0, 3)} size={22} ring={C.forest} />}
             <Text style={{ flex: 1, fontFamily: F.regular, fontSize: 13, color: C.forestMute }} numberOfLines={1}>
               {done ? (
-                <Text style={{ color: C.lime, fontFamily: F.medium }}>{t("dropCard.in")}</Text>
+                <Text style={{ color: C.lime, fontFamily: F.medium }}>
+                  {crowd.length > 1 ? t("dropCard.inWith", { count: formatNumber(crowd.length - 1, language), place }) : t("dropCard.in")}
+                </Text>
+              ) : crowd.length ? (
+                crowd.length === 1 ? t("dropCard.didInOne", { place }) : t("dropCard.didIn", { count: formatNumber(crowd.length, language), place })
               ) : (
-                t("dropCard.did", { count: formatNumber(doneCount, language) })
+                t("dropCard.first", { place })
               )}
             </Text>
             <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: C.lime, alignItems: "center", justifyContent: "center" }}>

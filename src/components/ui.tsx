@@ -2,8 +2,6 @@ import { Image } from "expo-image";
 import { useEffect, useState, type ReactNode } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
 import Animated, {
-  FadeInUp,
-  FadeOutUp,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
@@ -12,7 +10,6 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { create } from "zustand";
 
 import { Icon, type IconName } from "@/components/icon";
 import { LeafMark, SwayingLeaf } from "@/components/nature";
@@ -20,7 +17,7 @@ import { SOURCE_KINDS, SOURCES, type SourceId } from "@/data/sources";
 import type { Media } from "@/data/types";
 import { sourceCopy, sourceKindCopy } from "@/i18n/content";
 import { useI18n } from "@/i18n/use-i18n";
-import { C, F, R, shadow, T } from "@/theme/tokens";
+import { C, F, R, T } from "@/theme/tokens";
 import { haptic } from "@/utils/format";
 
 // ---------- Wordmark ----------
@@ -534,49 +531,4 @@ export function useCountUp(target: number, ms = 700) {
   return n;
 }
 
-// ---------- Toast ----------
-
-type ToastMsg = { id: number; text: string; icon?: IconName };
-const useToast = create<{ msg: ToastMsg | null }>(() => ({ msg: null }));
-let toastTimer: ReturnType<typeof setTimeout> | undefined;
-
-export function toast(text: string, icon?: IconName) {
-  clearTimeout(toastTimer);
-  useToast.setState({ msg: { id: Date.now(), text, icon } });
-  toastTimer = setTimeout(() => useToast.setState({ msg: null }), 2400);
-}
-
-export function Toaster() {
-  const msg = useToast((s) => s.msg);
-  const { top } = useSafeAreaInsets();
-  if (!msg) return null;
-  return (
-    <Animated.View
-      key={msg.id}
-      entering={FadeInUp.springify().damping(18)}
-      exiting={FadeOutUp.duration(200)}
-      pointerEvents="none"
-      style={{ position: "absolute", top: top + 8, left: 0, right: 0, alignItems: "center" }}
-    >
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 8,
-          backgroundColor: C.forest,
-          paddingHorizontal: 16,
-          paddingVertical: 12,
-          minHeight: 44,
-          borderRadius: 22,
-          boxShadow: shadow.lift,
-          maxWidth: "90%",
-        }}
-      >
-        {msg.icon && <Icon name={msg.icon} size={15} color={C.lime} />}
-        <Text numberOfLines={2} style={{ flexShrink: 1, color: C.white, fontFamily: F.medium, fontSize: 14, lineHeight: 19, letterSpacing: -0.1 }}>
-          {msg.text}
-        </Text>
-      </View>
-    </Animated.View>
-  );
-}
+export { toast, Toaster } from "@/components/toast";

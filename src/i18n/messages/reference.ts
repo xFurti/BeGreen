@@ -48,6 +48,7 @@ export const referenceMessages = defineMessages(
       canalPieces: "1,000 pieces out of the canal",
       breatheOctober: "Breathe Better October",
       firstProofs: "First 10 proofs",
+      actWeek: "{act} week",
     },
     bands: {
       good: "Good",
@@ -160,9 +161,29 @@ export const referenceMessages = defineMessages(
         terms: "Aggregated & anonymised before sharing with schools or Comuni",
       },
       arpa: {
-        name: "Regional monitoring stations",
-        provider: "ARPA regional agencies (e.g. ARPA Lombardia)",
-        terms: "Open data · API access & terms still to be verified per region",
+        name: "Air stations & municipal emissions",
+        provider: "ARPAV open data (PM10 2002-2025, INEMAR Veneto 2019 emissions per comune)",
+        terms: "CC BY 4.0 · Veneto only; other regions' ARPA still to be verified",
+      },
+      ispra: {
+        name: "Land take per comune",
+        provider: "ISPRA/SNPA Consumo di suolo, edition 2025 (data 2024)",
+        terms: "CC BY 4.0 · attribution to ISPRA/SNPA",
+      },
+      rifiuti: {
+        name: "Waste & separate collection per comune",
+        provider: "ISPRA Catasto Rifiuti, year 2024",
+        terms: "Public ISPRA data · reuse licence not stated on the page, to verify",
+      },
+      sensor: {
+        name: "Citizen air sensors",
+        provider: "Sensor.Community (low-cost PM sensors run by citizens)",
+        terms: "ODbL · identifiable user agent required · not official stations",
+      },
+      gbif: {
+        name: "Species records",
+        provider: "GBIF (museums, surveys and citizen science)",
+        terms: "Licence per dataset (CC0 / CC BY / CC BY-NC) · cite GBIF.org",
       },
     },
   },
@@ -213,6 +234,7 @@ export const referenceMessages = defineMessages(
       canalPieces: "1.000 pezzi fuori dal naviglio",
       breatheOctober: "Ottobre si respira meglio",
       firstProofs: "Prime 10 prove",
+      actWeek: "Settimana: {act}",
     },
     bands: {
       good: "Buona",
@@ -325,9 +347,29 @@ export const referenceMessages = defineMessages(
         terms: "Aggregati e anonimizzati prima della condivisione con scuole o Comuni",
       },
       arpa: {
-        name: "Stazioni di monitoraggio regionali",
-        provider: "Agenzie regionali ARPA (per esempio ARPA Lombardia)",
-        terms: "Open data · accesso API e condizioni ancora da verificare per regione",
+        name: "Stazioni dell'aria ed emissioni comunali",
+        provider: "Open data ARPAV (PM10 2002-2025, emissioni per comune INEMAR Veneto 2019)",
+        terms: "CC BY 4.0 · solo Veneto; le ARPA delle altre regioni sono ancora da verificare",
+      },
+      ispra: {
+        name: "Consumo di suolo per comune",
+        provider: "ISPRA/SNPA Consumo di suolo, edizione 2025 (dati 2024)",
+        terms: "CC BY 4.0 · citare ISPRA/SNPA",
+      },
+      rifiuti: {
+        name: "Rifiuti e raccolta differenziata per comune",
+        provider: "ISPRA Catasto Rifiuti, anno 2024",
+        terms: "Dati pubblici ISPRA · licenza di riuso non indicata nella pagina, da verificare",
+      },
+      sensor: {
+        name: "Sensori dell'aria dei cittadini",
+        provider: "Sensor.Community (sensori PM a basso costo gestiti da cittadini)",
+        terms: "ODbL · serve uno user agent identificabile · non sono stazioni ufficiali",
+      },
+      gbif: {
+        name: "Segnalazioni di specie",
+        provider: "GBIF (musei, monitoraggi e citizen science)",
+        terms: "Licenza per dataset (CC0 / CC BY / CC BY-NC) · citare GBIF.org",
       },
     },
   },

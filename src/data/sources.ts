@@ -13,7 +13,7 @@ export const SOURCE_KINDS: Record<SourceKind, { color: string }> = {
   community: { color: C.green },
 };
 
-export type SourceId = "cams" | "openmeteo" | "inat" | "osm" | "begreen" | "arpa";
+export type SourceId = "cams" | "openmeteo" | "inat" | "osm" | "begreen" | "arpa" | "ispra" | "rifiuti" | "sensor" | "gbif";
 
 export const SOURCES: Record<SourceId, { kind: SourceKind; url: string; verified: boolean; mark: string }> = {
   cams: {
@@ -48,8 +48,32 @@ export const SOURCES: Record<SourceId, { kind: SourceKind; url: string; verified
   },
   arpa: {
     kind: "official",
-    url: "https://www.arpalombardia.it",
+    url: "https://www.arpa.veneto.it/dati-ambientali/open-data/atmosfera",
+    verified: true,
+    mark: "ARPAV",
+  },
+  ispra: {
+    kind: "official",
+    url: "https://www.isprambiente.gov.it/it/attivita/suolo-e-territorio/suolo/il-consumo-di-suolo/i-dati-sul-consumo-di-suolo",
+    verified: true,
+    mark: "ISPRA",
+  },
+  rifiuti: {
+    kind: "official",
+    url: "https://www.catasto-rifiuti.isprambiente.it/index.php?pg=downloadComune",
     verified: false,
-    mark: "ARPA",
+    mark: "ISPRA",
+  },
+  sensor: {
+    kind: "citizen",
+    url: "https://sensor.community",
+    verified: true,
+    mark: "SENSOR.COMMUNITY",
+  },
+  gbif: {
+    kind: "citizen",
+    url: "https://techdocs.gbif.org/en/openapi/",
+    verified: true,
+    mark: "GBIF",
   },
 };

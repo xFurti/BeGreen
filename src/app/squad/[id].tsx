@@ -1,6 +1,6 @@
 import { Image } from "expo-image";
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import { ScrollView, Share, Text, useWindowDimensions, View } from "react-native";
+import { Alert, ScrollView, Share, Text, useWindowDimensions, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import Svg, { Circle } from "react-native-svg";
 
@@ -8,12 +8,11 @@ import { Icon } from "@/components/icon";
 import { AvatarStack, Bar, Button, Mono, Press, SdgTags, SourceBadge } from "@/components/ui";
 import { KIND } from "@/data/squad-kinds";
 import { ACTIONS, DOMAINS, type ActionId, type Domain } from "@/data/actions";
-import { USERS } from "@/data/seed";
 import { actionCopy, domainLabel, questTitle, squadKindLabel } from "@/i18n/content";
 import { formatNumber } from "@/i18n/format";
 import { useI18n } from "@/i18n/use-i18n";
 import { usePulse } from "@/hooks/use-pulse";
-import { useAllPosts, useApp } from "@/store/app-store";
+import { useApp, useAuthor } from "@/store/app-store";
 import { C, F, R, T } from "@/theme/tokens";
 
 function Ring({ value, size = 112 }: { value: number; size?: number }) {
@@ -39,8 +38,12 @@ function Ring({ value, size = 112 }: { value: number; size?: number }) {
 
 export default function SquadDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const squad = useApp((s) => s.squads.find((x) => x.id === id));
-  const posts = useAllPosts().filter((p) => p.squadId === id);
+  const squad = useApp((s) => s.squads.find((x) => x.id === id) ?? s.localSquads.find((x) => x.id === id));
+  const member = useApp((s) => s.squads.some((x) => x.id === id));
+  const join = useApp((s) => s.joinSquad);
+  const allPosts = useApp((s) => s.posts);
+  const posts = allPosts.filter((p) => p.squadId === id);
+  const author = useAuthor();
   const { insights, pulse } = usePulse();
   const { t, language } = useI18n();
   const { width } = useWindowDimensions();
@@ -54,7 +57,7 @@ export default function SquadDetail() {
     );
   }
 
-  const pct = squad.quest.progress / squad.quest.goal;
+  const pct = Math.min(1, squad.quest.progress / squad.quest.goal);
   const monthly = (Object.entries(squad.monthly) as [ActionId, number][]).sort((a, b) => b[1] - a[1]);
   const total = monthly.reduce((a, [, n]) => a + n, 0);
   const maxN = Math.max(1, ...monthly.map(([, n]) => n));
@@ -93,8 +96,10 @@ export default function SquadDetail() {
         </View>
         <Text style={[T.hero, { fontSize: 38, lineHeight: 40 }]}>{squad.name}</Text>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingTop: 4 }}>
-          <AvatarStack people={squad.memberIds.slice(0, 5).map((m) => ({ avatar: USERS[m]?.avatar, name: USERS[m]?.name ?? t("common.you") }))} size={28} />
-          <Text style={{ flex: 1, fontFamily: F.regular, color: C.ink2 }}>{t("league.members", { count: formatNumber(squad.memberCount, language) })}</Text>
+          <AvatarStack people={squad.memberIds.slice(0, 5).map(author)} size={28} />
+          <Text style={{ flex: 1, fontFamily: F.regular, color: C.ink2 }}>
+            {squad.memberCount === 1 ? t("league.member") : t("league.members", { count: formatNumber(squad.memberCount, language) })}
+          </Text>
           <Press
             onPress={() => Share.share({ message: t("squad.invite", { name: squad.name, code: squad.code }) })}
             style={{ flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: C.line, paddingHorizontal: 12, height: 34, borderRadius: R.pill }}
@@ -113,17 +118,27 @@ export default function SquadDetail() {
         </View>
         <View style={{ flex: 1, gap: 6 }}>
           <Mono>{t("squad.quest", { days: squad.quest.endsInDays })}</Mono>
-          <Text style={{ fontFamily: F.medium, fontSize: 20, lineHeight: 23, letterSpacing: -0.6 }}>{questTitle(t, squad.quest.title)}</Text>
+          <Text style={{ fontFamily: F.medium, fontSize: 20, lineHeight: 23, letterSpacing: -0.6 }}>{questTitle(t, squad.quest.title, squad.quest.action)}</Text>
           <Text style={{ fontFamily: F.regular, fontSize: 13, color: C.mute }}>
             {formatNumber(squad.quest.progress, language)} / {formatNumber(squad.quest.goal, language)}
           </Text>
-          <Button
-            size="sm"
-            label={t("squad.add")}
-            icon={ACTIONS[squad.quest.action].icon}
-            style={{ alignSelf: "flex-start", marginTop: 6 }}
-            onPress={() => router.push({ pathname: "/capture", params: { action: squad.quest.action } })}
-          />
+          {member ? (
+            <Button
+              size="sm"
+              label={t("squad.add")}
+              icon={ACTIONS[squad.quest.action].icon}
+              style={{ alignSelf: "flex-start", marginTop: 6 }}
+              onPress={() => router.push({ pathname: "/capture", params: { action: squad.quest.action } })}
+            />
+          ) : (
+            <Button
+              size="sm"
+              label={t("squad.join")}
+              icon="plus"
+              style={{ alignSelf: "flex-start", marginTop: 6 }}
+              onPress={() => join(squad.code).catch(() => Alert.alert(t("squad.joinFail"), t("shared.checkConnection")))}
+            />
+          )}
         </View>
       </View>
 

@@ -28,15 +28,15 @@ import { Blobs, LeafMark, LeafSwitch } from "@/components/nature";
 import { ProofMedia } from "@/components/proof-media";
 import { Button, Chip, IconButton, Mono, Press, SdgTags, Segmented, useCountUp } from "@/components/ui";
 import { ACTION_LIST, ACTIONS, type ActionId } from "@/data/actions";
-import { DEMO_BY_ACTION } from "@/data/seed";
+import { DEMO_BY_ACTION } from "@/data/demo";
 import type { Audience, Media } from "@/data/types";
-import { translate } from "@/i18n/catalog";
 import { actionCopy } from "@/i18n/content";
 import { useI18n } from "@/i18n/use-i18n";
 import { HIDDEN_PLACE } from "@/i18n/persist";
 import { usePulse } from "@/hooks/use-pulse";
 import { persistMedia } from "@/services/media";
-import { leagueOf, postedToday, sdgsOf, streakOf, useApp } from "@/store/app-store";
+import { hasBackend } from "@/services/supabase";
+import { leagueOf, mineOf, postedToday, sdgsOf, streakOf, useApp, useAuthor } from "@/store/app-store";
 import { C, F, R, T } from "@/theme/tokens";
 import { haptic } from "@/utils/format";
 
@@ -259,13 +259,19 @@ export default function Capture() {
   // The suggested act leads the chip row, so it's visible without scrolling.
   const [order] = useState(() => [ACTIONS[action], ...ACTION_LIST.filter((x) => x.id !== action)]);
   const [caption, setCaption] = useState("");
-  const [audience, setAudience] = useState<Audience>("friends");
+  const [audience, setAudience] = useState<Audience>("comune");
   const [shareSpot, setShareSpot] = useState(true);
   const squads = useApp((s) => s.squads);
+  const comune = useApp((s) => s.comune);
   const [squadId, setSquadId] = useState<string | undefined>(squads[0]?.id);
   const addPost = useApp((s) => s.addPost);
+  const author = useAuthor();
   const [result, setResult] = useState<Result | null>(null);
   const { t } = useI18n();
+  const place = comune?.name ?? pulse.place.name;
+  // Only a challenge the backend knows about can be claimed (or any, when running on-device only).
+  const dropDone = useApp((s) => s.posts.some((p) => p.authorId === s.userId && p.challengeId === drop.id));
+  const dropOpen = !drop.offline && (drop.shared || !hasBackend) && !dropDone;
 
   useEffect(() => {
     if (realCamera && perm && !perm.granted && perm.canAskAgain) requestPerm();
@@ -349,25 +355,26 @@ export default function Capture() {
   const post = () => {
     if (!photo || !proof) return;
     const s = useApp.getState();
-    const before = s.myPosts;
-    const you = s.profile.name.trim() || translate(s.language, "common.you");
+    const before = mineOf(s.posts, s.userId);
+    const name = (id: string) => author(id).name;
     const wasUnlocked = postedToday(before);
     const goalsBefore = sdgsOf(before);
-    const leagueBefore = leagueOf(before, you);
-    const isDrop =
-      action === drop.action && !before.some((p) => p.isDrop && new Date(p.createdAt).toDateString() === new Date().toDateString());
+    const leagueBefore = leagueOf(s.posts, s.userId, s.comune?.id, name);
+    const isDrop = action === drop.action && dropOpen;
+    const toSquad = audience === "squad" && squadId ? squadId : undefined;
     addPost({
       action,
       photo: typeof photo === "string" ? persistMedia(photo) : photo,
       proof: typeof proof === "string" ? persistMedia(proof) : proof,
       caption: caption.trim(),
-      audience,
-      place: shareSpot ? pulse.place.name : HIDDEN_PLACE,
-      isDrop,
-      squadId: audience === "squad" ? squadId : undefined,
+      audience: audience === "squad" && !toSquad ? "comune" : audience,
+      place: shareSpot ? place : HIDDEN_PLACE,
+      challengeId: isDrop ? drop.id : undefined,
+      squadId: toSquad,
     });
-    const after = useApp.getState().myPosts;
-    const leagueAfter = leagueOf(after, you);
+    const now = useApp.getState();
+    const after = mineOf(now.posts, now.userId);
+    const leagueAfter = leagueOf(now.posts, now.userId, now.comune?.id, name);
     const rankBefore = leagueBefore.findIndex((r) => r.me) + 1;
     const rankAfter = leagueAfter.findIndex((r) => r.me) + 1;
     setResult({
@@ -391,7 +398,7 @@ export default function Capture() {
 
   if (step === "review" && photo && proof) {
     const a = actionCopy(t, action);
-    const isDropAct = action === drop.action;
+    const isDropAct = action === drop.action && dropOpen;
     return (
       <KeyboardAvoidingView behavior={process.env.EXPO_OS === "ios" ? "padding" : undefined} style={{ flex: 1, backgroundColor: C.bg }}>
         <View
@@ -499,24 +506,27 @@ export default function Capture() {
               value={audience}
               onChange={setAudience}
               options={[
-                { value: "friends", label: t("common.friends") },
+                { value: "comune", label: place },
                 { value: "squad", label: t("common.squad") },
                 { value: "public", label: t("common.everyone") },
               ]}
             />
-            {audience === "squad" && (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-                {squads.map((s) => (
-                  <Chip key={s.id} label={s.name} active={s.id === squadId} onPress={() => setSquadId(s.id)} />
-                ))}
-              </ScrollView>
-            )}
+            {audience === "squad" &&
+              (squads.length ? (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+                  {squads.map((s) => (
+                    <Chip key={s.id} label={s.name} active={s.id === squadId} onPress={() => setSquadId(s.id)} />
+                  ))}
+                </ScrollView>
+              ) : (
+                <Text style={T.caption}>{t("capture.noSquad", { place })}</Text>
+              ))}
           </View>
 
           <View style={{ flexDirection: "row", alignItems: "center", gap: 12, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 16 }}>
             <Icon name="location" size={16} />
             <View style={{ flex: 1, gap: 2 }}>
-              <Text style={{ fontFamily: F.medium, fontSize: 15 }}>{t("capture.showArea", { place: pulse.place.name || t("common.yourArea") })}</Text>
+              <Text style={{ fontFamily: F.medium, fontSize: 15 }}>{t("capture.showArea", { place: place || t("common.yourArea") })}</Text>
               <Text style={{ fontFamily: F.regular, fontSize: 13, color: C.mute }}>{t("capture.neighbourhood")}</Text>
             </View>
             <LeafSwitch value={shareSpot} onValueChange={setShareSpot} label={t("capture.showMine")} />

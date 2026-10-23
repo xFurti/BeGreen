@@ -3,7 +3,6 @@ import { actionMessages } from "@/i18n/messages/actions";
 import { generatedMessages } from "@/i18n/messages/generated";
 import { guideMessages } from "@/i18n/messages/guide";
 import { referenceMessages } from "@/i18n/messages/reference";
-import { seedMessages } from "@/i18n/messages/seed";
 import { uiMessages } from "@/i18n/messages/ui";
 
 const en = {
@@ -12,7 +11,6 @@ const en = {
   ref: referenceMessages.en,
   bins: guideMessages.en.bins,
   items: guideMessages.en.items,
-  seed: seedMessages.en,
   drop: generatedMessages.en.drop,
   insights: generatedMessages.en.insights,
   answers: generatedMessages.en.leaf,
@@ -24,7 +22,6 @@ const it = {
   ref: referenceMessages.it,
   bins: guideMessages.it.bins,
   items: guideMessages.it.items,
-  seed: seedMessages.it,
   drop: generatedMessages.it.drop,
   insights: generatedMessages.it.insights,
   answers: generatedMessages.it.leaf,
