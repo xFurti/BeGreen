@@ -120,7 +120,7 @@ export default function Guide() {
                   borderCurve: "continuous",
                   padding: 14,
                   gap: 10,
-                  backgroundColor: on ? C.ink : C.card,
+                  backgroundColor: on ? C.forest : C.card,
                 }}
               >
                 <Swatch bin={b} size={16} />

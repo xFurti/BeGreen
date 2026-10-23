@@ -4,7 +4,7 @@ import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { KeyboardAvoidingView, Pressable, ScrollView, Share, Switch, Text, TextInput, View } from "react-native";
+import { KeyboardAvoidingView, Pressable, ScrollView, Share, Text, TextInput, View } from "react-native";
 import Animated, {
   Easing,
   FadeIn,
@@ -24,6 +24,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Circle } from "react-native-svg";
 
 import { Icon, type IconName } from "@/components/icon";
+import { Blobs, LeafMark, LeafSwitch } from "@/components/nature";
 import { ProofMedia } from "@/components/proof-media";
 import { Button, Chip, IconButton, Mono, Press, SdgTags, Segmented, useCountUp } from "@/components/ui";
 import { ACTION_LIST, ACTIONS, type ActionId } from "@/data/actions";
@@ -56,7 +57,7 @@ function RecordRing({ progress, size = 88 }: { progress: SharedValue<number>; si
         cx={size / 2}
         cy={size / 2}
         r={r}
-        stroke={C.white}
+        stroke={C.lime}
         strokeWidth={4}
         fill="none"
         strokeLinecap="round"
@@ -83,7 +84,7 @@ function Steps({ step }: { step: Step }) {
             {i > 0 && <View style={{ width: 18, height: 1, backgroundColor: C.nightLine }} />}
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
               {done ? (
-                <Icon name="check" size={11} color={C.white} />
+                <Icon name="check" size={11} color={C.lime} />
               ) : (
                 <Mono color={on ? C.white : C.nightMute}>{it.n}</Mono>
               )}
@@ -124,10 +125,11 @@ function Bit({ angle, i }: { angle: number; i: number }) {
       { rotate: `${t.value * 180}deg` },
     ],
   }));
+  // Confetti made of leaves, in the three greens and white.
   return (
-    <Animated.View
-      style={[{ position: "absolute", width: size, height: size, borderRadius: i % 2 ? size / 2 : 1.5, backgroundColor: C.white }, s]}
-    />
+    <Animated.View style={[{ position: "absolute" }, s]}>
+      <LeafMark size={size + 6} color={[C.lime, C.leaf, C.white, C.mint2][i % 4]} vein="transparent" />
+    </Animated.View>
   );
 }
 
@@ -148,14 +150,14 @@ function Row({ icon, title, sub, right, delay }: { icon: IconName; title: string
   return (
     <Animated.View
       entering={FadeInDown.delay(delay).springify().damping(18)}
-      style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 14, borderTopWidth: 1, borderTopColor: C.nightLine }}
+      style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 14, borderTopWidth: 1, borderTopColor: C.forestLine }}
     >
-      <Icon name={icon} size={17} color={C.white} />
+      <Icon name={icon} size={17} color={C.lime} />
       <View style={{ flex: 1, gap: 2 }}>
         <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3, color: C.white }}>{title}</Text>
-        {sub && <Text style={{ fontFamily: F.regular, fontSize: 13, color: C.nightMute }}>{sub}</Text>}
+        {sub && <Text style={{ fontFamily: F.regular, fontSize: 13, color: C.forestMute }}>{sub}</Text>}
       </View>
-      {right && <Mono color={C.white}>{right}</Mono>}
+      {right && <Mono color={C.lime}>{right}</Mono>}
     </Animated.View>
   );
 }
@@ -176,8 +178,9 @@ function Done(r: Result) {
   return (
     <Animated.View
       entering={FadeIn.duration(220)}
-      style={{ flex: 1, backgroundColor: C.night, paddingTop: top + 16, paddingBottom: bottom + 12, paddingHorizontal: 22 }}
+      style={{ flex: 1, backgroundColor: C.forest, paddingTop: top + 16, paddingBottom: bottom + 12, paddingHorizontal: 22, overflow: "hidden" }}
     >
+      <Blobs colors={[C.leaf, C.lime]} opacity={0.2} size={360} />
       <Burst />
       <View style={{ flexDirection: "row", alignItems: "center" }}>
         <Mono color={C.white} style={{ flex: 1 }}>
@@ -187,7 +190,7 @@ function Done(r: Result) {
       </View>
 
       <View style={{ flex: 1, justifyContent: "center" }}>
-        <Animated.Text style={[T.mega, { color: C.white, fontSize: 128, lineHeight: 128, fontVariant: ["tabular-nums"] }, big]}>
+        <Animated.Text style={[T.mega, { color: C.lime, fontSize: 128, lineHeight: 128, fontVariant: ["tabular-nums"] }, big]}>
           +{n}
         </Animated.Text>
         <Animated.Text entering={FadeIn.delay(300)} style={{ fontFamily: F.medium, fontSize: 22, letterSpacing: -0.6, color: C.white }}>
@@ -516,11 +519,11 @@ export default function Capture() {
               <Text style={{ fontFamily: F.medium, fontSize: 15 }}>{t("capture.showArea", { place: pulse.place.name || t("common.yourArea") })}</Text>
               <Text style={{ fontFamily: F.regular, fontSize: 13, color: C.mute }}>{t("capture.neighbourhood")}</Text>
             </View>
-            <Switch value={shareSpot} onValueChange={setShareSpot} trackColor={{ true: C.ink }} />
+            <LeafSwitch value={shareSpot} onValueChange={setShareSpot} label={t("capture.showMine")} />
           </View>
         </ScrollView>
         <View style={{ paddingHorizontal: 16, paddingBottom: bottom + 10, paddingTop: 8 }}>
-          <Button label={t("capture.post")} trailing={`+${a.seeds + (isDropAct ? 10 : 0)}`} onPress={post} />
+          <Button label={t("capture.post")} kind="green" trailing={`+${a.seeds + (isDropAct ? 10 : 0)}`} onPress={post} />
         </View>
       </KeyboardAvoidingView>
     );

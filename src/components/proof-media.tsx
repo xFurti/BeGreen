@@ -193,8 +193,8 @@ export function ProofMedia({
             backgroundColor: C.white,
           }}
         >
-          <Icon name="checkSeal" size={14} color={C.ink} />
-          <Text style={{ color: C.ink, fontFamily: F.monoMedium, fontSize: 10.5, letterSpacing: 0.5 }}>{t("common.verified")}</Text>
+          <Icon name="checkSeal" size={14} color={C.leaf} />
+          <Text style={{ color: C.forest, fontFamily: F.monoMedium, fontSize: 10.5, letterSpacing: 0.5 }}>{t("common.verified")}</Text>
         </Animated.View>
       )}
 
@@ -203,8 +203,8 @@ export function ProofMedia({
       {locked && (
         <Animated.View entering={FadeIn} style={{ position: "absolute", inset: 0 } as never}>
           <BlurView intensity={70} tint="light" style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 12 }}>
-            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: C.ink, alignItems: "center", justifyContent: "center" }}>
-              <Icon name="lock" size={19} color={C.white} />
+            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: C.forest, alignItems: "center", justifyContent: "center" }}>
+              <Icon name="lock" size={19} color={C.lime} />
             </View>
             {lockHint && (
               <View style={{ alignItems: "center", gap: 6, paddingHorizontal: 40 }}>

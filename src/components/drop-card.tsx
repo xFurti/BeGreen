@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Text, View } from "react-native";
 
 import { Icon } from "@/components/icon";
+import { Blobs, LeafMark } from "@/components/nature";
 import { AvatarStack, LiveDot, Mono, Press, SdgTags } from "@/components/ui";
 import { USERS } from "@/data/seed";
 import { actionCopy } from "@/i18n/content";
@@ -54,14 +55,28 @@ export function DropCard({
       disabled={!ready}
       accessibilityLabel={t("dropCard.a11y", { title: drop.title })}
       onPress={() => router.push("/drop")}
-      style={{ backgroundColor: C.night, borderRadius: R.xl, borderCurve: "continuous", padding: 20, gap: 18, overflow: "hidden" }}
+      // Leaf-shaped: two round corners, two tight ones.
+      style={{
+        backgroundColor: C.forest,
+        borderRadius: R.sm,
+        borderTopLeftRadius: 40,
+        borderBottomRightRadius: 40,
+        borderCurve: "continuous",
+        padding: 20,
+        gap: 18,
+        overflow: "hidden",
+      }}
     >
+      <Blobs colors={[C.leaf, C.lime]} opacity={0.22} />
+      <View pointerEvents="none" style={{ position: "absolute", right: -18, bottom: -26, opacity: 0.14 }}>
+        <LeafMark size={150} color={C.lime} vein={C.forest} rotate={-12} />
+      </View>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-        <LiveDot color={done ? C.nightMute : C.red} />
+        <LiveDot color={done ? C.forestMute : C.lime} />
         <Mono color={C.white}>{done ? t("dropCard.done") : t("dropCard.today")}</Mono>
-        <Mono color={C.nightMute}>· {place}</Mono>
+        <Mono color={C.forestMute}>· {place}</Mono>
         <View style={{ flex: 1 }} />
-        <Mono color={C.nightMute} style={{ fontVariant: ["tabular-nums"] }}>
+        <Mono color={C.forestMute} style={{ fontVariant: ["tabular-nums"] }}>
           {left}
         </Mono>
       </View>
@@ -73,30 +88,30 @@ export function DropCard({
       {ready ? (
         <View style={{ gap: 14 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <Icon name={action.icon} size={14} color={C.white} />
+            <Icon name={action.icon} size={14} color={C.lime} />
             <Text style={{ fontFamily: F.medium, fontSize: 14, color: C.white }}>{action.label}</Text>
-            <Text style={{ flex: 1, flexShrink: 1, fontFamily: F.regular, fontSize: 13, lineHeight: 18, color: C.nightMute }}>
+            <Text style={{ flex: 1, flexShrink: 1, fontFamily: F.regular, fontSize: 13, lineHeight: 18, color: C.forestMute }}>
               · {drop.metric}
             </Text>
             <SdgTags goals={action.sdgs.slice(0, 1)} dark />
           </View>
-          <View style={{ height: 1, backgroundColor: C.nightLine }} />
+          <View style={{ height: 1, backgroundColor: C.forestLine }} />
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-            <AvatarStack people={crowd} size={22} ring={C.night} />
-            <Text style={{ flex: 1, fontFamily: F.regular, fontSize: 13, color: C.nightMute }} numberOfLines={1}>
+            <AvatarStack people={crowd} size={22} ring={C.forest} />
+            <Text style={{ flex: 1, fontFamily: F.regular, fontSize: 13, color: C.forestMute }} numberOfLines={1}>
               {done ? (
-                <Text style={{ color: C.white, fontFamily: F.medium }}>{t("dropCard.in")}</Text>
+                <Text style={{ color: C.lime, fontFamily: F.medium }}>{t("dropCard.in")}</Text>
               ) : (
                 t("dropCard.did", { count: formatNumber(doneCount, language) })
               )}
             </Text>
-            <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: C.white, alignItems: "center", justifyContent: "center" }}>
-              <Icon name={done ? "check" : "arrowRight"} size={13} color={C.ink} />
+            <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: C.lime, alignItems: "center", justifyContent: "center" }}>
+              <Icon name={done ? "check" : "arrowRight"} size={13} color={C.forest} />
             </View>
           </View>
         </View>
       ) : (
-        <Text style={{ fontFamily: F.regular, fontSize: 14, lineHeight: 20, color: C.nightMute }}>
+        <Text style={{ fontFamily: F.regular, fontSize: 14, lineHeight: 20, color: C.forestMute }}>
           {t("dropCard.loading")}
         </Text>
       )}

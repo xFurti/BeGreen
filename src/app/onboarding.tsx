@@ -2,12 +2,13 @@ import * as Location from "expo-location";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { KeyboardAvoidingView, Pressable, ScrollView, Switch, Text, TextInput, useWindowDimensions, View, type ScrollViewInstance } from "react-native";
+import { KeyboardAvoidingView, Pressable, ScrollView, Text, TextInput, useWindowDimensions, View, type ScrollViewInstance } from "react-native";
 import Animated, { FadeIn, FadeInDown, LinearTransition, useAnimatedStyle, useSharedValue, withDelay, withSpring } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Icon, type IconName } from "@/components/icon";
 import { LanguageSwitch } from "@/components/language-switch";
+import { Blobs, LeafScatter, LeafSwitch } from "@/components/nature";
 import { Avatar, Button, Chip, Logo, Mono } from "@/components/ui";
 import { SDG_LIST } from "@/data/sdgs";
 import { HERO_PHOTOS, USERS } from "@/data/seed";
@@ -57,6 +58,10 @@ function HeroCollage({ width }: { width: number }) {
   const w = width * 0.5;
   return (
     <View style={{ height: w * 1.45, width: "100%" }}>
+      <View style={{ position: "absolute", inset: -20, borderRadius: 48, overflow: "hidden" } as never}>
+        <Blobs colors={[C.mint2, C.mint2]} opacity={0.7} size={width * 0.75} />
+      </View>
+      <LeafScatter style={{ position: "absolute", right: 4, bottom: 0, zIndex: 6 }} />
       <Tile src={HERO_PHOTOS[2]} rotate="-8deg" x={width * 0.02} y={34} z={1} w={w * 0.84} />
       <Tile src={HERO_PHOTOS[3]} rotate="7deg" x={width * 0.5} y={18} z={1} w={w * 0.84} />
       <View style={{ position: "absolute", left: (width - w) / 2, top: 40, zIndex: 3, width: w, aspectRatio: 4 / 5 }}>
@@ -86,13 +91,13 @@ function HeroCollage({ width }: { width: number }) {
             flexDirection: "row",
             alignItems: "center",
             gap: 6,
-            backgroundColor: C.ink,
+            backgroundColor: C.forest,
             paddingHorizontal: 12,
             height: 30,
             borderRadius: R.pill,
           }}
         >
-          <Icon name="checkSeal" size={13} color={C.white} />
+          <Icon name="checkSeal" size={13} color={C.lime} />
           <Text style={{ color: C.white, fontFamily: F.medium, fontSize: 13 }}>{t("onboarding.verifiedBy3")}</Text>
         </View>
       </View>
@@ -172,19 +177,19 @@ function RacePreview({ active }: { active: boolean }) {
             paddingHorizontal: r.me ? 14 : 0,
             marginHorizontal: r.me ? -14 : 0,
             borderRadius: r.me ? R.md : 0,
-            backgroundColor: r.me ? C.ink : "transparent",
+            backgroundColor: r.me ? C.forest : "transparent",
             borderBottomWidth: r.me ? 0 : 1,
             borderBottomColor: C.line,
           }}
         >
-          <Mono color={r.me ? C.white : C.mute} style={{ width: 20 }}>
+          <Mono color={r.me ? C.lime : C.mute} style={{ width: 20 }}>
             {String(i + 1).padStart(2, "0")}
           </Mono>
           {r.me ? <Avatar name={t("common.you")} size={34} invert /> : <Avatar src={USERS[r.id].avatar} name={USERS[r.id].name} size={34} />}
           <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3, color: r.me ? C.white : C.ink }}>
             {r.me ? t("common.you") : USERS[r.id].name}
           </Text>
-          {r.me && i === 0 && <Icon name="crown" size={14} color={C.white} />}
+          {r.me && i === 0 && <Icon name="crown" size={14} color={C.lime} />}
           <Text style={{ fontFamily: F.medium, fontSize: 17, color: r.me ? C.white : C.ink, fontVariant: ["tabular-nums"] }}>{r.pts}</Text>
         </Animated.View>
       ))}
@@ -199,9 +204,9 @@ function GoalCell({ g, on, delay, size }: { g: number; on: boolean; delay: numbe
   }, [on, delay, t]);
   const fill = useAnimatedStyle(() => ({ opacity: t.value, transform: [{ scale: 0.6 + t.value * 0.4 }] }));
   return (
-    <View style={{ width: size, height: size, borderRadius: 12, backgroundColor: C.card, overflow: "hidden" }}>
-      <Text style={{ position: "absolute", top: 8, left: 9, fontFamily: F.medium, fontSize: 18, letterSpacing: -0.6, color: C.faint }}>{g}</Text>
-      <Animated.View style={[{ position: "absolute", inset: 0, backgroundColor: C.ink, borderRadius: 12 } as never, fill]}>
+    <View style={{ width: size, height: size, borderRadius: 12, backgroundColor: C.mint, overflow: "hidden" }}>
+      <Text style={{ position: "absolute", top: 8, left: 9, fontFamily: F.medium, fontSize: 18, letterSpacing: -0.6, color: C.forestMute }}>{g}</Text>
+      <Animated.View style={[{ position: "absolute", inset: 0, backgroundColor: C.leaf, borderRadius: 12 } as never, fill]}>
         <Text style={{ position: "absolute", top: 8, left: 9, fontFamily: F.medium, fontSize: 18, letterSpacing: -0.6, color: C.white }}>{g}</Text>
       </Animated.View>
     </View>
@@ -292,7 +297,7 @@ export default function Onboarding() {
     <KeyboardAvoidingView behavior={process.env.EXPO_OS === "ios" ? "padding" : undefined} style={{ flex: 1, backgroundColor: C.bg }}>
       <View style={{ paddingTop: top + 10, paddingHorizontal: 20, gap: 14 }}>
         <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
-          <Logo size={24} />
+          <Logo size={24} sway />
           <View style={{ flexGrow: 1 }} />
           <LanguageSwitch compact />
           {page < last ? (
@@ -307,7 +312,7 @@ export default function Onboarding() {
         </View>
         <View style={{ flexDirection: "row", gap: 4 }}>
           {Array.from({ length: last + 1 }).map((_, i) => (
-            <View key={i} style={{ flex: 1, height: 2, borderRadius: 1, backgroundColor: i <= page ? C.ink : C.card2 }} />
+            <View key={i} style={{ flex: 1, height: 3, borderRadius: 2, backgroundColor: i <= page ? C.leaf : C.mint2 }} />
           ))}
         </View>
       </View>
@@ -324,7 +329,7 @@ export default function Onboarding() {
           <ScrollView key={i} style={{ width }} contentContainerStyle={{ padding: 20, paddingTop: 24, gap: 26 }} showsVerticalScrollIndicator={false}>
             <Animated.View entering={FadeIn.delay(80)}>{s.visual}</Animated.View>
             <View style={{ gap: 12, paddingTop: 6 }}>
-              <Mono>{s.kicker}</Mono>
+              <Mono color={C.leaf}>{s.kicker}</Mono>
               <Text style={[T.hero, { fontSize: 42, lineHeight: 43 }]}>{s.title}</Text>
               <Text style={[T.body, { fontSize: 17, lineHeight: 25, color: C.ink2 }]}>{s.body}</Text>
             </View>
@@ -333,7 +338,7 @@ export default function Onboarding() {
 
         <ScrollView style={{ width }} contentContainerStyle={{ padding: 20, paddingTop: 28, gap: 30 }} keyboardShouldPersistTaps="handled">
           <View style={{ gap: 10 }}>
-            <Mono>{t("onboarding.last")}</Mono>
+            <Mono color={C.leaf}>{t("onboarding.last")}</Mono>
             <Text style={[T.hero, { fontSize: 42, lineHeight: 43 }]}>{t("onboarding.who")}</Text>
           </View>
 
@@ -347,7 +352,7 @@ export default function Onboarding() {
             style={{
               height: 64,
               borderBottomWidth: 1,
-              borderBottomColor: name ? C.ink : C.line,
+              borderBottomColor: name ? C.leaf : C.line,
               fontSize: 30,
               fontFamily: F.medium,
               letterSpacing: -1.1,
@@ -356,7 +361,7 @@ export default function Onboarding() {
           />
 
           <View style={{ gap: 12 }}>
-            <Mono color={C.ink}>{t("onboarding.joining")}</Mono>
+            <Mono color={C.forest}>{t("onboarding.joining")}</Mono>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
               {ROLES.map((r) => (
                 <Chip key={r.value} label={t(r.label)} icon={r.icon} active={role === r.value} onPress={() => setRole(r.value)} />
@@ -367,7 +372,7 @@ export default function Onboarding() {
 
           <View style={{ borderTopWidth: 1, borderTopColor: C.line }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: C.line }}>
-              <Icon name="location" size={17} />
+              <Icon name="location" size={17} color={C.leaf} />
               <View style={{ flex: 1, gap: 2 }}>
                 <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2 }}>{t("onboarding.local")}</Text>
                 <Text style={{ fontFamily: F.regular, color: C.mute, fontSize: 13 }}>
@@ -375,18 +380,18 @@ export default function Onboarding() {
                 </Text>
               </View>
               {loc === "on" ? (
-                <Icon name="checkSeal" size={20} color={C.ink} />
+                <Icon name="checkSeal" size={20} color={C.leaf} />
               ) : (
                 <Button size="sm" label={loc === "asking" ? "…" : t("onboarding.allow")} onPress={askLocation} />
               )}
             </View>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: C.line }}>
-              <Icon name="sparkle" size={17} />
+              <Icon name="sparkle" size={17} color={C.leaf} />
               <View style={{ flex: 1, gap: 2 }}>
                 <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2 }}>{t("onboarding.demo")}</Text>
                 <Text style={{ fontFamily: F.regular, color: C.mute, fontSize: 13 }}>{t("onboarding.demoHint")}</Text>
               </View>
-              <Switch value={demo} onValueChange={setDemo} trackColor={{ true: C.ink }} />
+              <LeafSwitch value={demo} onValueChange={setDemo} label={t("onboarding.demo")} />
             </View>
           </View>
         </ScrollView>
@@ -396,7 +401,7 @@ export default function Onboarding() {
         {page < last ? (
           <Button label={page === 0 ? t("onboarding.letsGo") : t("common.next")} onPress={() => go(page + 1)} />
         ) : (
-          <Button label={t("onboarding.start")} onPress={start} />
+          <Button label={t("onboarding.start")} kind="green" icon="leaf" onPress={start} />
         )}
       </View>
     </KeyboardAvoidingView>

@@ -72,7 +72,7 @@ export default function PostDetail() {
 
         <View style={{ gap: 12 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <Icon name={action.icon} size={16} color={C.ink} />
+            <Icon name={action.icon} size={16} color={C.leaf} />
             <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 18, letterSpacing: -0.4 }}>{action.label}</Text>
           </View>
           {!!caption && (
@@ -173,9 +173,9 @@ export default function PostDetail() {
           accessibilityLabel={t("post.sendComment")}
           disabled={!text.trim()}
           onPress={send}
-          style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: text.trim() ? C.ink : C.card, alignItems: "center", justifyContent: "center" }}
+          style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: text.trim() ? C.forest : C.card, alignItems: "center", justifyContent: "center" }}
         >
-          <Icon name="send" size={17} color={text.trim() ? C.white : C.faint} />
+          <Icon name="send" size={17} color={text.trim() ? C.lime : C.faint} />
         </Pressable>
       </View>
     </KeyboardAvoidingView>

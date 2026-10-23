@@ -4,6 +4,7 @@ import { Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Icon, type IconName } from "@/components/icon";
+import { LeafMark } from "@/components/nature";
 import { Press } from "@/components/ui";
 import type { MessageKey } from "@/i18n/catalog";
 import { useI18n } from "@/i18n/use-i18n";
@@ -18,7 +19,7 @@ const TABS: Record<string, { label: MessageKey; icon: IconName; on: IconName }> 
   me: { label: "tabs.me", icon: "me", on: "meFill" },
 };
 
-// The shutter. Looks like the camera it opens.
+// The shutter. Looks like the camera it opens, in deep green with a lime ring.
 function CaptureButton() {
   const done = postedToday(useApp((s) => s.myPosts));
   const { t } = useI18n();
@@ -35,14 +36,14 @@ function CaptureButton() {
         width: 62,
         height: 62,
         borderRadius: 31,
-        backgroundColor: C.ink,
+        backgroundColor: C.forest,
         alignItems: "center",
         justifyContent: "center",
         marginTop: -14,
-        boxShadow: "0 6px 20px rgba(0,0,0,0.22)",
+        boxShadow: "0 6px 20px rgba(11,61,42,0.32)",
       }}
     >
-      <View style={{ width: 50, height: 50, borderRadius: 25, borderWidth: 2, borderColor: C.white, alignItems: "center", justifyContent: "center" }}>
+      <View style={{ width: 50, height: 50, borderRadius: 25, borderWidth: 2, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}>
         <Icon name="plus" size={20} color={C.white} />
       </View>
       {!done && (
@@ -87,15 +88,18 @@ export function TabBar({ state, emitter, navigateToTab }: BottomTabBarProps) {
         }}
         style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 4, paddingTop: 10 }}
       >
-        <Icon name={focused ? meta.on : meta.icon} size={22} color={focused ? C.ink : C.faint} />
-        <Text
-          numberOfLines={1}
-          adjustsFontSizeToFit
-          minimumFontScale={0.8}
-          style={{ width: "100%", textAlign: "center", fontFamily: F.medium, fontSize: 10.5, letterSpacing: -0.1, color: focused ? C.ink : C.mute }}
-        >
-          {label}
-        </Text>
+        <Icon name={focused ? meta.on : meta.icon} size={22} color={focused ? C.forest : C.faint} />
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 3, maxWidth: "100%" }}>
+          {focused && <LeafMark size={8} color={C.leaf} vein="transparent" />}
+          <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+            style={{ flexShrink: 1, fontFamily: F.medium, fontSize: 10.5, letterSpacing: -0.1, color: focused ? C.forest : C.mute }}
+          >
+            {label}
+          </Text>
+        </View>
       </Pressable>
     );
   });
