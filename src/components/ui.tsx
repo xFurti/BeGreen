@@ -48,6 +48,7 @@ export function Press({
   style,
   scale = 0.97,
   disabled,
+  dimDisabled = true,
   hapticOn = true,
   accessibilityLabel,
   hitSlop,
@@ -58,6 +59,8 @@ export function Press({
   style?: StyleProp<ViewStyle>;
   scale?: number;
   disabled?: boolean;
+  /** Disabled still blocks presses. Set false when a short lock should not fade the control. */
+  dimDisabled?: boolean;
   hapticOn?: boolean;
   accessibilityLabel?: string;
   hitSlop?: PressableProps["hitSlop"];
@@ -84,7 +87,7 @@ export function Press({
         onPress?.();
       }}
     >
-      <Animated.View style={[inner, a, disabled && { opacity: 0.35 }]}>{children}</Animated.View>
+      <Animated.View style={[inner, a, disabled && dimDisabled && { opacity: 0.35 }]}>{children}</Animated.View>
     </Pressable>
   );
 }
