@@ -133,7 +133,7 @@ export function Button({
 }) {
   const { C } = useTheme();
   // `inverse` and `glass` sit on dark surfaces (camera, forest cards) in both themes.
-  const bg = { primary: C.ink, green: C.forest, secondary: C.mint, ghost: "transparent", inverse: C.white, glass: "rgba(255,255,255,0.12)" }[kind];
+  const bg = { primary: C.ink, green: C.forest, secondary: C.mint, ghost: "transparent", inverse: C.white, glass: C.glass }[kind];
   const fg = { primary: C.bg, green: C.white, secondary: C.forestInk, ghost: C.ink, inverse: C.night, glass: C.white }[kind];
   const h = { lg: 56, md: 46, sm: 34 }[size];
   return (
@@ -294,7 +294,7 @@ export function Tag({ label, dark, solid }: { label: string; dark?: boolean; sol
         paddingHorizontal: 6,
         borderRadius: 5,
         borderWidth: solid ? 0 : 1,
-        borderColor: dark ? "rgba(255,255,255,0.28)" : C.mint2,
+        borderColor: dark ? C.glassLine : C.band,
         backgroundColor: solid ? (dark ? C.lime : C.forest) : "transparent",
         justifyContent: "center",
       }}
@@ -342,21 +342,29 @@ export function Segmented<V extends string>({
   options,
   onChange,
   dark,
+  label,
 }: {
   value: V;
   options: { value: V; label: string }[];
   onChange: (v: V) => void;
   dark?: boolean;
+  // Names the group for VoiceOver / TalkBack. Each option keeps its own label and selected state.
+  label?: string;
 }) {
   const { C } = useTheme();
   return (
-    <View style={{ flexDirection: "row", backgroundColor: dark ? C.night2 : C.card, borderRadius: R.pill, padding: 3 }}>
+    <View
+      accessibilityRole="tablist"
+      accessibilityLabel={label}
+      style={{ flexDirection: "row", backgroundColor: dark ? C.night2 : C.card, borderRadius: R.pill, padding: 3 }}
+    >
       {options.map((o) => {
         const on = o.value === value;
         return (
           <Pressable
             key={o.value}
             accessibilityRole="tab"
+            accessibilityLabel={process.env.EXPO_OS === "web" && on ? `${o.label}, selected` : o.label}
             accessibilityState={{ selected: on }}
             onPress={() => {
               if (on) return;
@@ -485,7 +493,7 @@ export function Bar({
   }, [value, w]);
   const a = useAnimatedStyle(() => ({ width: `${w.value * 100}%` }));
   return (
-    <View style={{ height, borderRadius: height, backgroundColor: track ?? C.mint2, overflow: "hidden" }}>
+    <View style={{ height, borderRadius: height, backgroundColor: track ?? C.band, overflow: "hidden" }}>
       <Animated.View style={[{ height: "100%", borderRadius: height, backgroundColor: color ?? C.leaf }, a]} />
     </View>
   );

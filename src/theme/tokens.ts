@@ -25,6 +25,11 @@ export const fixed = {
   blue: "#3E63DD",
   violet: "#6E56CF",
   grey: "#8E8E93",
+  // On dark surfaces in both themes (camera, forest cards, photo scrims).
+  glass: "rgba(255,255,255,0.12)",
+  glassLine: "rgba(255,255,255,0.28)",
+  ring: "rgba(255,255,255,0.22)",
+  scrim: "rgba(0,0,0,0.5)",
 } as const;
 
 const lightRoles = {
@@ -44,6 +49,8 @@ const lightRoles = {
   onLeaf: "#FFFFFF", // text on a leaf fill
   mint: "#E6F6EC", // soft tint for cards and tracks
   mint2: "#CFE8D8",
+  // Chart bars, progress tracks and outlines. Same as mint2 in light, so the light theme does not move.
+  band: "#CFE8D8",
 };
 
 export type Palette = typeof fixed & { [K in keyof typeof lightRoles]: string };
@@ -68,6 +75,8 @@ export const dark: Palette = {
   onLeaf: "#0A0A0A", // 8:1 on the lighter leaf; white would be 2.6:1
   mint: "#11261A",
   mint2: "#1C3B2A",
+  // 3.7:1 on bg, 3.4:1 on card, 3:1 on mint. mint2 is 1.6:1 on bg, so bars drawn with it vanish.
+  band: "#34785A",
 };
 
 // Geist for everything; Geist Mono for labels, numbers and metadata.

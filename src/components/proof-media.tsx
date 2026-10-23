@@ -167,7 +167,7 @@ export function ProofMedia({
             paddingHorizontal: 9,
             height: 24,
             borderRadius: R.pill,
-            backgroundColor: "rgba(0,0,0,0.5)",
+            backgroundColor: C.scrim,
           }}
         >
           <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: C.red }} />

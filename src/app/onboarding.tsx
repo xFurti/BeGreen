@@ -324,7 +324,7 @@ export default function Onboarding() {
         </View>
         <View style={{ flexDirection: "row", gap: 4 }}>
           {Array.from({ length: last + 1 }).map((_, i) => (
-            <View key={i} style={{ flex: 1, height: 3, borderRadius: 2, backgroundColor: i <= page ? C.leaf : C.mint2 }} />
+            <View key={i} style={{ flex: 1, height: 3, borderRadius: 2, backgroundColor: i <= page ? C.leaf : C.band }} />
           ))}
         </View>
       </View>

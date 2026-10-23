@@ -6,7 +6,9 @@ import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import * as SystemUI from "expo-system-ui";
 import { useEffect, useMemo } from "react";
+import { Appearance } from "react-native";
 
+import { useApp } from "@/store/app-store";
 import { F } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
 
@@ -22,6 +24,7 @@ const sheet = {
 export default function RootLayout() {
   const [loaded, error] = useFonts({ Geist_400Regular, Geist_500Medium, Geist_600SemiBold, GeistMono_400Regular, GeistMono_500Medium });
   const { C, scheme } = useTheme();
+  const themePref = useApp((s) => s.theme);
   const theme = useMemo(() => {
     const base = scheme === "dark" ? DarkTheme : DefaultTheme;
     return { ...base, colors: { ...base.colors, background: C.bg, card: C.bg, text: C.ink, primary: C.ink, border: C.line } };
@@ -35,6 +38,14 @@ export default function RootLayout() {
   useEffect(() => {
     SystemUI.setBackgroundColorAsync(C.bg);
   }, [C.bg]);
+
+  // Light and Dark override the app windows, so sheets, the grabber and the keyboard follow.
+  // System clears the override and the phone's changes keep arriving through useColorScheme.
+  // Web's Appearance has no setter; matchMedia covers it there.
+  useEffect(() => {
+    if (typeof Appearance.setColorScheme !== "function") return;
+    Appearance.setColorScheme(themePref === "system" ? "auto" : themePref);
+  }, [themePref]);
 
   if (!loaded && !error) return null;
 

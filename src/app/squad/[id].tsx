@@ -19,7 +19,7 @@ function Ring({ value, size = 112 }: { value: number; size?: number }) {
   const len = 2 * Math.PI * r;
   return (
     <Svg width={size} height={size} style={{ transform: [{ rotate: "-90deg" }] }}>
-      <Circle cx={size / 2} cy={size / 2} r={r} stroke={C.mint2} strokeWidth={6} fill="none" />
+      <Circle cx={size / 2} cy={size / 2} r={r} stroke={C.band} strokeWidth={6} fill="none" />
       <Circle
         cx={size / 2}
         cy={size / 2}

@@ -52,7 +52,7 @@ function RecordRing({ progress, size = 88 }: { progress: SharedValue<number>; si
   const props = useAnimatedProps(() => ({ strokeDashoffset: len * (1 - progress.value) }));
   return (
     <Svg width={size} height={size} style={{ position: "absolute", transform: [{ rotate: "-90deg" }] }}>
-      <Circle cx={size / 2} cy={size / 2} r={r} stroke="rgba(255,255,255,0.22)" strokeWidth={4} fill="none" />
+      <Circle cx={size / 2} cy={size / 2} r={r} stroke={C.ring} strokeWidth={4} fill="none" />
       <ACircle
         cx={size / 2}
         cy={size / 2}
@@ -627,7 +627,7 @@ export default function Capture() {
                 <Mono color={C.white}>00:0{secs}</Mono>
               </Animated.View>
             ) : (
-              <View style={{ backgroundColor: "rgba(0,0,0,0.45)", paddingHorizontal: 10, height: 26, borderRadius: R.pill, justifyContent: "center" }}>
+              <View style={{ backgroundColor: C.scrim, paddingHorizontal: 10, height: 26, borderRadius: R.pill, justifyContent: "center" }}>
                 <Mono color={C.white}>{ACTIONS[action].label}</Mono>
               </View>
             )}
@@ -638,7 +638,7 @@ export default function Capture() {
               key={`${step}${recording}`}
               entering={FadeInDown.springify().damping(18)}
               exiting={FadeOut}
-              style={{ backgroundColor: "rgba(0,0,0,0.5)", paddingHorizontal: 14, paddingVertical: 10, borderRadius: R.md, maxWidth: 320 }}
+              style={{ backgroundColor: C.scrim, paddingHorizontal: 14, paddingVertical: 10, borderRadius: R.md, maxWidth: 320 }}
             >
               <Text style={{ color: C.white, fontFamily: F.medium, fontSize: 14, textAlign: "center", lineHeight: 19 }}>
                 {recording ? "Recording. Keep it in frame." : hint}

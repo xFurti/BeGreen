@@ -292,8 +292,11 @@ export default function Me() {
         </View>
 
         <View style={{ gap: 12 }}>
-          <Mono color={C.ink}>Appearance</Mono>
+          <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+            <Mono color={C.ink}>Appearance</Mono>
+          </View>
           <Segmented<ThemePref>
+            label="Appearance"
             value={themePref}
             onChange={setTheme}
             options={[

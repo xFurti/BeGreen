@@ -42,7 +42,7 @@ function AirChart({ data }: { data: { hour: string; aqi: number }[] }) {
               flex: 1,
               height: `${Math.max(6, (d.aqi / max) * 100)}%`,
               borderRadius: 2,
-              backgroundColor: i === 0 ? C.forestInk : d.aqi > 60 ? C.red : C.mint2,
+              backgroundColor: i === 0 ? C.forestInk : d.aqi > 60 ? C.red : C.band,
             }}
           />
         ))}
@@ -70,7 +70,7 @@ function RainChart({ data }: { data: { day: string; mm: number }[] }) {
               flex: 1,
               height: `${Math.max(4, (d.mm / max) * 100)}%`,
               borderRadius: 2,
-              backgroundColor: i >= todayIdx ? C.mint2 : C.forestInk,
+              backgroundColor: i >= todayIdx ? C.band : C.forestInk,
             }}
           />
         ))}
@@ -95,7 +95,7 @@ function Extra({ k, pulse }: { k: Insight["key"]; pulse: Pulse }) {
           <View key={s.id} style={{ width: 120, gap: 6 }}>
             <View style={{ width: 120, height: 150, borderRadius: 16, overflow: "hidden", backgroundColor: C.card }}>
               {s.photo ? <Image source={s.photo} style={{ flex: 1 }} contentFit="cover" transition={200} /> : null}
-              <View style={{ position: "absolute", top: 8, left: 8, backgroundColor: "rgba(0,0,0,0.5)", paddingHorizontal: 6, height: 18, borderRadius: 9, justifyContent: "center" }}>
+              <View style={{ position: "absolute", top: 8, left: 8, backgroundColor: C.scrim, paddingHorizontal: 6, height: 18, borderRadius: 9, justifyContent: "center" }}>
                 <Mono color={C.white} size={10}>
                   ×{s.count}
                 </Mono>

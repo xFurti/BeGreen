@@ -24,7 +24,7 @@ function Dots({ n, dark }: { n: number; dark?: boolean }) {
       {Array.from({ length: VERIFY_GOAL }).map((_, i) => (
         <View
           key={i}
-          style={{ width: 12, height: 3, borderRadius: 2, backgroundColor: i < n ? (dark ? C.lime : C.leaf) : dark ? C.nightLine : C.mint2 }}
+          style={{ width: 12, height: 3, borderRadius: 2, backgroundColor: i < n ? (dark ? C.lime : C.leaf) : dark ? C.nightLine : C.band }}
         />
       ))}
     </View>

@@ -121,7 +121,7 @@ export default function Leaf() {
                   key={s}
                   onPress={() => ask(s)}
                   accessibilityRole="button"
-                  style={{ paddingHorizontal: 14, paddingVertical: 10, borderRadius: R.pill, borderWidth: 1, borderColor: C.mint2 }}
+                  style={{ paddingHorizontal: 14, paddingVertical: 10, borderRadius: R.pill, borderWidth: 1, borderColor: C.band }}
                 >
                   <Text style={{ fontFamily: F.medium, fontSize: 14, letterSpacing: -0.15, color: C.forestInk }}>{s}</Text>
                 </Pressable>
