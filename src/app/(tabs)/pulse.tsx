@@ -4,19 +4,17 @@ import { ActivityIndicator, Platform, RefreshControl, ScrollView, Text, View } f
 import Animated, { cancelAnimation, FadeIn, FadeInDown, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { DailyCard } from "@/components/drop-card";
 import { Icon } from "@/components/icon";
-import { LeafMark } from "@/components/nature";
 import { levelColor, PulseDetail } from "@/components/pulse-detail";
 import { SeedTip } from "@/components/seed-ui";
 import { IconButton, Press, TopCover } from "@/components/ui";
 import { SOURCES } from "@/data/sources";
 import { usePulse } from "@/hooks/use-pulse";
-import { actionCopy, sourceKindCopy } from "@/i18n/content";
+import { sourceKindCopy } from "@/i18n/content";
 import { timeAgo } from "@/i18n/format";
 import { useI18n } from "@/i18n/use-i18n";
 import { pulseCards, type PulseCard } from "@/services/pulse-cards";
-import { canClaimDrop, seedsFor } from "@/services/rewards";
-import { hasBackend } from "@/services/supabase";
 import { useApp } from "@/store/app-store";
 import { F, R } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
@@ -80,7 +78,7 @@ function PulseSkeleton() {
 export default function PulseScreen() {
   const { C, T } = useTheme();
   const { top } = useSafeAreaInsets();
-  const { pulse, insights, drop, loading, refresh, ready } = usePulse();
+  const { pulse, insights, loading, refresh, ready } = usePulse();
   const explain = useApp((s) => s.explain);
   const setExplain = useApp((s) => s.setExplain);
   const { t, language } = useI18n();
@@ -91,8 +89,6 @@ export default function PulseScreen() {
   const pendingNavigation = useRef<(() => void) | null>(null);
   const cards = pulseCards(pulse, insights, t);
   const selectedCard = cards.find((c) => c.key === selected);
-  const da = actionCopy(t, drop.action);
-  const bonus = useApp((s) => canClaimDrop(drop, s.posts, s.userId, hasBackend));
   async function reload() {
     setRefreshing(true);
     try { await refresh(); } finally { setRefreshing(false); }
@@ -128,15 +124,8 @@ export default function PulseScreen() {
         </View>
         {ready && pulse.sample && <View style={{ backgroundColor: C.card, borderRadius: R.md, padding: 12, borderLeftWidth: 3, borderLeftColor: C.amber }}><Text style={T.callout}>{t("pulse.offline")}</Text></View>}
         {!ready ? <PulseSkeleton /> : <>
-          <Animated.View entering={reduced ? undefined : FadeInDown.duration(350)} style={{ backgroundColor: C.forest, borderRadius: R.xl, padding: 20, gap: 12, overflow: "hidden" }}>
-            <View pointerEvents="none" accessible={false} style={{ position: "absolute", right: -35, top: -40, opacity: 0.15 }}><LeafMark size={180} color={C.lime} vein="transparent" rotate={-25} /></View>
-            <Text style={{ fontFamily: F.monoMedium, fontSize: 10, letterSpacing: 1, textTransform: "uppercase", color: C.forestMute }}>{t("pulse.todayGesture")}</Text>
-            <Text style={{ fontFamily: F.medium, fontSize: 27, lineHeight: 31, letterSpacing: -0.9, color: C.white }}>{drop.title}</Text>
-            <Text numberOfLines={2} style={{ fontFamily: F.regular, fontSize: 13, lineHeight: 19, color: C.white }}>{drop.why}</Text>
-            <Press accessibilityLabel={t("pulse.doDrop")} scale={reduced ? 1 : 0.98} onPress={() => router.push({ pathname: "/capture", params: { action: drop.action } })}
-              style={{ minHeight: 50, flexDirection: "row", alignItems: "center", padding: 14, gap: 10, borderRadius: R.md, backgroundColor: C.lime, marginTop: 4 }}>
-              <Icon name={da.icon} size={18} color={C.forest} /><Text style={{ flex: 1, fontFamily: F.semibold, fontSize: 15, color: C.forest }}>{t("pulse.doDrop")}</Text><Text style={{ fontFamily: F.mono, fontSize: 12, color: C.forest }}>+{seedsFor({ action: drop.action, isDrop: bonus })}</Text><Icon name="arrowRight" size={16} color={C.forest} />
-            </Press>
+          <Animated.View entering={reduced ? undefined : FadeInDown.duration(350)}>
+            <DailyCard />
           </Animated.View>
           <View style={{ gap: 12 }}>
             <View style={{ gap: 4 }}><Text accessibilityRole="header" style={T.title}>{t("pulse.explore")}</Text><Text style={T.caption}>{t("pulse.tapCard")}</Text></View>

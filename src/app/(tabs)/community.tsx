@@ -10,7 +10,7 @@ import { toast } from "@/components/toast";
 import { Icon } from "@/components/icon";
 import { LoveYourCity } from "@/components/love-your-city";
 import { TerritoryCard } from "@/components/territory-card";
-import { Logo, Press } from "@/components/ui";
+import { Press } from "@/components/ui";
 import { useI18n } from "@/i18n/use-i18n";
 import { useApp } from "@/store/app-store";
 import { syncCommunity, useJoined } from "@/store/community-store";
@@ -73,8 +73,8 @@ export default function CommunityTab() {
           {section === "territory" ? <TerritoryCard /> : section === "groups" ? <GroupHub groups={groups} /> : <CommunityRankings groups={groups} onContextChange={setRankingCommunity} />}
         </Animated.View>
 
-        <View accessible accessibilityLabel="Love your city · BeGreen" style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 14, paddingTop: 4 }}>
-          <LoveYourCity height={24} /><View style={{ width: 1, height: 18, backgroundColor: C.line }} /><Logo size={18} />
+        <View accessible accessibilityLabel="Love your city" style={{ alignItems: "center", paddingTop: 10 }}>
+          <LoveYourCity height={46} />
         </View>
       </ScrollView>
     </View>

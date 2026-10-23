@@ -151,8 +151,8 @@ export function db() {
   return supabase;
 }
 
-// Your Comune this week, public proofs from everywhere, your squads, and your own history.
-export async function fetchFeed(me: string, comuneId: string, groupIds: string[]): Promise<Feed> {
+// Your Comune this week, public proofs from everywhere, your squads, your friends and your own history.
+export async function fetchFeed(me: string, comuneId: string, groupIds: string[], following: string[] = []): Promise<Feed> {
   const s = db();
   const since = (days: number) => new Date(Date.now() - days * D).toISOString();
   const queries = [
@@ -171,6 +171,17 @@ export async function fetchFeed(me: string, comuneId: string, groupIds: string[]
         .limit(120),
     );
   }
+  if (following.length) {
+    queries.push(
+      s
+        .from("posts")
+        .select(POST)
+        .in("author_id", following.slice(0, 200))
+        .gte("created_at", since(30))
+        .order("created_at", { ascending: false })
+        .limit(150),
+    );
+  }
   const results = await Promise.all(queries);
   const rows: PostRow[] = [];
   for (const r of results) {
@@ -184,6 +195,52 @@ export async function fetchGroupIds(me: string): Promise<string[]> {
   const { data, error } = await db().from("community_members").select("community_id, community:communities!inner(kind)").eq("user_id", me).neq("community.kind", "territory");
   if (error) throw error;
   return (data ?? []).map((r) => r.community_id as string);
+}
+
+// ---------- following ----------
+
+// Who someone follows (for you: your friends) and who follows them.
+export async function fetchFollows(me: string): Promise<{ following: string[]; followers: string[] }> {
+  const s = db();
+  const [out, inc] = await Promise.all([
+    s.from("follows").select("followee_id").eq("follower_id", me).order("created_at", { ascending: false }),
+    s.from("follows").select("follower_id").eq("followee_id", me).order("created_at", { ascending: false }),
+  ]);
+  if (out.error) throw out.error;
+  if (inc.error) throw inc.error;
+  return {
+    following: (out.data as { followee_id: string }[]).map((r) => r.followee_id),
+    followers: (inc.data as { follower_id: string }[]).map((r) => r.follower_id),
+  };
+}
+
+export async function setFollow(me: string, userId: string, on: boolean) {
+  const s = db();
+  const { error } = on
+    ? await s.from("follows").upsert({ follower_id: me, followee_id: userId }, { onConflict: "follower_id,followee_id", ignoreDuplicates: true })
+    : await s.from("follows").delete().eq("follower_id", me).eq("followee_id", userId);
+  if (error) throw error;
+}
+
+// People by handle or name, to find friends to follow.
+export async function searchProfiles(q: string, me: string): Promise<User[]> {
+  const term = q.trim().replace(/^@/, "").replace(/[%_,()]/g, "");
+  if (term.length < 2) return [];
+  const { data, error } = await db()
+    .from("profiles")
+    .select(PROFILE)
+    .or(`handle.ilike.%${term}%,name.ilike.%${term}%`)
+    .neq("id", me)
+    .limit(20);
+  if (error) throw error;
+  return (data as ProfileRow[]).map(toUser);
+}
+
+// Who else planted a seed in your Comune: people you may know.
+export async function fetchNearbyProfiles(comuneId: string, me: string): Promise<User[]> {
+  const { data, error } = await db().from("profiles").select(PROFILE).eq("comune_id", comuneId).neq("id", me).order("created_at", { ascending: false }).limit(20);
+  if (error) throw error;
+  return (data as ProfileRow[]).map(toUser);
 }
 
 export async function countMyVerifications(me: string): Promise<number> {
@@ -457,7 +514,7 @@ export function subscribeFeed(onChange: () => void): () => void {
   if (!supabase) return () => {};
   const s = supabase;
   const ch = s.channel("feed");
-  for (const table of ["posts", "verifications", "comments", "reactions", "spots", "spot_comments", "spot_reactions", "challenge_entries", "community_members", "group_progress"]) {
+  for (const table of ["posts", "verifications", "comments", "reactions", "spots", "spot_comments", "spot_reactions", "challenge_entries", "community_members", "group_progress", "follows"]) {
     ch.on("postgres_changes", { event: "*", schema: "public", table }, onChange);
   }
   ch.subscribe();

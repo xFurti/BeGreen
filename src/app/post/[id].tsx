@@ -9,6 +9,7 @@ import { Icon } from "@/components/icon";
 import { VERIFY_GOAL, VerifyBar } from "@/components/post-card";
 import { ProofMedia } from "@/components/proof-media";
 import { TitledName } from "@/components/titled-name";
+import { FollowButton, openMember } from "@/components/friends";
 import { Avatar, Mono, Press, SdgTags, Tag } from "@/components/ui";
 import { demoPostsFor } from "@/data/demo";
 import { useKeyboardCover } from "@/hooks/use-keyboard-cover";
@@ -65,13 +66,22 @@ export default function PostDetail() {
       <Stack.Screen options={{ title: a.name }} />
       <ScrollView contentContainerStyle={{ padding: 16, gap: 20, paddingBottom: 30 }} contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled">
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-          <Avatar src={a.avatar} name={a.name} seed={a.seed} seeds={a.seeds} size={42} />
-          <View style={{ flex: 1, gap: 3 }}>
-            <TitledName name={a.name} badgeId={a.badgeId} style={{ fontFamily: F.semibold, fontSize: 16, letterSpacing: -0.2 }} />
-            <Mono>
-              @{a.handle} · {placeLabel(post.place, t)} · {timeAgo(post.createdAt, language)}
-            </Mono>
-          </View>
+          <Press
+            scale={0.98}
+            disabled={post.isDemo}
+            onPress={() => openMember(post.authorId)}
+            accessibilityLabel={a.name}
+            style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 12 }}
+          >
+            <Avatar src={a.avatar} name={a.name} seed={a.seed} seeds={a.seeds} size={42} />
+            <View style={{ flex: 1, gap: 3 }}>
+              <TitledName name={a.name} badgeId={a.badgeId} style={{ fontFamily: F.semibold, fontSize: 16, letterSpacing: -0.2 }} />
+              <Mono>
+                @{a.handle} · {placeLabel(post.place, t)} · {timeAgo(post.createdAt, language)}
+              </Mono>
+            </View>
+          </Press>
+          {!post.isDemo && <FollowButton user={a} />}
           {post.isDemo && <Tag label={t("common.demo")} />}
           {post.isDrop && <DropTag post={post} />}
         </View>

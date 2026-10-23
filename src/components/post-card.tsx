@@ -217,13 +217,21 @@ export const PostCard = memo(function PostCard({
   return (
     <Animated.View entering={FadeInDown.delay(Math.min(index, 4) * 60).springify().damping(20)} style={{ gap: 12 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-        <Avatar src={a.avatar} name={a.name} seed={a.seed} seeds={a.seeds} size={34} />
-        <View style={{ flex: 1, gap: 2 }}>
-          <TitledName name={a.name} badgeId={a.badgeId} style={{ fontFamily: F.semibold, fontSize: 15, letterSpacing: -0.2, color: C.ink }} />
-          <Mono>
-            {placeLabel(post.place, t)} · {timeAgo(post.createdAt, language)}
-          </Mono>
-        </View>
+        <Press
+          scale={0.98}
+          disabled={post.isDemo}
+          onPress={() => router.push({ pathname: "/member/[id]", params: { id: post.authorId } })}
+          accessibilityLabel={a.name}
+          style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 10 }}
+        >
+          <Avatar src={a.avatar} name={a.name} seed={a.seed} seeds={a.seeds} size={34} />
+          <View style={{ flex: 1, gap: 2 }}>
+            <TitledName name={a.name} badgeId={a.badgeId} style={{ fontFamily: F.semibold, fontSize: 15, letterSpacing: -0.2, color: C.ink }} />
+            <Mono>
+              {placeLabel(post.place, t)} · {timeAgo(post.createdAt, language)}
+            </Mono>
+          </View>
+        </Press>
         {post.isDemo && <Tag label={t("common.demo")} />}
         {post.isDrop && <DropTag post={post} />}
         {flagged && <Tag label={t("post.flaggedTag")} />}
