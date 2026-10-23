@@ -1,0 +1,11 @@
+{
+  "checks": [
+    "capture with area off persists neither location nor Comune label",
+    "capture with area on records actual selected Comune centre",
+    "canonical badge equips explicitly",
+    "settings focus stays within dialog and Escape dismisses",
+    "pan/zoom camera retained across fullscreen and return",
+    "320px long name and reduced-motion setting"
+  ],
+  "errors": []
+}

@@ -1,0 +1,17 @@
+{
+  "checks": [
+    "canonical locked badge sheet retained",
+    "multiple proofs per day accessible",
+    "previous month history accessible",
+    "legacy history has no fabricated pins",
+    "local edit validates dots, preserves badge and survives reload",
+    "live Italian/English and light/dark changes",
+    "guide, sources, Leaf and Comune navigation",
+    "cancelled/confirmed local reset and preserved preferences",
+    "two colocated pins, hidden area omitted, fullscreen/Escape",
+    "map thumbnail opens real original post",
+    "desktop max width and Agenda grid",
+    "empty memories"
+  ],
+  "errors": []
+}

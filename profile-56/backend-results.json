@@ -1,0 +1,24 @@
+{
+  "checks": [
+    "Supabase duplicate handle error leaves local profile intact",
+    "Supabase outage leaves local profile intact",
+    "retry updates current shared identity without overwriting badge or Comune",
+    "capture keeps Comune area under real server post ID without new DB columns",
+    "area survives reload and actual feed sync"
+  ],
+  "errors": [],
+  "profileWrites": [
+    {
+      "name": "Shared Name",
+      "handle": "shared.name"
+    },
+    {
+      "name": "Shared Name",
+      "handle": "shared.name"
+    },
+    {
+      "name": "Shared Name",
+      "handle": "shared.name"
+    }
+  ]
+}
