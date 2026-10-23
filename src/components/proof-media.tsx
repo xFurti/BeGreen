@@ -132,6 +132,8 @@ export function ProofMedia({
 
   // When `photo` changes, loadedPhoto no longer matches until onLoad — no reset effect needed.
   const photoReady = typeof photo === "number" || loadedPhoto === photo;
+  // Swap only while active: inactive tiles never mount main+inset photos together.
+  const layoutSwapped = !locked && active && swapped;
   // Mount the clip only while this tile is active, so scroll unloads the player.
   const showClip = !locked && active && (swapped || photoReady);
   const markReady = () => setLoadedPhoto(photo);
@@ -168,10 +170,9 @@ export function ProofMedia({
         {/* Locked feed: no remote photo/clip fetch — placeholder only under the lock blur. */}
         {!locked && (
           <View style={{ flex: 1 }}>
-            {/* One photo Image at a time: full frame when not swapped, inset when swapped. */}
-            {!swapped && <Photo src={photo} priority={priority} onReady={markReady} />}
-            {swapped && showClip && <Proof src={proof} playing />}
-            {swapped && !showClip && <Photo src={photo} priority={priority} onReady={markReady} />}
+            {/* One photo Image at a time: full frame when not swapped; video full-frame when swapped+active. */}
+            {!layoutSwapped && <Photo src={photo} priority={priority} onReady={markReady} />}
+            {layoutSwapped && showClip && <Proof src={proof} playing />}
           </View>
         )}
       </Pressable>
@@ -183,7 +184,7 @@ export function ProofMedia({
         >
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={swapped ? t("proof.showPhoto") : t("proof.showClip")}
+            accessibilityLabel={layoutSwapped ? t("proof.showPhoto") : t("proof.showClip")}
             onPress={() => {
               haptic.soft();
               setSwapped((s) => !s);
@@ -200,7 +201,7 @@ export function ProofMedia({
             }}
           >
             <View style={{ flex: 1 }}>
-              {swapped ? (
+              {layoutSwapped ? (
                 <Photo src={photo} priority="low" onReady={markReady} fill />
               ) : showClip ? (
                 <Proof src={proof} playing />
