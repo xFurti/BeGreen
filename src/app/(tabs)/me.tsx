@@ -329,7 +329,7 @@ export default function Me() {
         </View>
 
         <View style={{ alignItems: "center", gap: 6, paddingTop: 8 }}>
-          <Logo size={22} color={C.faint} />
+          <Logo size={19} color={C.faint} />
           <Mono color={C.faint}>{t("me.tagline")}</Mono>
         </View>
       </ScrollView>

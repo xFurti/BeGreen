@@ -311,7 +311,7 @@ export default function Onboarding() {
     <KeyboardAvoidingView behavior={process.env.EXPO_OS === "ios" ? "padding" : undefined} style={{ flex: 1, backgroundColor: C.bg }}>
       <View style={{ paddingTop: top + 10, paddingHorizontal: 20, gap: 14 }}>
         <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
-          <Logo size={24} sway />
+          <Logo size={24} />
           <View style={{ flexGrow: 1 }} />
           <LanguageSwitch compact />
           {page < last ? (

@@ -32,6 +32,9 @@ export const C = {
   red: "#E5484D",
   blue: "#3E63DD",
   violet: "#6E56CF",
+  // Brand Kit — logo, app icon and splash. Never Proof Lime on white (1.4:1).
+  canopy: "#152315",
+  proofLime: "#C8E61A",
 } as const;
 
 // Geist for everything; Geist Mono for labels, numbers and metadata.
