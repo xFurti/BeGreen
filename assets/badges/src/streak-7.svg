@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240">
+  <circle cx="120" cy="120" r="108" fill="#174D39" stroke="#CFE8D8" stroke-width="3"/>
+  <path d="M121 35c18 31-5 43 21 65 25 21 25 54 5 76-15 17-38 27-63 19-33-11-49-42-41-71 7-25 27-37 43-58 10-13 20-24 35-31z" fill="#B6F23C"/>
+  <text x="120" y="163" text-anchor="middle" font-family="Arial,sans-serif" font-size="103" font-weight="700" fill="#FFFFFF">7</text>
+</svg>

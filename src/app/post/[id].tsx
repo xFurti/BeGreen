@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon } from "@/components/icon";
 import { VERIFY_GOAL, VerifyBar } from "@/components/post-card";
 import { ProofMedia } from "@/components/proof-media";
+import { TitledName } from "@/components/titled-name";
 import { Avatar, Mono, SdgTags, Tag } from "@/components/ui";
 import { demoPostsFor } from "@/data/demo";
 import { useKeyboardCover } from "@/hooks/use-keyboard-cover";
@@ -58,7 +59,7 @@ export default function PostDetail() {
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
           <Avatar src={a.avatar} name={a.name} size={42} />
           <View style={{ flex: 1, gap: 3 }}>
-            <Text style={{ fontFamily: F.semibold, fontSize: 16, letterSpacing: -0.2 }}>{a.name}</Text>
+            <TitledName name={a.name} badgeId={a.badgeId} style={{ fontFamily: F.semibold, fontSize: 16, letterSpacing: -0.2 }} />
             <Mono>
               @{a.handle} · {placeLabel(post.place, t)} · {timeAgo(post.createdAt, language)}
             </Mono>
@@ -113,7 +114,7 @@ export default function PostDetail() {
                 return (
                   <View key={v} style={{ alignItems: "center", gap: 6 }}>
                     <Avatar src={u.avatar} name={u.name} size={42} />
-                    <Text style={{ fontFamily: F.medium, fontSize: 12 }}>{u.name}</Text>
+                    <TitledName name={u.name} badgeId={u.badgeId} align="center" style={{ fontFamily: F.medium, fontSize: 12 }} />
                   </View>
                 );
               })}
@@ -133,9 +134,12 @@ export default function PostDetail() {
                 <Animated.View key={c.id} entering={FadeInDown.delay(i * 40)} style={{ flexDirection: "row", gap: 10 }}>
                   <Avatar src={u.avatar} name={u.name} size={30} />
                   <View style={{ flex: 1, gap: 2 }}>
-                    <Text style={{ fontFamily: F.semibold, fontSize: 14 }}>
-                      {u.name} <Text style={{ fontFamily: F.regular, color: C.mute }}>{timeAgo(c.createdAt, language)}</Text>
-                    </Text>
+                    <TitledName
+                      name={u.name}
+                      badgeId={u.badgeId}
+                      style={{ fontFamily: F.semibold, fontSize: 14 }}
+                      after={<Text style={{ fontFamily: F.regular, color: C.mute }}> {timeAgo(c.createdAt, language)}</Text>}
+                    />
                     <Text style={[T.body, { fontSize: 15, lineHeight: 21 }]}>{c.text}</Text>
                   </View>
                 </Animated.View>

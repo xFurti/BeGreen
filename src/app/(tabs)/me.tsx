@@ -1,6 +1,6 @@
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, Pressable, ScrollView, Share, Text, useWindowDimensions, View } from "react-native";
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -8,8 +8,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ComuneSection } from "@/components/comune-card";
 import { Icon, type IconName } from "@/components/icon";
 import { LanguageSwitch } from "@/components/language-switch";
+import { TitledName } from "@/components/titled-name";
 import { Avatar, IconButton, Logo, Mono, Press, SectionHeader, TopCover, useCountUp } from "@/components/ui";
 import { ACTIONS } from "@/data/actions";
+import { BADGE_ART } from "@/data/badge-art";
+import { BADGES, earnedBadges } from "@/data/badges";
 import { daysTo2030, SDG_LIST } from "@/data/sdgs";
 import type { Post } from "@/data/types";
 import { useComune } from "@/hooks/use-comune";
@@ -18,7 +21,7 @@ import { profileName, sdgTitle } from "@/i18n/content";
 import { formatDecimal, formatNumber, monthName, weekdayInitials } from "@/i18n/format";
 import { useI18n } from "@/i18n/use-i18n";
 import { supabase } from "@/services/supabase";
-import { sdgsOf, seedsOf, streakOf, useApp, useLeague, useMyPosts } from "@/store/app-store";
+import { badgeStatsOf, dropStaleBadge, sdgsOf, seedsOf, streakOf, useApp, useLeague, useMyPosts } from "@/store/app-store";
 import { C, F, R, T } from "@/theme/tokens";
 import { haptic } from "@/utils/format";
 
@@ -194,6 +197,7 @@ export default function Me() {
   const explain = useApp((s) => s.explain);
   const setExplain = useApp((s) => s.setExplain);
   const reset = useApp((s) => s.reset);
+  const equipBadge = useApp((s) => s.equipBadge);
   const { t, language } = useI18n();
   const pulse = useApp((s) => s.pulse);
   const comuneView = useComune();
@@ -206,17 +210,14 @@ export default function Me() {
   const seeds = seedsOf(posts, verifiedCount);
   const place = comune?.name ?? t("comune.yours");
   const imp = impact(posts);
-  const kinds = new Set(posts.map((p) => p.action));
   const goals = sdgsOf(posts);
+  const stats = badgeStatsOf(posts, verifiedCount);
+  const earned = earnedBadges(stats);
+  const earnedKey = earned.join();
 
-  const badges: { icon: IconName; label: string; on: boolean }[] = [
-    { icon: "camera", label: t("me.b1"), on: posts.length > 0 },
-    { icon: "flame", label: t("me.b2"), on: streak >= 7 },
-    { icon: "bike", label: t("me.b3"), on: posts.filter((p) => p.action === "move").length >= 5 },
-    { icon: "binoculars", label: t("me.b4"), on: kinds.has("spot") },
-    { icon: "shield", label: t("me.b5"), on: verifiedCount >= 10 },
-    { icon: "globe", label: t("me.b6"), on: goals.size >= 10 },
-  ];
+  useEffect(() => {
+    dropStaleBadge();
+  }, [profile.badgeId, earnedKey]);
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
@@ -231,7 +232,7 @@ export default function Me() {
             />
           </View>
           <View style={{ gap: 6 }}>
-            <Text style={[T.hero, { fontSize: 40, lineHeight: 42 }]}>{profileName(profile.name, t)}</Text>
+            <TitledName name={profileName(profile.name, t)} badgeId={profile.badgeId} lines={2} style={[T.hero, { fontSize: 40, lineHeight: 42 }]} />
             <Mono>
               @{profile.handle || t("common.youInline")} · {t(ROLE_LABEL[profile.role])} · {t("me.rankIn", { rank, place })}
             </Mono>
@@ -270,25 +271,50 @@ export default function Me() {
         </View>
 
         <View style={{ gap: 16 }}>
-          <SectionHeader index="05" title={t("me.badges")} action={`${badges.filter((b) => b.on).length}/${badges.length}`} />
+          <SectionHeader index="05" title={t("me.badges")} action={`${earned.length}/${BADGES.length}`} />
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-            {badges.map((b) => (
-              <View
-                key={b.label}
-                style={{
-                  width: badgeSize,
-                  height: badgeSize * 0.9,
-                  borderRadius: R.md,
-                  borderCurve: "continuous",
-                  backgroundColor: b.on ? C.forest : C.card,
-                  padding: 12,
-                  justifyContent: "space-between",
-                }}
-              >
-                <Icon name={b.on ? b.icon : "lock"} size={18} color={b.on ? C.lime : C.faint} />
-                <Text style={{ fontFamily: F.medium, fontSize: 13, letterSpacing: -0.2, color: b.on ? C.white : C.mute }}>{b.label}</Text>
-              </View>
-            ))}
+            {BADGES.map((b) => {
+              const on = earned.includes(b.id);
+              const equipped = profile.badgeId === b.id;
+              const progressLine = b.progress ? t(b.progress.key, { n: Math.min(b.progress.of(stats), b.progress.goal), goal: b.progress.goal }) : "";
+              const reqLine = on ? t(b.requirement) : b.progress ? progressLine : t(b.requirement);
+              const alertLine = b.progress ? `${t(b.requirement)} ${progressLine}` : t(b.requirement);
+              return (
+                <Pressable
+                  key={b.id}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: equipped }}
+                  accessibilityLabel={`${t(b.name)}, ${equipped ? t("badges.active") : on ? t("badges.earned") : t("badges.locked")}. ${reqLine}`}
+                  onPress={() => {
+                    haptic.tap();
+                    if (on) equipBadge(equipped ? null : b.id);
+                    else Alert.alert(t(b.name), alertLine);
+                  }}
+                  style={{
+                    width: badgeSize,
+                    minHeight: badgeSize * 1.1,
+                    borderRadius: R.md,
+                    borderCurve: "continuous",
+                    backgroundColor: on ? C.forest : C.card,
+                    borderWidth: equipped ? 2 : 0,
+                    borderColor: C.leaf,
+                    padding: equipped ? 10 : 12,
+                    justifyContent: "space-between",
+                  }}
+                >
+                  {!on && (
+                    <View style={{ position: "absolute", top: 8, right: 8 }}>
+                      <Icon name="lock" size={12} color={C.faint} />
+                    </View>
+                  )}
+                  <Image source={BADGE_ART[b.id]} style={{ width: badgeSize * 0.38, height: badgeSize * 0.38, opacity: on ? 1 : 0.35 }} />
+                  <View style={{ gap: 2 }}>
+                    <Text style={{ fontFamily: F.medium, fontSize: 13, letterSpacing: -0.2, color: on ? C.white : C.mute }}>{t(b.name)}</Text>
+                    {!on && <Text numberOfLines={2} style={{ fontFamily: F.regular, fontSize: 11, color: C.mute }}>{b.progress ? progressLine : t(b.requirement)}</Text>}
+                  </View>
+                </Pressable>
+              );
+            })}
           </View>
         </View>
 

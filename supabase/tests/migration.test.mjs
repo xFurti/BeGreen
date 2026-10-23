@@ -53,6 +53,10 @@ test("profiles: own row only, unique handles", async () => {
   await rejects(B, `insert into profiles (id, name, handle) values ('${A}', 'X', 'xx')`);
   await as(B, `insert into profiles (id, name, handle, comune_id) values ('${B}', 'Bo', 'bo', '6542283')`);
   assert.equal((await as(B, `update profiles set name = 'hacked' where id = '${A}' returning id`)).length, 0);
+  assert.deepEqual((await as(A, `update profiles set badge_id = 'spotter' where id = '${A}' returning badge_id`))[0], { badge_id: "spotter" });
+  await rejects(A, `update profiles set badge_id = 'legend' where id = '${A}'`);
+  assert.equal((await as(A, `update profiles set badge_id = null where id = '${A}' returning badge_id`))[0].badge_id, null);
+  assert.equal((await as(B, `update profiles set badge_id = 'spotter' where id = '${A}' returning id`)).length, 0);
 });
 
 test("challenges: one per Comune per day, the first one wins", async () => {
