@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon } from "@/components/icon";
 import { author, VERIFY_GOAL, VerifyBar } from "@/components/post-card";
 import { ProofMedia } from "@/components/proof-media";
-import { Avatar, Button, Mono, SdgTags, Tag } from "@/components/ui";
+import { Avatar, Mono, Press, SdgTags, Tag } from "@/components/ui";
 import { ACTIONS } from "@/data/actions";
 import { SDGS } from "@/data/sdgs";
 import { ME_ID } from "@/data/seed";
@@ -133,14 +133,15 @@ export default function PostDetail() {
         </View>
 
         {post.authorId !== ME_ID && (
-          <View style={{ alignItems: "center", gap: 10, paddingTop: 8 }}>
-            <Text style={T.caption}>Doesn’t look real?</Text>
-            <Button
-              kind="ghost"
-              size="md"
-              label={flagged ? "Proof flagged" : "Flag proof"}
-              accessibilityLabel={flagged ? "Proof flagged" : "Flag this proof"}
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 12, borderTopWidth: 1, borderColor: C.line, paddingTop: 16 }}>
+            <View style={{ flex: 1, gap: 3 }}>
+              <Mono color={C.ink}>Doesn’t look real?</Mono>
+              <Text style={T.caption}>{flagged ? "Flagged on this device." : "A flag is saved on this device only."}</Text>
+            </View>
+            <Press
               disabled={flagged}
+              hitSlop={6}
+              accessibilityLabel={flagged ? "Proof flagged" : "Flag this proof"}
               onPress={() =>
                 Alert.alert("Flag this proof?", "It will be marked on this device. This prototype has no moderators, and Seeds stay as they are.", [
                   { text: "Cancel", style: "cancel" },
@@ -154,7 +155,11 @@ export default function PostDetail() {
                   },
                 ])
               }
-            />
+              style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 12, height: 34, borderRadius: R.pill, borderWidth: 1, borderColor: C.mint2 }}
+            >
+              <Icon name={flagged ? "check" : "flag"} size={12} color={C.leaf} />
+              <Text style={{ fontFamily: F.medium, fontSize: 13 }}>{flagged ? "Proof flagged" : "Flag proof"}</Text>
+            </Press>
           </View>
         )}
       </ScrollView>

@@ -63,6 +63,7 @@ export function Press({
   style,
   scale = 0.97,
   disabled,
+  hitSlop,
   hapticOn = true,
   accessibilityLabel,
 }: {
@@ -72,6 +73,7 @@ export function Press({
   style?: StyleProp<ViewStyle>;
   scale?: number;
   disabled?: boolean;
+  hitSlop?: number;
   hapticOn?: boolean;
   accessibilityLabel?: string;
 }) {
@@ -88,6 +90,7 @@ export function Press({
       accessibilityLabel={accessibilityLabel}
       accessibilityState={{ disabled: !!disabled }}
       disabled={disabled}
+      hitSlop={hitSlop}
       onPressIn={() => s.set(withSpring(scale, { damping: 22, stiffness: 420 }))}
       onPressOut={() => s.set(withSpring(1, { damping: 15, stiffness: 300 }))}
       onLongPress={onLongPress}
@@ -113,7 +116,6 @@ export function Button({
   trailing,
   loading,
   disabled,
-  accessibilityLabel,
   size = "lg",
   style,
 }: {
@@ -124,7 +126,6 @@ export function Button({
   trailing?: string;
   loading?: boolean;
   disabled?: boolean;
-  accessibilityLabel?: string;
   size?: "lg" | "md" | "sm";
   style?: StyleProp<ViewStyle>;
 }) {
@@ -135,7 +136,7 @@ export function Button({
     <Press
       onPress={onPress}
       disabled={disabled || loading}
-      accessibilityLabel={accessibilityLabel ?? label}
+      accessibilityLabel={label}
       style={[
         {
           height: h,

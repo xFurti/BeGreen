@@ -66,6 +66,7 @@ const MAP = {
   seed: ["circle.hexagongrid.fill", "ellipse"],
   calendar: ["calendar", "calendar-outline"],
   shield: ["checkmark.shield.fill", "shield-checkmark"],
+  flag: ["flag", "flag-outline"],
   doc: ["doc.text.fill", "document-text"],
   link: ["arrow.up.right", "open-outline"],
   thermometer: ["thermometer.medium", "thermometer"],
