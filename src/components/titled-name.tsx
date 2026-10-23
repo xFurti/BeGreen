@@ -13,15 +13,17 @@ export function TitledName({
   style,
   align,
   after,
+  lines = 1,
 }: {
   name: string;
   badgeId?: BadgeId | null;
   style: StyleProp<TextStyle>;
   align?: "center";
   after?: ReactNode;
+  lines?: number;
 }) {
   const { t } = useI18n();
-  if (!isBadgeId(badgeId)) return <Text numberOfLines={1} style={style}>{name}{after}</Text>;
+  if (!isBadgeId(badgeId)) return <Text numberOfLines={lines} style={style}>{name}{after}</Text>;
   const fontSize = StyleSheet.flatten(style)?.fontSize ?? 15;
   const h = Math.round(fontSize * 0.8);
   const badge = badgeById(badgeId);
@@ -32,7 +34,7 @@ export function TitledName({
       style={{ flexDirection: "row", alignItems: "center", gap: fontSize * 0.3, justifyContent: align === "center" ? "center" : undefined }}
     >
       <Image source={BADGE_ART[badgeId]} style={{ width: h, height: h, flexShrink: 0 }} accessible={false} />
-      <Text numberOfLines={1} style={[style, { flexShrink: 1 }]}>{name}{after}</Text>
+      <Text numberOfLines={lines} style={[style, { flexShrink: 1 }]}>{name}{after}</Text>
     </View>
   );
 }

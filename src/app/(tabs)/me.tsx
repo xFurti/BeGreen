@@ -232,7 +232,7 @@ export default function Me() {
             />
           </View>
           <View style={{ gap: 6 }}>
-            <TitledName name={profileName(profile.name, t)} badgeId={profile.badgeId} style={[T.hero, { fontSize: 40, lineHeight: 42 }]} />
+            <TitledName name={profileName(profile.name, t)} badgeId={profile.badgeId} lines={2} style={[T.hero, { fontSize: 40, lineHeight: 42 }]} />
             <Mono>
               @{profile.handle || t("common.youInline")} · {t(ROLE_LABEL[profile.role])} · {t("me.rankIn", { rank, place })}
             </Mono>
