@@ -1,11 +1,10 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useEffect, useState, type ReactNode } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View, type StyleProp, type ViewStyle } from "react-native";
 import Animated, {
   cancelAnimation,
   Easing,
-  FadeInDown,
   ReduceMotion,
   useAnimatedStyle,
   useReducedMotion,
@@ -91,6 +90,20 @@ function Shine({ color, delay = 0, pause = 2600, sweep = 1100 }: { color: string
   );
 }
 
+// Entrance reveal driven by useEffect instead of `entering`: Reanimated entering animations can get
+// stuck at opacity 0 for ScrollView children inside an iOS formSheet (they mount before the sheet's
+// animation host is ready). Shared values + withTiming always run.
+function Reveal({ children, delay = 0, duration = 340, style }: { children: ReactNode; delay?: number; duration?: number; style?: StyleProp<ViewStyle> }) {
+  const reduced = useReducedMotion();
+  const p = useSharedValue(reduced ? 1 : 0);
+  useEffect(() => {
+    if (reduced) return;
+    p.set(withDelay(delay, withTiming(1, { duration, easing: Easing.out(Easing.cubic), reduceMotion: ReduceMotion.System })));
+  }, [p, delay, duration, reduced]);
+  const a = useAnimatedStyle(() => ({ opacity: p.value, transform: [{ translateY: (1 - p.value) * 14 }] }));
+  return <Animated.View style={[style, a]}>{children}</Animated.View>;
+}
+
 // Slow sway for decorative leaves, like wind through the card.
 function Sway({ children }: { children: ReactNode }) {
   const reduced = useReducedMotion();
@@ -106,9 +119,8 @@ function Sway({ children }: { children: ReactNode }) {
 
 function StatTile({ icon, label, value, unit, index }: { icon: IconName; label: string; value: string; unit?: string; index: number }) {
   const { C } = useTheme();
-  const reduced = useReducedMotion();
   return (
-    <Animated.View entering={reduced ? undefined : FadeInDown.delay(190 + index * 40).duration(320)} style={{ flex: 1 }}>
+    <Reveal delay={190 + index * 40} duration={320} style={{ flex: 1 }}>
       <View style={{ flex: 1, backgroundColor: C.card, borderRadius: R.md, borderCurve: "continuous", padding: 14, gap: 10 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
           <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: C.mint2, alignItems: "center", justifyContent: "center" }}>
@@ -129,14 +141,13 @@ function StatTile({ icon, label, value, unit, index }: { icon: IconName; label: 
           )}
         </View>
       </View>
-    </Animated.View>
+    </Reveal>
   );
 }
 
 export default function DropSheet() {
   const { C, T } = useTheme();
   const { bottom } = useSafeAreaInsets();
-  const reduced = useReducedMotion();
   const { drop, pulse } = usePulse();
   const comune = useApp((s) => s.comune);
   const { t, language } = useI18n();
@@ -163,9 +174,9 @@ export default function DropSheet() {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 20, paddingTop: 26, gap: 22, paddingBottom: 150 + foot }}>
-        <Animated.View
-          entering={reduced ? undefined : FadeInDown.duration(360)}
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 20, paddingTop: 26, gap: 22, paddingBottom: 150 + foot }}>
+        <Reveal
+          duration={360}
           // Leaf-shaped, like the Drop card on the feed it opens from.
           style={{
             backgroundColor: C.forest,
@@ -220,10 +231,10 @@ export default function DropSheet() {
             </View>
             <SdgTags goals={a.sdgs} dark />
           </View>
-        </Animated.View>
+        </Reveal>
 
-        <Animated.View
-          entering={reduced ? undefined : FadeInDown.delay(90).duration(340)}
+        <Reveal
+          delay={90}
           style={{ backgroundColor: C.mint, borderRadius: R.lg, borderCurve: "continuous", padding: 18, gap: 10 }}
         >
           <Mono color={C.forestInk}>{t("dropSheet.why")}</Mono>
@@ -234,13 +245,13 @@ export default function DropSheet() {
               <SourceBadge key={s} id={s} onPress={() => router.push("/sources")} />
             ))}
           </View>
-        </Animated.View>
+        </Reveal>
 
         {rows.length > 0 && (
           <View style={{ gap: 10 }}>
-            <Animated.View entering={reduced ? undefined : FadeInDown.delay(150).duration(320)}>
+            <Reveal delay={150}>
               <Mono>{t("dropSheet.readings.title", { place })}</Mono>
-            </Animated.View>
+            </Reveal>
             {pairs.map((pair, ri) => (
               <View key={ri} style={{ flexDirection: "row", gap: 10 }}>
                 {pair.map((r, ci) => (
@@ -252,17 +263,18 @@ export default function DropSheet() {
           </View>
         )}
 
-        <Animated.View
-          entering={reduced ? undefined : FadeInDown.delay(300).duration(340)}
+        <Reveal
+          delay={300}
           style={{ backgroundColor: C.card, borderRadius: R.lg, borderCurve: "continuous", padding: 18, gap: 12 }}
         >
           <Mono>{t("dropSheet.how")}</Mono>
           <View>
             <View pointerEvents="none" style={{ position: "absolute", left: 15, top: 25, bottom: 25, width: 2, borderRadius: 1, backgroundColor: C.band }} />
             {steps.map((s, i) => (
-              <Animated.View
+              <Reveal
                 key={i}
-                entering={reduced ? undefined : FadeInDown.delay(340 + i * 70).duration(320)}
+                delay={340 + i * 70}
+                duration={320}
                 style={{ flexDirection: "row", gap: 12, alignItems: "flex-start", paddingVertical: 9 }}
               >
                 <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: C.leaf, alignItems: "center", justifyContent: "center" }}>
@@ -273,13 +285,14 @@ export default function DropSheet() {
                   <Text style={[T.callout, { fontSize: 13, lineHeight: 18 }]}>{s.body}</Text>
                 </View>
                 <Icon name={s.icon} size={17} color={C.leaf} />
-              </Animated.View>
+              </Reveal>
             ))}
           </View>
-        </Animated.View>
+        </Reveal>
 
-        <Animated.View
-          entering={reduced ? undefined : FadeInDown.delay(380).duration(320)}
+        <Reveal
+          delay={380}
+          duration={320}
           style={{
             flexDirection: "row",
             gap: 10,
@@ -296,11 +309,11 @@ export default function DropSheet() {
           <Text style={[T.caption, { flex: 1 }]}>
             {drop.offline ? t("dropSheet.noteOffline", { place }) : drop.shared ? t("dropSheet.noteShared", { place }) : t("dropSheet.noteLocal", { place })}
           </Text>
-        </Animated.View>
+        </Reveal>
       </ScrollView>
 
-      <Animated.View
-        entering={reduced ? undefined : FadeInDown.delay(420).duration(340)}
+      <Reveal
+        delay={420}
         style={{
           position: "absolute",
           left: 0,
@@ -320,7 +333,7 @@ export default function DropSheet() {
           <Shine color={C.ring} delay={1300} pause={2200} sweep={900} />
         </View>
         <Button label={t("dropSheet.show")} kind="ghost" icon="book" size="md" onPress={() => go("/guide")} />
-      </Animated.View>
+      </Reveal>
     </View>
   );
 }
