@@ -1,6 +1,6 @@
-# Dati per «Il mio Comune»
+# Dati ufficiali per Comune
 
-Sezione **02 · My Comune** nella schermata *Me*: il comune dell'utente (posizione approssimata ~1 km), i suoi indicatori di sostenibilità ufficiali confrontati con gli altri comuni della provincia, i dati live da sensori e osservazioni, e una domanda concreta da portare al Comune. Risponde alla domanda guida della traccia: trasformare i dati del territorio in azioni alla portata di chi decide.
+Nota: il blocco «My Comune» non è più nella schermata *Io*; gli indicatori ufficiali sono parte della scheda **Dati** (Pulse) e alimentano anche la sfida di oggi. Questo documento resta la fonte su dataset, join, soglie e licenze per i dati per-Comune: gli indicatori ufficiali del comune scelto, confrontati con gli altri comuni della provincia, e i dati live da sensori e osservazioni. Risponde alla domanda guida della traccia: trasformare i dati del territorio in azioni alla portata di chi decide.
 
 ## Dataset del kit: cosa abbiamo verificato
 

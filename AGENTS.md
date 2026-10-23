@@ -6,7 +6,7 @@ BeGreen è il progetto del team (sei partecipanti) per l'hackathon Good Vibes / 
 
 - Questo file è la regola predefinita: non serve caricare una skill per task ordinari.
 - Per scope, idee o pitch: leggi `docs/traccia.md` (e se serve `skills/hackathon-track/SKILL.md`) così il lavoro resta sulla traccia ufficiale, non su un altro prodotto.
-- Controlla attività e referenti in `docs/team.md` e l'issue pertinente. Non modificare il lavoro altrui senza coordinarti.
+- I componenti del team sono elencati nella sezione Team di `README.md` e in `docs/team.md`. Controlla referenti e attività in `docs/team.md` e l'issue pertinente. Non modificare il lavoro altrui senza coordinarti.
 - Se mancano dettagli bloccanti, chiedili; per scelte reversibili e ordinarie procedi con un'assunzione esplicita.
 
 ## Skills (opzionali)

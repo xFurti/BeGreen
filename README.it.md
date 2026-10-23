@@ -42,7 +42,8 @@
 [Architettura](#architettura) ·
 [Brand](#brand-e-design-system) ·
 [Limiti](#limiti-dichiarati) ·
-[Team](#team)
+[Team](#team) ·
+[Contribuire](#come-contribuire)
 
 <br>
 
@@ -494,19 +495,23 @@ Idee per dopo l'hackathon: [`docs/ideas.md`](docs/ideas.md).
 | **4BI** | Bassanello Leonardo · Cremonese Luca · Warnakulasuriya Arachchilage Fernando Nipun Samuel |
 | **4SI** | Cipriani Gabriele |
 
-## Come lavora il team
+## Come contribuire
 
-1. Leggi [AGENTS.md](AGENTS.md): vale anche per gli assistenti AI.
-2. Attività e referenti in [docs/team.md](docs/team.md); le nuove idee in [docs/ideas.md](docs/ideas.md).
-3. Crea un branch da `main` aggiornato (`feat/12-demo`, `fix/18-login`, `docs/pitch`) e apri una PR verso `main`. `npm run verify` deve passare.
-4. Serve l'approvazione di un compagno di team prima del merge. Se la review Pi è configurata in CI, parte da sola sulle PR pronte.
+<img src="docs/readme/icons/construct.svg" width="20" alt=""> Le regole di lavoro della repo sono in [AGENTS.md](AGENTS.md); valgono anche per gli assistenti AI. In sintesi:
+
+- Crea un branch da `main` aggiornato (`feat/12-demo`, `fix/18-login`, `docs/pitch`) e apri una PR verso `main`. `npm run verify` deve passare.
+- Serve l'approvazione di un compagno prima del merge. Quando la review Pi è configurata in CI, parte da sola sulle PR pronte.
+- Attività e referenti: [docs/team.md](docs/team.md) · idee fuori dallo scope corrente: [docs/ideas.md](docs/ideas.md).
+
+### Documentazione
 
 | Documento | Cosa |
 | --- | --- |
 | [docs/traccia.md](docs/traccia.md) · [docs/regolamento.md](docs/regolamento.md) | Traccia ufficiale e regolamento dell'evento |
-| [docs/decisions.md](docs/decisions.md) | Decisioni di prodotto e tecniche |
-| [docs/presentation.md](docs/presentation.md) | Pitch e demo (8 minuti) |
-| [docs/dati-comune.md](docs/dati-comune.md) | Dataset ufficiali per Comune |
+| [docs/presentation.md](docs/presentation.md) | Struttura del pitch e percorso della demo (8 minuti) |
+| [docs/decisions.md](docs/decisions.md) | Perché il prodotto è fatto così |
+| [docs/dati-comune.md](docs/dati-comune.md) | Dataset ufficiali per Comune, join e soglie |
+| [docs/profile.md](docs/profile.md) | Profilo e configurazione della mappa nativa |
 | [MARKETING.md](MARKETING.md) | Piano di lancio |
 | [skills/](skills/) | Skill facoltative per gli agenti: traccia, feature, review, pitch |
 

@@ -42,7 +42,8 @@
 [Architecture](#architecture) ·
 [Brand](#brand--design-system) ·
 [Limits](#honest-limits) ·
-[Team](#team)
+[Team](#team) ·
+[Contributing](#contributing)
 
 <br>
 
@@ -492,19 +493,23 @@ Ideas for after the hackathon: [`docs/ideas.md`](docs/ideas.md).
 | **4BI** | Bassanello Leonardo · Cremonese Luca · Warnakulasuriya Arachchilage Fernando Nipun Samuel |
 | **4SI** | Cipriani Gabriele |
 
-## Team workflow
+## Contributing
 
-1. Read [AGENTS.md](AGENTS.md): it applies to AI assistants too.
-2. Track tasks and owners in [docs/team.md](docs/team.md); park new ideas in [docs/ideas.md](docs/ideas.md).
-3. Branch from an up-to-date `main` (`feat/12-demo`, `fix/18-login`, `docs/pitch`) and open a PR to `main`. `npm run verify` must pass.
-4. Get approval from a teammate before merging. If Pi review is configured in CI, it runs on its own on ready PRs.
+<img src="docs/readme/icons/construct.svg" width="20" alt=""> The repo's working rules live in [AGENTS.md](AGENTS.md); they apply to AI assistants too. The short version:
+
+- Branch from an up-to-date `main` (`feat/12-demo`, `fix/18-login`, `docs/pitch`) and open a PR to `main`. `npm run verify` must pass.
+- Another teammate approves before merging. When Pi review is configured in CI, it runs on its own on ready PRs.
+- Tasks and owners: [docs/team.md](docs/team.md) · new ideas, off the current scope: [docs/ideas.md](docs/ideas.md).
+
+### Documentation
 
 | Document | What |
 | --- | --- |
-| [docs/traccia.md](docs/traccia.md) · [docs/regolamento.md](docs/regolamento.md) | Official track and event rules |
-| [docs/decisions.md](docs/decisions.md) | Product and technical decisions |
-| [docs/presentation.md](docs/presentation.md) | Pitch and demo (8 minutes) |
-| [docs/dati-comune.md](docs/dati-comune.md) | Official per-Comune datasets |
+| [docs/traccia.md](docs/traccia.md) · [docs/regolamento.md](docs/regolamento.md) | The official track and the event rules |
+| [docs/presentation.md](docs/presentation.md) | Pitch structure and demo path (8 minutes) |
+| [docs/decisions.md](docs/decisions.md) | Why the product looks like this |
+| [docs/dati-comune.md](docs/dati-comune.md) | Official per-Comune datasets, joins and thresholds |
+| [docs/profile.md](docs/profile.md) | Profile and native map setup |
 | [MARKETING.md](MARKETING.md) | Go-to-market plan |
 | [skills/](skills/) | Optional agent skills: track, feature, review, pitch |
 

@@ -2,13 +2,13 @@
 
 Il profilo usa cover con avatar sovrapposto, identità centrata, statistiche compatte e tre schede. La cover riutilizza `assets/demo/forest.jpg`; la palette segue il tema dell’app.
 
-- **Impatto**: conteggi calcolati sulle proprie prove reali, con avvertenza sulle stime. Include Agenda 2030, il conto alla rovescia fino al 1° gennaio 2030, badge e scelta esplicita del titolo. I badge usano il catalogo condiviso, senza traguardi paralleli. I dati ambientali locali si consultano nella scheda Dati: il profilo non contiene il blocco «Il mio Comune».
-- **Ricordi**: calendario da lunedì, navigazione fra mesi, filtro per giorno e foto che aprono la prova originale. Più prove nello stesso giorno restano accessibili. Nomi, date e testi seguono italiano/inglese.
+- **Impatto**: conteggi calcolati sulle proprie prove reali, con avvertenza sulle stime. Include Agenda 2030, il conto alla rovescia fino al 1° gennaio 2030, badge (medaglie SVG con anello di progresso) e scelta esplicita del titolo. I dati ambientali locali si consultano nella scheda Dati: il profilo non contiene il blocco «Il mio Comune».
+- **Foto**: griglia delle proprie prove; ogni foto apre la prova originale. Nomi, date e testi seguono italiano/inglese.
 - **Mappa**: aree delle prove salvate su questo dispositivo. Nessun segnaposto fittizio per le prove precedenti o con zona nascosta. Ogni nuova prova con «Mostra zona» attivo registra il **centro del Comune scelto**, non la posizione del gesto. Le coordinate restano sul dispositivo e sopravvivono alla pubblicazione e alla sincronizzazione del post. Il backend attuale continua a ricevere soltanto i campi già supportati: non servono migrazioni. Dopo un reset o su un altro telefono le vecchie aree non sono disponibili.
 
 Più prove nello stesso Comune condividono la posizione. La striscia delle foto sotto la mappa permette di aprirle tutte, anche quando i segnaposto si sovrappongono. La vista a schermo intero conserva centro e zoom durante apertura/chiusura.
 
-Dalla cover si aprono condivisione e impostazioni: modifica nome/handle/ruolo, tema sistema/chiaro/scuro, pubblico delle spiegazioni, Comune, lingua, guida, fonti e Leaf. La modifica del profilo mantiene il titolo e usa il salvataggio Supabase esistente: errori di rete e handle occupati lasciano i dati precedenti e consentono di riprovare. Senza backend il salvataggio è locale. Gli handle seguono le regole dell’onboarding (2–24 lettere, numeri, punti o trattini bassi).
+Dalla cover si aprono condivisione e impostazioni: modifica nome/handle/ruolo e specie del seme, tema sistema/chiaro/scuro, pubblico delle spiegazioni, Comune, lingua, luoghi salvati, amici, guida, fonti e Leaf. La modifica del profilo mantiene il titolo e usa il salvataggio Supabase esistente: errori di rete e handle occupati lasciano i dati precedenti e consentono di riprovare. Senza backend il salvataggio è locale. Gli handle seguono le regole dell’onboarding (2–24 lettere, numeri, punti o trattini bassi).
 
 Uscita e reset richiedono conferma, spiegano il limite degli account anonimi e mantengono lingua/tema. Un errore di uscita dal server non viene presentato come successo.
 
@@ -26,4 +26,4 @@ Le tile online richiedono connessione. Se la mappa web non si carica, le foto so
 
 `npm run verify` include la suite completa di main e i test del profilo: salvataggio/errore e conservazione del titolo, validazione degli handle, calendario e giorni con più prove, assenza di segnaposto inventati, coordinate valide, inquadratura e tile.
 
-Le immagini in `docs/concepts/` documentano il concept originale e i suoi vecchi dati dimostrativi; non rappresentano la versione integrata. Le prove visive attuali e gli esiti dei flussi sono collegati nella PR #56.
+Gli screenshot aggiornati del profilo sono in `docs/readme/screens/`.

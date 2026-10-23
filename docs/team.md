@@ -1,15 +1,15 @@
 # Team e collaborazione
 
-Il gruppo è composto da sei persone. Username e assegnazioni sono ancora da comunicare; i ruoli possono cambiare o essere condivisi.
+Il team **Magilla Gorilla** per Good Vibes / FESAV 2026: sei studenti del Liceo Tecnologico Guglielmo Marconi di Verona. Elenco di riferimento anche nella sezione Team del `README.md`.
 
-| Partecipante | Username GitHub | Referenza concordata |
-| --- | --- | --- |
-| 1 | Da comunicare | Da assegnare |
-| 2 | Da comunicare | Da assegnare |
-| 3 | Da comunicare | Da assegnare |
-| 4 | Da comunicare | Da assegnare |
-| 5 | Da comunicare | Da assegnare |
-| 6 | Da comunicare | Da assegnare |
+| Partecipante | Classe | Username GitHub | Referenza concordata |
+| --- | --- | --- | --- |
+| Holovan Oleksii | 4AI | Da comunicare | Da assegnare |
+| Vitiello Lorenzo | 4AI | Da comunicare | Da assegnare |
+| Bassanello Leonardo | 4BI | Da comunicare | Da assegnare |
+| Cremonese Luca | 4BI | Da comunicare | Da assegnare |
+| Warnakulasuriya Arachchilage Fernando Nipun Samuel | 4BI | Da comunicare | Da assegnare |
+| Cipriani Gabriele | 4SI | Da comunicare | Da assegnare |
 
 Concordate chi segue problema/utenti, esperienza, sviluppo, integrazione, verifica e pitch. Sono responsabilità da coprire, non sei reparti da creare.
 
