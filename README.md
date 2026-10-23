@@ -88,8 +88,10 @@ Without the two environment variables below the app still runs, on this phone on
 
 `src/services/leaf.ts` has two modes:
 
+Leaf opens on a summary of today's data for your Comune and up to three questions picked from it (a problem in the data comes first). Each answer starts with a verdict, then a short explanation, the numbers as chips, its sources (tap for what they are) and whether it is a guided or an AI answer. *Explained for* above the composer chooses Me, My class or the Comune for the next questions; it starts from your profile's choice but does not change Pulse or Me. Under the latest answer, chips re-ask it for another audience or suggest a next question; past answers never rewrite themselves.
+
 - **Grounded local engine (default):** answers by recognising the question's intent, using only the live Pulse numbers. It never invents a value and always cites sources. It works offline.
-- **AI backend:** set `EXPO_PUBLIC_LEAF_ENDPOINT`. The app sends `POST { question, audience, language, pulse, insights }` (`language` is `it` or `en`) and expects `{ text, cites: SourceId[] }`. That server is where a language model reads documents, interprets proof images, identifies species and rewrites answers for the audience. **Model keys stay on the server, never in the app.** If the backend fails or ignores `language`, the app falls back to the local engine, which answers in the active language.
+- **AI backend:** set `EXPO_PUBLIC_LEAF_ENDPOINT`. The app sends `POST { question, audience, language, pulse, insights }` (`language` is `it` or `en`) and expects `{ text, cites: SourceId[] }`, optionally with `headline` (the verdict shown in bold), `facts: { label, value, unit?, level? }[]` (number chips) and `followUps: string[]` (up to two next questions); unknown sources and malformed fields are dropped. That server is where a language model reads documents, interprets proof images, identifies species and rewrites answers for the audience. **Model keys stay on the server, never in the app.** If the backend fails or ignores `language`, the app falls back to the local engine, which answers in the active language.
 
 ## Run it
 

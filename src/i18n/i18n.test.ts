@@ -159,16 +159,16 @@ describe("Leaf", () => {
     }
 
     const trust = answerLocally("affidabilità", { ...base, language: "it" });
-    assert.match(trust.text, /Attenzione|modello|Misura/i);
+    assert.match(`${trust.headline}\n${trust.text}`, /Attenzione|modello|Misura/i);
     assert.ok(trust.cites.length > 0);
 
     const species = answerLocally("species", { ...base, language: "en", insights: buildInsights(SAMPLE_PULSE, { carFree: 12, areaName: "Milano" }, "en") });
-    assert.match(species.text, /species/i);
+    assert.match(`${species.headline}\n${species.text}`, /species/i);
     assert.ok(species.cites.includes("inat"));
 
     const suggested = translate("it", "answers.suggested.trust");
     const fromChip = answerLocally(suggested, { ...base, language: "it" });
-    assert.match(fromChip.text, /Attenzione|modello|Misura/i);
+    assert.match(`${fromChip.headline}\n${fromChip.text}`, /Attenzione|modello|Misura/i);
     assert.ok(fromChip.cites.length > 0);
   });
 });
