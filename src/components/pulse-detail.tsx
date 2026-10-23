@@ -164,6 +164,11 @@ export function PulseDetail({ card, pulse, visible, explain, onExplain, onClose,
             <IconButton icon="close" label={t("common.close")} onPress={onClose} size={44} />
           </View>
           <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: bottom + 28, gap: 20 }}>
+            {pulse.sample && (
+              <View style={{ backgroundColor: C.card, borderRadius: R.md, padding: 12, borderLeftWidth: 3, borderLeftColor: C.amber }}>
+                <Text style={T.callout}>{t("pulse.offline")}</Text>
+              </View>
+            )}
             <View style={{ gap: 6 }}>
               {card.sources.map((s) => <SourceBadge key={s} id={s} onPress={onSources} />)}
               <Text selectable style={{ fontFamily: F.medium, fontSize: 62, letterSpacing: -2.5, color: C.ink }}>{card.value}</Text>
