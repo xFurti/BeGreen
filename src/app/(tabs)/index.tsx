@@ -99,7 +99,7 @@ function Race({ place }: { place: string }) {
   return (
     <Press
       scale={0.985}
-      onPress={() => router.navigate("/league")}
+      onPress={() => router.push("/league")}
       accessibilityLabel={t("feed.leagueA11y")}
       style={{ backgroundColor: C.card, borderRadius: R.xl, borderCurve: "continuous", padding: 18, gap: 14 }}
     >
@@ -251,7 +251,7 @@ export default function Feed() {
             <Text style={{ fontFamily: F.regular, color: C.mute, textAlign: "center" }}>
               {lens === "squads" ? t("feed.quietBody") : lens === "everyone" ? t("feed.quietEveryone") : t("feed.quietComune", { place })}
             </Text>
-            {lens === "squads" && <Button label={t("feed.findSquad")} size="md" onPress={() => router.navigate("/league")} style={{ marginTop: 6 }} />}
+            {lens === "squads" && <Button label={t("feed.findSquad")} size="md" onPress={() => router.push({ pathname: "/league", params: { tab: "squads" } })} style={{ marginTop: 6 }} />}
           </Animated.View>
         }
         showsVerticalScrollIndicator={false}

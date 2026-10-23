@@ -25,10 +25,16 @@ BeGreen is built for the brief **“2. La mia sostenibilità”**: it takes sust
 | **Pulse** | Live local data for air, weather, water, soil, nature and protected areas. Every card has a **source badge** and an **“Explain it for: Me / My class / Comune”** switch, plus a button that turns the insight into an action. |
 | **Leaf** | An assistant that answers questions about your area using only the data you can see, and cites its sources. It adapts to the audience. |
 | **How we know** | Explains each kind of source (official, model, citizen science, open map, community): what it is, what it's good for, where to be careful. It also flags data whose access or terms still need checking. |
-| **League** | This week's race between everyone posting in your Comune (podium, your gap to the next person, **nudges** for people who haven't posted), your squads with weekly quests and join-by-code, and the ranking of every squad in your Comune. A new squad's first quest follows today's Drop. |
+| **Community** | Replaces the League tab and opens straight on the communities you're in, with the **Love your city** mark on top. Two kinds: **Your groups** (friends, a class, a crew: joined with a code, each row shows your rank this week; **New group** and **Join with code** right there) and **Your city** (a real place, shown on its real map; not in one yet → your Comune's city, one tap to join). Search finds any Italian city. |
+| **Community map** | The real OpenStreetMap map of the area (streets, places, rivers, railway), pannable and zoomable to street level, with BeGreen pins in seven layers: discover, repair & reuse, gardens & groups, swap & share, events & challenges, reports, moments. Search that understands questions (“Dove posso riparare una bici?”, “eventi questo weekend”) and finds real streets and places in the area, layer chips, filters (distance, upcoming events, most saved, new this week, open reports, from friends, family-friendly once verified), a legend, clustering, and a card for the pin you tap with directions. |
+| **Add a place** | Photo-first, five steps: what (discovery, useful place, event, challenge/experience, report, moment), photo (optional), a few words and the category (date and time for events), where (your location only suggests it; exact or ~200 m; a moment can stay off the map), who sees it (everyone or members only). An exact public spot needs an explicit confirmation. |
+| **Place page** | Photo, category, status (verified / from the community / to verify / open or resolved / upcoming or ended), who added it and when, last update, address and directions, love, save, share, “I'm going” for events, the proofs taken there (and “add a proof here”), comments, and the trust tools: report out of date / wrong / not OK, propose a correction, “this looks fixed”, block the author; authors mark resolved/done or “still right”; moderators verify, hide, delete. |
+| **Community page** | A **city** leads with its real map and *Happening here* (upcoming events, then places), then the daily prompt, challenges, this week's leaderboard and the latest proofs. A **group** leads with its leaderboard (members ranked by this week's Seeds), then the invite code to share, the latest proofs and challenges. Both can be explored before joining; private groups show only their name until you join with the code. |
+| **Challenges** | Collective challenges with a goal and a deadline, from starter ideas (discover 5 places, reuse, organise a swap, a second-hand shop, clean-up, a neglected area, a walk with a discovery) or your own. Contribute with a place or just “I did it”; progress, contributors (a thank-you list, not a leaderboard) and a result summary. Plus the **daily prompt**: one optional question for everyone, no streak. |
+| **League** | Still there, no longer a tab: this week's friendly race in your Comune, squads with quests and join-by-code, and the squads ranking. Reached from the feed. |
 | **How to** | For people who don't know where to start: a searchable **“Where does it go?”** lookup (pizza box, Tetra Pak, receipts…), the six Italian waste streams, and three steps for every act. |
 | **Squad page** | Quest progress, invite code, and a **Community Report**: anonymised acts by type, estimated impact, which of the 7 areas are covered, today's local context. It can be shared with a school or Comune. |
-| **Me** | Streak, Seeds, verified count, **My Comune** (official per-comune indicators for the Province of Vicenza: PM10 from the nearest ARPAV station, CO₂ per resident, land sealed, separate collection, each compared with legal targets or the other 113 comuni; plus live citizen sensors and GBIF species, and one thing to ask your Comune), **Agenda 2030** grid (which of the 17 UN goals your proofs moved, plus days left to 2030), estimated impact, a Memories calendar, badges with a requirement each and one you equip as a title next to your name (also in the feed and in League), settings. |
+| **Me** | Streak, Seeds, verified count, **My Comune** (official per-comune indicators for the Province of Vicenza: PM10 from the nearest ARPAV station, CO₂ per resident, land sealed, separate collection, each compared with legal targets or the other 113 comuni; plus live citizen sensors and GBIF species, and one thing to ask your Comune), **Agenda 2030** grid (which of the 17 UN goals your proofs moved, plus days left to 2030), estimated impact, a Memories calendar, badges with a requirement each and one you equip as a title next to your name (also in the feed and in League), saved places, your contributions, settings. |
 
 ## How the brief is covered
 
@@ -42,7 +48,7 @@ BeGreen is built for the brief **“2. La mia sostenibilità”**: it takes sust
 | Protected areas, species, nature observations | iNaturalist species list with photos and attribution; OpenStreetMap protected areas nearby |
 | Air quality, weather, local climate | CAMS European AQI with a 24 h chart, pollutant breakdown and dominant pollutant; current weather |
 | Soil and landscape changes | Top-soil moisture and its trend; class and Comune text points to land-sealing and land-use cartography (access marked “to verify”) |
-| Individual behaviour and group activity | Personal proofs, squad quests, city league, Community Report |
+| Individual behaviour and group activity | Personal proofs, squad quests, Community challenges and what we did together, Community Report |
 | AI to understand measurements and documents | Leaf turns raw numbers into plain language and plugs into an LLM backend (see below) |
 | Answers that cite sources | Every Leaf answer carries source badges; every Pulse card carries its source |
 | Interpreting images | Proof photo + video verified by peers today; the backend contract covers image interpretation (species ID, proof checks) |
@@ -79,6 +85,17 @@ Profiles, posts, verifications, reactions, comments, squads and the daily challe
 - **Live updates:** the feed refreshes when someone posts, verifies, reacts or comments.
 
 Without the two environment variables below the app still runs, on this phone only: your proofs stay local and the feed shows the example proofs for today's Drop.
+
+## Community
+
+BeGreen doesn't ask people to already care about sustainability: the Community tab is where people, groups and places meet. It links **people** (posts, reactions, shared challenges), **groups** (classes, associations, neighbourhoods, squads) and the **territory** (a map the community builds).
+
+- **Two kinds of community.** A **city** is a real place: Alto Vicentino is bundled and seeded, and any Italian Comune can be found by name (Open-Meteo geocoding) and joined; the first person to join starts it. A **group** is personal: friends, a class, a crew. Creating one takes a name and private/public; it gets an invite code, any member can share it, and the code alone is enough to join (`join_by_code`). Private groups show only their name until you join. The founder is the first moderator.
+- **Leaderboards** rank this week's Seeds (last 7 days, same rule as the League). A group ranks its members wherever they post, members without proofs included; a city ranks whoever posted there. It's computed on the phone from the proofs it downloads.
+- **The map is real**: OpenStreetMap's standard tiles (© OpenStreetMap contributors, ODbL) in Web Mercator, with pins positioned by the same projection (`src/services/geo.ts`), and street/place search through Photon (komoot), limited to the community's area. Both are free and keyless for light use; a production build should swap `TILE_URL` in `community-map.tsx` for a keyed tile provider.
+- **Trust and privacy**: verified places are distinguished from community additions; two “out of date / wrong” flags mark a place *to verify* (the author's edit clears it), three “not OK” flags hide it until a moderator checks, two “looks fixed” flags resolve a report. Flags are private to moderators. Nobody's real-time position is shown; a precise public spot needs explicit confirmation, and any spot can be shared as approximate (~200 m). Blocking hides someone's places, posts and comments. Last update and verification dates are shown on every place.
+- **Empty and quiet states**: no fake places, not even examples: the map is real, so only real pins go on it. An empty city says so and offers to add the first place. Location unavailable or denied → search a street or move the map.
+- All of it lives in `supabase/migrations/20261025000000_community.sql` (tables, RLS, the flag trigger, join/create/verify functions) and `20261026000000_community_groups.sql` (the `friends` kind, codes for every group, `join_by_code`), and is covered by `supabase/tests`. Without a backend everything works on the phone only.
 
 ## The AI layer (Leaf)
 
@@ -117,7 +134,13 @@ npm run lint
 ```
 src/
   app/                    Expo Router routes (screens only)
-    (tabs)/               Feed · Pulse · League · Me + custom tab bar with the shutter button
+    (tabs)/               Feed · Pulse · Community · Me + custom tab bar with the shutter button
+    community/[id].tsx    Community page: a city (map first) or a group (leaderboard first)
+    map/[id].tsx          Full-screen community map
+    spot/[id].tsx         A place or experience: info, trust tools, proofs, comments
+    add-spot.tsx          Add to the map: what → photo → words → where → who sees it
+    communities.tsx       Find a city · new-community.tsx New group → invite · join.tsx Join with code
+    new-challenge.tsx flag-spot.tsx saved.tsx member/[id].tsx league.tsx
     capture.tsx           Snap → Prove → Review → Celebrate
     post/[id].tsx         Post detail, verifiers, comments, flagging
     squad/[id].tsx        Quest + Community Report
@@ -130,6 +153,8 @@ src/
                           supabase (client + anonymous session), social (feed, uploads, verify, squads), leaf, media
   hooks/                  use-pulse (Comune → live data → insights + today's Drop), use-social (sync + live updates)
   store/app-store.ts      Zustand store: local cache of the shared data, saved through the expo-sqlite localStorage polyfill
+  store/community-store.ts  Communities, map places, saves, challenges, blocks (same pattern, its own persisted store)
+  data/community.ts       Community model (city or group), map layers, starter challenges, daily prompts
   theme/tokens.ts         Colours, Geist font families, radii, type scale
 supabase/                 Migrations (schema, RLS, trigger, bucket), their tests, local CLI config
 assets/                   Icon, splash, demo photos (Unsplash), 5 s proof clips
@@ -150,9 +175,11 @@ assets/                   Icon, splash, demo photos (Unsplash), 5 s proof clips
 
 - Accounts are anonymous and tied to the phone: signing out or reinstalling loses the account (your proofs stay on the feed). There are no friends or follows yet; the social unit is your Comune and your squads.
 - The daily Drop is built by the first phone that opens the app in a Comune that day. The database checks its shape and date, not its numbers; a server-side job would make it tamper-proof.
-- Moderation is still missing: “Flag proof” only asks for confirmation. Verifications are one per person but not yet checked against proximity or fraud patterns.
+- Moderation of proofs is still missing: “Flag proof” only asks for confirmation. Community places have flags, auto-hiding and moderators, but promoting someone to moderator (beyond a community's founder) is done in the database for now. Verifications are one per person but not yet checked against proximity or fraud patterns.
 - The league and the Comune counts are computed from the proofs the app downloads (last 8 days in your Comune), not from a server-side aggregate.
 - Impact figures are conservative estimates per act and are labelled that way everywhere.
+- The community map's search for BeGreen places is a keyword and intent matcher, offline, Italian and English; it isn't a language model. Map tiles and street search need a connection and rely on free OpenStreetMap/Photon services meant for light use.
+- Squads (League) and groups (Community) overlap: both are friends joined with a code. Groups don't have quests or squad-only posts yet.
 - ARPA / ISPRA official data isn't wired in yet, because access and terms vary by region. It's listed as “to verify”.
 
 See **[MARKETING.md](MARKETING.md)** for the go-to-market plan.

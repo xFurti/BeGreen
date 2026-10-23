@@ -43,6 +43,8 @@ export type Post = {
   comuneId?: string;
   audience: Audience;
   squadId?: string;
+  // The community place this proof was taken at.
+  spotId?: string;
   // Example proof for today's challenge: never verified, never counted.
   isDemo?: boolean;
   // Saved on this device, not yet on the shared feed.

@@ -28,6 +28,7 @@ import { Icon, type IconName } from "@/components/icon";
 import { Blobs, LeafMark, LeafSwitch } from "@/components/nature";
 import { ProofMedia } from "@/components/proof-media";
 import { Button, Chip, IconButton, Mono, Press, SdgTags, Segmented, useCountUp } from "@/components/ui";
+import { CATEGORIES } from "@/data/community";
 import { ACTION_LIST, ACTIONS, type ActionId } from "@/data/actions";
 import { DEMO_BY_ACTION } from "@/data/demo";
 import type { Audience, Media } from "@/data/types";
@@ -41,6 +42,7 @@ import { canStopProof, displaySeconds, noteProgress, outcomeFromRecording, PROOF
 import { canClaimDrop, seedsFor } from "@/services/rewards";
 import { hasBackend } from "@/services/supabase";
 import { leagueOf, mineOf, postedToday, sdgsOf, streakOf, useApp, useAuthor } from "@/store/app-store";
+import { useCommunity } from "@/store/community-store";
 import { F, R } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
@@ -257,7 +259,7 @@ function Done(r: Result) {
 export default function Capture() {
   // The camera steps and the Done screen are dark in both themes; only the review follows it.
   const { C, T, scheme } = useTheme();
-  const params = useLocalSearchParams<{ action?: ActionId }>();
+  const params = useLocalSearchParams<{ action?: ActionId; spot?: string }>();
   const { top, bottom } = useSafeAreaInsets();
   const { ref: keyboardRoot, cover } = useKeyboardCover();
   const { drop, pulse } = usePulse();
@@ -293,6 +295,15 @@ export default function Capture() {
   const [squadId, setSquadId] = useState<string | undefined>(squads[0]?.id);
   const addPost = useApp((s) => s.addPost);
   const author = useAuthor();
+  // The community place this proof was taken at: from its page, or picked here.
+  const [spotId, setSpotId] = useState<string | undefined>(params.spot);
+  const primaryCommunity = useCommunity((s) => s.primary);
+  const savedSpots = useCommunity((s) => s.saved);
+  const allSpots = useCommunity((s) => s.spots);
+  const spotChoices = allSpots
+    .filter((x) => !x.hidden && x.lat != null && (x.id === params.spot || x.communityId === primaryCommunity))
+    .sort((a, b) => Number(b.id === params.spot) - Number(a.id === params.spot) || (savedSpots[b.id] ?? 0) - (savedSpots[a.id] ?? 0) || b.createdAt - a.createdAt)
+    .slice(0, 8);
   const [result, setResult] = useState<Result | null>(null);
   const { t } = useI18n();
   const place = comune?.name ?? pulse.place.name;
@@ -434,6 +445,7 @@ export default function Capture() {
         place: shareSpot ? place : HIDDEN_PLACE,
         challengeId: isDrop ? drop.id : undefined,
         squadId: toSquad,
+        spotId: spotId && !spotId.startsWith("example-") ? spotId : undefined,
       });
       const now = useApp.getState();
       const after = mineOf(now.posts, now.userId);
@@ -596,6 +608,19 @@ export default function Capture() {
                 <Text style={T.caption}>{t("capture.noSquad", { place })}</Text>
               ))}
           </View>
+
+          {spotChoices.length > 0 && (
+            <View style={{ gap: 12 }}>
+              <Mono color={C.ink}>{t("community.capture.where")}</Mono>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+                <Chip label={t("community.capture.none")} active={!spotId} onPress={() => setSpotId(undefined)} />
+                {spotChoices.map((x) => (
+                  <Chip key={x.id} label={x.title} icon={CATEGORIES[x.category].icon} active={x.id === spotId} onPress={() => setSpotId(x.id)} />
+                ))}
+              </ScrollView>
+              <Text style={T.caption}>{t("community.capture.hint")}</Text>
+            </View>
+          )}
 
           <View style={{ flexDirection: "row", alignItems: "center", gap: 12, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 16 }}>
             <Icon name="location" size={16} />

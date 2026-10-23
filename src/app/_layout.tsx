@@ -7,6 +7,7 @@ import { StatusBar } from "expo-status-bar";
 import * as SystemUI from "expo-system-ui";
 import { useEffect, useMemo } from "react";
 import { Appearance } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { useApp } from "@/store/app-store";
 import { F } from "@/theme/tokens";
@@ -50,32 +51,46 @@ export default function RootLayout() {
   if (!loaded && !error) return null;
 
   return (
-    <ThemeProvider value={theme}>
-      <StatusBar style={scheme === "dark" ? "light" : "dark"} />
-      <Stack
-        screenOptions={{
-          headerShadowVisible: false,
-          headerBackButtonDisplayMode: "minimal",
-          headerTintColor: C.ink,
-          headerTitleStyle: { fontFamily: F.medium, fontSize: 17 },
-          contentStyle: { backgroundColor: C.bg },
-        }}
-      >
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false, animation: "fade" }} />
-        <Stack.Screen
-          name="capture"
-          options={{ presentation: "fullScreenModal", headerShown: false, contentStyle: { backgroundColor: C.black } }}
-        />
-        <Stack.Screen name="post/[id]" options={{ title: "" }} />
-        <Stack.Screen name="squad/[id]" options={{ title: "" }} />
-        <Stack.Screen name="drop" options={{ ...sheet, sheetAllowedDetents: [0.92] }} />
-        <Stack.Screen name="leaf" options={{ ...sheet, sheetAllowedDetents: [0.92] }} />
-        <Stack.Screen name="guide" options={{ ...sheet, sheetAllowedDetents: [0.92] }} />
-        <Stack.Screen name="sources" options={{ ...sheet, sheetAllowedDetents: [0.8, 1] }} />
-        <Stack.Screen name="new-squad" options={{ ...sheet, sheetAllowedDetents: [0.6] }} />
-        <Stack.Screen name="comune" options={{ ...sheet, sheetAllowedDetents: [0.92] }} />
-      </Stack>
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider value={theme}>
+        <StatusBar style={scheme === "dark" ? "light" : "dark"} />
+        <Stack
+          screenOptions={{
+            headerShadowVisible: false,
+            headerBackButtonDisplayMode: "minimal",
+            headerTintColor: C.ink,
+            headerTitleStyle: { fontFamily: F.medium, fontSize: 17 },
+            contentStyle: { backgroundColor: C.bg },
+          }}
+        >
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false, animation: "fade" }} />
+          <Stack.Screen
+            name="capture"
+            options={{ presentation: "fullScreenModal", headerShown: false, contentStyle: { backgroundColor: C.black } }}
+          />
+          <Stack.Screen name="post/[id]" options={{ title: "" }} />
+          <Stack.Screen name="squad/[id]" options={{ title: "" }} />
+          <Stack.Screen name="drop" options={{ ...sheet, sheetAllowedDetents: [0.92] }} />
+          <Stack.Screen name="leaf" options={{ ...sheet, sheetAllowedDetents: [0.92] }} />
+          <Stack.Screen name="guide" options={{ ...sheet, sheetAllowedDetents: [0.92] }} />
+          <Stack.Screen name="sources" options={{ ...sheet, sheetAllowedDetents: [0.8, 1] }} />
+          <Stack.Screen name="new-squad" options={{ ...sheet, sheetAllowedDetents: [0.6] }} />
+          <Stack.Screen name="comune" options={{ ...sheet, sheetAllowedDetents: [0.92] }} />
+          <Stack.Screen name="league" options={{ title: "" }} />
+          <Stack.Screen name="community/[id]" options={{ title: "" }} />
+          <Stack.Screen name="spot/[id]" options={{ title: "" }} />
+          <Stack.Screen name="member/[id]" options={{ title: "" }} />
+          <Stack.Screen name="saved" options={{ title: "" }} />
+          <Stack.Screen name="map/[id]" options={{ headerShown: false, animation: "fade" }} />
+          <Stack.Screen name="add-spot" options={{ presentation: "fullScreenModal", headerShown: false }} />
+          <Stack.Screen name="communities" options={{ ...sheet, sheetAllowedDetents: [0.92] }} />
+          <Stack.Screen name="new-community" options={{ ...sheet, sheetAllowedDetents: [0.92] }} />
+          <Stack.Screen name="join" options={{ ...sheet, sheetAllowedDetents: [0.7] }} />
+          <Stack.Screen name="new-challenge" options={{ ...sheet, sheetAllowedDetents: [0.92] }} />
+          <Stack.Screen name="flag-spot" options={{ ...sheet, sheetAllowedDetents: [0.7] }} />
+        </Stack>
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }

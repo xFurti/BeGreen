@@ -84,6 +84,23 @@ const MAP = {
   league: ["chart.bar.xaxis", "podium-outline"],
   leagueFill: ["chart.bar.xaxis", "podium"],
   heart: ["heart.fill", "heart"],
+  community: ["person.3.sequence", "people-circle-outline"],
+  communityFill: ["person.3.sequence.fill", "people-circle"],
+  wrench: ["wrench.and.screwdriver.fill", "build"],
+  swap: ["arrow.left.arrow.right", "swap-horizontal"],
+  alert: ["exclamationmark.triangle.fill", "warning"],
+  bookmark: ["bookmark", "bookmark-outline"],
+  bookmarkFill: ["bookmark.fill", "bookmark"],
+  filter: ["line.3.horizontal.decrease", "options-outline"],
+  layers: ["square.3.layers.3d", "layers-outline"],
+  directions: ["arrow.triangle.turn.up.right.diamond.fill", "navigate"],
+  locate: ["location.circle", "locate"],
+  minus: ["minus", "remove"],
+  block: ["hand.raised.slash.fill", "ban"],
+  pencil: ["pencil", "create-outline"],
+  pin: ["mappin.and.ellipse", "pin"],
+  family: ["figure.2.and.child.holdinghands", "people"],
+  expand: ["arrow.up.left.and.arrow.down.right", "expand"],
 } as const satisfies Record<string, readonly [string, Ion]>;
 
 export type IconName = keyof typeof MAP;

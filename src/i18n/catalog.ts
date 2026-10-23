@@ -1,5 +1,6 @@
 import { fill, flatten, type Language, type Leaves } from "@/i18n/schema";
 import { actionMessages } from "@/i18n/messages/actions";
+import { communityMessages } from "@/i18n/messages/community";
 import { generatedMessages } from "@/i18n/messages/generated";
 import { guideMessages } from "@/i18n/messages/guide";
 import { referenceMessages } from "@/i18n/messages/reference";
@@ -14,6 +15,7 @@ const en = {
   drop: generatedMessages.en.drop,
   insights: generatedMessages.en.insights,
   answers: generatedMessages.en.leaf,
+  community: communityMessages.en,
 };
 
 const it = {
@@ -25,6 +27,7 @@ const it = {
   drop: generatedMessages.it.drop,
   insights: generatedMessages.it.insights,
   answers: generatedMessages.it.leaf,
+  community: communityMessages.it,
 };
 
 export const messages = { en, it };

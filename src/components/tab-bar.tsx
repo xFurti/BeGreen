@@ -16,7 +16,7 @@ import { haptic } from "@/utils/format";
 const TABS: Record<string, { label: MessageKey; icon: IconName; on: IconName }> = {
   index: { label: "tabs.feed", icon: "home", on: "homeFill" },
   pulse: { label: "tabs.pulse", icon: "pulse", on: "pulseFill" },
-  league: { label: "tabs.league", icon: "league", on: "leagueFill" },
+  community: { label: "tabs.community", icon: "community", on: "communityFill" },
   me: { label: "tabs.me", icon: "me", on: "meFill" },
 };
 

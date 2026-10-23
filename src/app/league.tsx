@@ -1,12 +1,11 @@
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { Alert, ScrollView, Text, TextInput, View } from "react-native";
 import Animated, { FadeInDown, LinearTransition } from "react-native-reanimated";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Icon } from "@/components/icon";
 import { TitledName } from "@/components/titled-name";
-import { Avatar, AvatarStack, Bar, Button, IconButton, Mono, Press, SectionHeader, TextTabs, toast, TopCover } from "@/components/ui";
+import { Avatar, AvatarStack, Bar, Button, IconButton, Mono, Press, SectionHeader, TextTabs, toast } from "@/components/ui";
 import { ACTIONS } from "@/data/actions";
 import { KIND } from "@/data/squad-kinds";
 import type { Squad } from "@/data/types";
@@ -172,9 +171,10 @@ function SquadCard({ s, index }: { s: Squad; index: number }) {
   );
 }
 
+// A friendly weekly race and the squads around you. No longer a tab: reached from the feed and from Community → Challenges.
 export default function League() {
   const { C, T } = useTheme();
-  const { top } = useSafeAreaInsets();
+  const params = useLocalSearchParams<{ tab?: View_ }>();
   const squads = useApp((s) => s.squads);
   const localSquads = useApp((s) => s.localSquads);
   const place = useApp((s) => s.comune?.name ?? s.place.name);
@@ -182,7 +182,7 @@ export default function League() {
   const league = useLeague();
   const [code, setCode] = useState("");
   const [joining, setJoining] = useState(false);
-  const [tab, setTab] = useState<View_>("people");
+  const [tab, setTab] = useState<View_>(params.tab ?? "people");
   const { t, language } = useI18n();
   const mySquadIds = new Set(squads.map((s) => s.id));
   const ranking = [...localSquads].sort((a, b) => b.points - a.points);
@@ -195,7 +195,8 @@ export default function League() {
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       <ScrollView
         style={{ flex: 1, backgroundColor: C.bg }}
-        contentContainerStyle={{ paddingTop: top + 10, paddingHorizontal: 20, paddingBottom: 140, gap: 22 }}
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={{ paddingTop: 4, paddingHorizontal: 20, paddingBottom: 60, gap: 22 }}
         keyboardShouldPersistTaps="handled"
       >
         <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" }}>
@@ -342,7 +343,6 @@ export default function League() {
           </View>
         )}
       </ScrollView>
-      <TopCover />
     </View>
   );
 }

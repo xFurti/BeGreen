@@ -1,4 +1,4 @@
-import { Stack, useLocalSearchParams } from "expo-router";
+import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { Alert, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
@@ -18,6 +18,7 @@ import { formatNumber, timeAgo } from "@/i18n/format";
 import { useI18n } from "@/i18n/use-i18n";
 import { composerInset } from "@/services/keyboard-inset";
 import { useApp, useAuthor } from "@/store/app-store";
+import { useSpot } from "@/store/community-store";
 import { F, R } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
@@ -39,6 +40,7 @@ export default function PostDetail() {
   const userId = useApp((s) => s.userId);
   const [text, setText] = useState("");
   const { t, language } = useI18n();
+  const spot = useSpot(post?.spotId);
 
   if (!post) {
     return (
@@ -111,6 +113,22 @@ export default function PostDetail() {
             <Text style={T.caption}>{t("post.moves", { goals: action.sdgs.map((g) => sdgTitle(t, g)).join(", ").toLowerCase() })}</Text>
           </View>
         </View>
+
+        {spot && (
+          <Pressable
+            onPress={() => router.push({ pathname: "/spot/[id]", params: { id: spot.id } })}
+            accessibilityRole="button"
+            accessibilityLabel={t("community.post.takenAt", { title: spot.title })}
+            style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.mint, borderRadius: R.lg, padding: 14 }}
+          >
+            <Icon name="pin" size={18} color={C.forest} />
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={{ fontFamily: F.medium, fontSize: 15.5, color: C.forest }}>{t("community.post.takenAt", { title: spot.title })}</Text>
+              <Text style={T.caption}>{t("community.post.seeOnMap")}</Text>
+            </View>
+            <Icon name="chevron" size={14} color={C.forest} />
+          </Pressable>
+        )}
 
         {post.verifiedBy.length > 0 && (
           <View style={{ gap: 12 }}>

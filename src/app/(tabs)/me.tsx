@@ -22,6 +22,7 @@ import { formatDecimal, formatNumber, monthName, weekdayInitials } from "@/i18n/
 import { useI18n } from "@/i18n/use-i18n";
 import { supabase } from "@/services/supabase";
 import { badgeStatsOf, dropStaleBadge, sdgsOf, seedsOf, streakOf, useApp, useLeague, useMyPosts, type ThemePref } from "@/store/app-store";
+import { useCommunity } from "@/store/community-store";
 import { F } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
@@ -219,6 +220,8 @@ export default function Me() {
   const explain = useApp((s) => s.explain);
   const setExplain = useApp((s) => s.setExplain);
   const reset = useApp((s) => s.reset);
+  const userId = useApp((s) => s.userId);
+  const savedCount = useCommunity((s) => Object.keys(s.saved).length);
   const equipBadge = useApp((s) => s.equipBadge);
   const [selected, setSelected] = useState<BadgeId | null>(null);
   const selectedBadge = BADGES.find((b) => b.id === selected);
@@ -339,6 +342,12 @@ export default function Me() {
             <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2, color: C.ink }}>{t("language.row")}</Text>
             <LanguageSwitch />
           </View>
+          <Row icon="bookmarkFill" label={t("community.me.saved")} value={savedCount ? String(savedCount) : undefined} onPress={() => router.push("/saved")} />
+          <Row
+            icon="pin"
+            label={t("community.me.contributions")}
+            onPress={() => router.push({ pathname: "/member/[id]", params: { id: userId } })}
+          />
           <Row icon="book" label={t("me.guide")} onPress={() => router.push("/guide")} />
           <Row icon="shield" label={t("me.sources")} onPress={() => router.push("/sources")} />
           <Row icon="sparkle" label={t("common.askLeaf")} onPress={() => router.push("/leaf")} />
@@ -354,6 +363,7 @@ export default function Me() {
                   onPress: async () => {
                     await supabase?.auth.signOut().catch(() => {});
                     reset();
+                    useCommunity.getState().reset();
                     router.replace("/onboarding");
                   },
                 },

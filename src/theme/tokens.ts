@@ -33,6 +33,17 @@ export const fixed = {
   // Brand Kit — logo, app icon and splash. Never Proof Lime on white (1.4:1).
   canopy: "#152315",
   proofLime: "#C8E61A",
+  // Community map: the seven layers, history pins (resolved, ended), the land under OSM tiles, the Love your city mark.
+  layerDiscover: "#6E56CF",
+  layerRepair: "#2F5BD3",
+  layerGardens: "#1B7D44",
+  layerSwap: "#D9480F",
+  layerEvents: "#C2255C",
+  layerReports: "#B07800",
+  layerMoments: "#0E7C86",
+  past: "#9AA39A",
+  mapLand: "#F2EFE9",
+  loveRed: "#EB2127",
 } as const;
 
 const lightRoles = {

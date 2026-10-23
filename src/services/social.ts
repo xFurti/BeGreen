@@ -12,8 +12,8 @@ import { SUPABASE_KEY, SUPABASE_URL, supabase } from "@/services/supabase";
 
 const D = 864e5;
 
-type ProfileRow = { id: string; name: string; handle: string; role: Role; badge_id: string | null };
-type PostRow = {
+export type ProfileRow = { id: string; name: string; handle: string; role: Role; badge_id: string | null };
+export type PostRow = {
   id: string;
   author_id: string;
   comune_id: string | null;
@@ -25,6 +25,7 @@ type PostRow = {
   place: string;
   audience: Audience;
   squad_id: string | null;
+  spot_id: string | null;
   created_at: string;
   author: ProfileRow | null;
   verifications: { user_id: string; user: ProfileRow | null }[];
@@ -45,19 +46,19 @@ type SquadRow = {
   squad_members: { user_id: string }[];
 };
 
-const PROFILE = "id, name, handle, role, badge_id";
+export const PROFILE = "id, name, handle, role, badge_id";
 // posts and profiles are also linked through verifications, reactions and comments: name the FK for each embed.
-const POST =
-  "id, author_id, comune_id, challenge_id, action, photo, proof, caption, place, audience, squad_id, created_at, " +
+export const POST =
+  "id, author_id, comune_id, challenge_id, action, photo, proof, caption, place, audience, squad_id, spot_id, created_at, " +
   `author:profiles!posts_author_id_fkey(${PROFILE}), verifications(user_id, user:profiles!verifications_user_id_fkey(${PROFILE})), ` +
   `reactions(user_id, emoji), comments(id, author_id, text, created_at, author:profiles!comments_author_id_fkey(${PROFILE}))`;
 const SQUAD = "id, name, kind, place, comune_id, code, points, quest, monthly, month, squad_members(user_id)";
 
-const toUser = (p: ProfileRow): User => ({ id: p.id, name: p.name, handle: p.handle, role: p.role, badgeId: isBadgeId(p.badge_id) ? p.badge_id : null });
+export const toUser = (p: ProfileRow): User => ({ id: p.id, name: p.name, handle: p.handle, role: p.role, badgeId: isBadgeId(p.badge_id) ? p.badge_id : null });
 
 export type Feed = { posts: Post[]; profiles: Record<string, User>; myReactions: Record<string, string> };
 
-function toFeed(rows: PostRow[], me: string): Feed {
+export function toFeed(rows: PostRow[], me: string): Feed {
   const profiles: Record<string, User> = {};
   const myReactions: Record<string, string> = {};
   const add = (p: ProfileRow | null) => p && (profiles[p.id] = toUser(p));
@@ -94,6 +95,7 @@ function toFeed(rows: PostRow[], me: string): Feed {
       comuneId: r.comune_id ?? undefined,
       audience: r.audience,
       squadId: r.squad_id ?? undefined,
+      spotId: r.spot_id ?? undefined,
     });
   }
   posts.sort((a, b) => b.createdAt - a.createdAt);
@@ -127,7 +129,7 @@ function toSquad(r: SquadRow): Squad {
   };
 }
 
-function db() {
+export function db() {
   if (!supabase) throw new Error("No backend configured");
   return supabase;
 }
@@ -290,6 +292,9 @@ async function upload(me: string, m: Media, kind: "photo" | "proof"): Promise<st
   return s.storage.from("proofs").getPublicUrl(path).data.publicUrl;
 }
 
+// A photo for the community map, in the same public bucket and folder rules as proofs.
+export const uploadPhoto = (me: string, m: Media) => upload(me, m, "photo");
+
 // ---------- writes ----------
 
 export async function publishPost(me: string, p: Post): Promise<Post> {
@@ -307,6 +312,7 @@ export async function publishPost(me: string, p: Post): Promise<Post> {
       place: p.place,
       audience: p.audience,
       squad_id: p.squadId ?? null,
+      spot_id: p.spotId ?? null,
     })
     .select(POST)
     .single();
@@ -377,12 +383,12 @@ export async function joinByCode(me: string, code: string): Promise<Squad | null
   return toSquad(full as unknown as SquadRow);
 }
 
-// Something changed on the shared feed: new proofs, verifications, comments or reactions.
+// Something changed on the shared feed or a community map: proofs, places, verifications, comments, reactions.
 export function subscribeFeed(onChange: () => void): () => void {
   if (!supabase) return () => {};
   const s = supabase;
   const ch = s.channel("feed");
-  for (const table of ["posts", "verifications", "comments", "reactions"]) {
+  for (const table of ["posts", "verifications", "comments", "reactions", "spots", "spot_comments", "spot_reactions", "challenge_entries"]) {
     ch.on("postgres_changes", { event: "*", schema: "public", table }, onChange);
   }
   ch.subscribe();
