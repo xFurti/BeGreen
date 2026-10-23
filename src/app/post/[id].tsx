@@ -71,6 +71,7 @@ export default function PostDetail() {
           photo={post.photo}
           proof={post.proof}
           active
+          priority="high"
           verified={post.verifiedBy.length >= VERIFY_GOAL}
           onDoubleTap={() => {
             if (mine !== "💚") react(post.id, "💚");

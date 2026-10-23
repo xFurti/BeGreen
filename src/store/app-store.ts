@@ -14,6 +14,7 @@ import type { Language } from "@/i18n/schema";
 import { saveComune } from "@/services/comuni";
 import type { Drop } from "@/services/drop";
 import { DEFAULT_PLACE, type Place, type Pulse } from "@/services/env";
+import { existingLocal, preferLocal } from "@/services/media";
 import {
   addComment,
   addVerification,
@@ -49,6 +50,7 @@ type State = {
   reacted: Record<string, string>;
   squads: Squad[];
   localSquads: Squad[];
+  localMedia: Record<string, { photo?: string; proof?: string }>;
   verifiedCount: number;
   nudged: Record<string, number>;
   syncedAt: number;
@@ -99,6 +101,7 @@ const initial: State = {
   reacted: {},
   squads: [],
   localSquads: [],
+  localMedia: {},
   verifiedCount: 0,
   nudged: {},
   syncedAt: 0,
@@ -269,6 +272,7 @@ export const useApp = create<State & Actions>()(
         reacted: s.reacted,
         squads: s.squads,
         localSquads: s.localSquads,
+        localMedia: s.localMedia,
         verifiedCount: s.verifiedCount,
         nudged: s.nudged,
         syncedAt: s.syncedAt,
@@ -303,7 +307,12 @@ async function send(post: Post): Promise<void> {
     const saved = await publishPost(useApp.getState().userId, post);
     published.set(saved.id, Date.now());
     // Keep the local files on screen: no flicker while the uploaded copies load.
-    useApp.setState({ posts: patchPost(useApp.getState().posts, post.id, () => ({ ...saved, photo: post.photo, proof: post.proof })) });
+    const photo = typeof post.photo === "string" && post.photo.startsWith("file:") ? post.photo : undefined;
+    const proof = typeof post.proof === "string" && post.proof.startsWith("file:") ? post.proof : undefined;
+    useApp.setState({
+      posts: patchPost(useApp.getState().posts, post.id, () => ({ ...saved, photo: post.photo, proof: post.proof })),
+      ...(photo || proof ? { localMedia: { ...useApp.getState().localMedia, [saved.id]: { photo, proof } } } : {}),
+    });
   } catch (e) {
     // Already did today's challenge (e.g. from another phone): post it as a regular proof.
     if ((e as { code?: string }).code === "23505" && post.challengeId) return send({ ...post, challengeId: undefined, isDrop: false });
@@ -345,12 +354,22 @@ export function syncSocial(): Promise<void> {
     // Keep what's still uploading, and your proofs that finished uploading after the feed was fetched.
     const fetched = new Set(feed.posts.map((p) => p.id));
     const keep = useApp.getState().posts.filter((p) => p.pending || ((published.get(p.id) ?? 0) >= startedAt && !fetched.has(p.id)));
+    const localMedia = Object.fromEntries(
+      Object.entries(useApp.getState().localMedia)
+        .map(([id, media]) => {
+          const photo = existingLocal(media.photo);
+          const proof = existingLocal(media.proof);
+          return photo || proof ? [id, { ...(photo ? { photo } : {}), ...(proof ? { proof } : {}) }] : null;
+        })
+        .filter((entry): entry is [string, { photo?: string; proof?: string }] => entry !== null),
+    );
     useApp.setState({
-      posts: [...keep, ...feed.posts],
+      posts: [...keep, ...preferLocal(feed.posts, localMedia)],
       profiles: { ...known, ...members },
       reacted: feed.myReactions,
       squads: mine,
       localSquads: local,
+      localMedia,
       verifiedCount,
       syncedAt: Date.now(),
     });

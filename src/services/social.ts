@@ -3,7 +3,8 @@ import { File } from "expo-file-system";
 import type { ActionId } from "@/data/actions";
 import { assetKey, resolveMedia } from "@/data/demo";
 import type { Audience, Comment, Comune, Media, Post, Role, Squad, SquadKind, User } from "@/data/types";
-import { supabase } from "@/services/supabase";
+import { shrinkPhoto } from "@/services/media";
+import { SUPABASE_KEY, SUPABASE_URL, supabase } from "@/services/supabase";
 
 // The shared social layer on Supabase. Pure data access: the store decides what to keep.
 
@@ -221,25 +222,44 @@ const MIME: Record<string, string> = {
 
 async function upload(me: string, m: Media, kind: "photo" | "proof"): Promise<string> {
   // Bundled demo media are numbers on native and objects or local URLs on web: never upload them.
+  // Native files are uploaded directly from disk, without passing the body through JavaScript.
   const key = assetKey(m);
   if (key) return key;
   if (typeof m !== "string") throw new Error("Unknown bundled media");
   if (/^(https?:|asset:)/.test(m)) return m;
+  const isWeb = process.env.EXPO_OS === "web";
   let bytes: ArrayBuffer;
   let type: string;
-  if (process.env.EXPO_OS === "web") {
+  if (isWeb) {
     const blob = await (await fetch(m)).blob();
     bytes = await blob.arrayBuffer();
     type = blob.type || (kind === "photo" ? "image/jpeg" : "video/mp4");
   } else {
-    bytes = await new File(m).arrayBuffer();
+    if (kind === "photo") m = await shrinkPhoto(m);
     type = MIME[ext(m, kind)] ?? "application/octet-stream";
   }
   const e = Object.entries(MIME).find(([, v]) => v === type)?.[0] ?? ext(m, kind);
   const path = `${me}/${Date.now()}-${kind}.${e}`;
   const s = db();
-  const { error } = await s.storage.from("proofs").upload(path, bytes, { contentType: type, upsert: false });
-  if (error) throw error;
+  if (isWeb) {
+    const { error } = await s.storage.from("proofs").upload(path, bytes!, { contentType: type, upsert: false });
+    if (error) throw error;
+  } else {
+    const token = (await s.auth.getSession()).data.session?.access_token;
+    if (!token) throw new Error("No session");
+    const result = await new File(m).upload(`${SUPABASE_URL}/storage/v1/object/proofs/${path}`, {
+      httpMethod: "POST",
+      mimeType: type,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        apikey: SUPABASE_KEY,
+        "Content-Type": type,
+        "x-upsert": "false",
+        "Cache-Control": "max-age=3600",
+      },
+    });
+    if (result.status < 200 || result.status >= 300) throw new Error(`Upload failed (${result.status}): ${result.body}`);
+  }
   return s.storage.from("proofs").getPublicUrl(path).data.publicUrl;
 }
 

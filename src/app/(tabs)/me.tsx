@@ -156,7 +156,7 @@ function Calendar({ posts }: { posts: Post[] }) {
                 >
                   {p ? (
                     <>
-                      <Image source={p.photo} style={{ position: "absolute", width: "100%", height: "100%" }} contentFit="cover" />
+                      <Image source={p.photo} style={{ position: "absolute", width: "100%", height: "100%" }} contentFit="cover" priority="low" />
                       <Text style={{ color: C.white, fontFamily: F.medium, fontSize: 12, textShadowColor: "rgba(0,0,0,0.5)", textShadowRadius: 4 }}>{d}</Text>
                     </>
                   ) : (
