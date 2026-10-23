@@ -35,7 +35,7 @@ const MAP = {
   sun: ["sun.max.fill", "sunny"],
   drop: ["drop.fill", "water"],
   soil: ["square.stack.3d.down.forward.fill", "layers"],
-  nature: ["tortoise.fill", "bug"],
+  nature: ["leaf.fill", "leaf"],
   tree: ["tree.fill", "leaf"],
   people: ["person.2.fill", "people"],
   bike: ["bicycle", "bicycle"],
