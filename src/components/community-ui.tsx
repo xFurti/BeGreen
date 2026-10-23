@@ -33,6 +33,8 @@ import { useApp, useAuthor } from "@/store/app-store";
 import { F, R, type Palette } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
+import { eventWhenText } from "@/services/event-schedule";
+import { categoryChipColors } from "@/theme/community";
 
 // ---------- text ----------
 
@@ -47,14 +49,7 @@ export function communityDescription(t: Translator, c: Community) {
   return c.description;
 }
 
-export function whenText(lang: Language, start: number, end?: number) {
-  const loc = intlLocale(lang);
-  const day = new Intl.DateTimeFormat(loc, { weekday: "short", day: "numeric", month: "short" }).format(start);
-  const time = (t: number) => new Intl.DateTimeFormat(loc, { hour: "2-digit", minute: "2-digit" }).format(t);
-  if (!end) return `${day} · ${time(start)}`;
-  const sameDay = new Date(start).toDateString() === new Date(end).toDateString();
-  return sameDay ? `${day} · ${time(start)}–${time(end)}` : `${day} ${time(start)} → ${new Intl.DateTimeFormat(loc, { day: "numeric", month: "short" }).format(end)}`;
-}
+export const whenText = eventWhenText;
 
 export function dateText(lang: Language, t: number) {
   return new Intl.DateTimeFormat(intlLocale(lang), { day: "numeric", month: "short", year: "numeric" }).format(t);
@@ -120,6 +115,7 @@ export function CategoryChip({ category, active, onPress }: { category: SpotCate
   const { C } = useTheme();
   const { t } = useI18n();
   const c = CATEGORIES[category];
+  const colors = categoryChipColors(C, category, active);
   return (
     <Press
       onPress={onPress}
@@ -131,14 +127,14 @@ export function CategoryChip({ category, active, onPress }: { category: SpotCate
         height: 34,
         paddingHorizontal: 12,
         borderRadius: R.pill,
-        backgroundColor: active ? c.color : C.white,
+        backgroundColor: colors.background,
         borderWidth: 1,
-        borderColor: active ? c.color : C.line,
+        borderColor: colors.border,
         boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
       }}
     >
-      <Icon name={c.icon} size={13} color={active ? C.white : c.color} />
-      <Text style={{ fontFamily: F.medium, fontSize: 13.5, letterSpacing: -0.15, color: active ? C.white : C.ink }}>{t(`community.categories.${category}`)}</Text>
+      <Icon name={c.icon} size={13} color={colors.icon} />
+      <Text style={{ fontFamily: F.medium, fontSize: 13.5, letterSpacing: -0.15, color: colors.text }}>{t(`community.categories.${category}`)}</Text>
     </Press>
   );
 }

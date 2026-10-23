@@ -269,7 +269,7 @@ export function MapScreen({
               </Pressable>
             )}
           </View>
-          <Press onPress={() => setSheet("filters")} accessibilityLabel={t("community.filters.title")} style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: count ? C.forest : C.white, alignItems: "center", justifyContent: "center", boxShadow: "0 2px 10px rgba(0,0,0,0.14)" }}>
+          <Press onPress={() => setSheet("filters")} accessibilityLabel={t("community.filters.title")} style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: count ? C.forest : C.card, alignItems: "center", justifyContent: "center", boxShadow: "0 2px 10px rgba(0,0,0,0.14)" }}>
             <Icon name="filter" size={17} color={count ? C.lime : C.ink} />
             {count > 0 && (
               <View style={{ position: "absolute", top: -2, right: -2, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: C.lime, alignItems: "center", justifyContent: "center" }}>
