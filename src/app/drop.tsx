@@ -62,7 +62,7 @@ export default function DropSheet() {
           <View style={{ flex: 1, gap: 4 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
               <LiveDot color={C.leaf} />
-              <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 14, color: C.forest }}>{t("dropSheet.title")}</Text>
+              <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 14, color: C.forestInk }}>{t("dropSheet.title")}</Text>
             </View>
             <Mono>{place}</Mono>
           </View>
