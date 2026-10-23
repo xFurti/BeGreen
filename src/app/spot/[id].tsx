@@ -192,7 +192,7 @@ export default function SpotDetail() {
                 const a = author(c.authorId);
                 return (
                   <View key={c.id} style={{ flexDirection: "row", gap: 10 }}>
-                    <Avatar name={a.name} size={30} />
+                    <Avatar name={a.name} seed={a.seed} seeds={a.seeds} size={30} />
                     <View style={{ flex: 1, gap: 2 }}>
                       <Text style={{ fontFamily: F.medium, fontSize: 14, color: C.ink }}>
                         {a.name} <Text style={{ fontFamily: F.regular, color: C.mute }}>· {timeAgo(c.createdAt, language)}</Text>
