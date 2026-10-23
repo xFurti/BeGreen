@@ -26,6 +26,7 @@ import * as api from "@/services/community";
 import { bboxAround } from "@/services/geo";
 import { isGroupPost, localSquadGroup, monthKey, postGroupId, type GroupProgress } from "@/services/groups";
 import { standings, type Standing } from "@/services/leaderboard";
+import { createCommunitySync, type CommunitySyncOptions } from "@/services/community-sync";
 import { seedsFor } from "@/services/rewards";
 import { clearMediaAccess, mediaAccessVersion } from "@/services/storage-media";
 import { hasBackend } from "@/services/supabase";
@@ -472,16 +473,10 @@ async function publishSpot(spot: Spot, challengeId?: string) {
   }
 }
 
-let syncing: Promise<void> | null = null;
-
-// Refreshes the catalog, your memberships and the communities you're in (plus `extra`, one you're exploring).
-export function syncCommunity(extra?: string): Promise<void> {
-  if (!hasBackend) {
-    migrateLocalGroups();
-    return Promise.resolve();
-  }
-  if (syncing) return syncing.then(() => (extra && !useCommunity.getState().syncedAt[extra] ? syncCommunity(extra) : undefined));
-  syncing = (async () => {
+const syncRemoteCommunity = createCommunitySync({
+  hasSynced: (id) => !!useCommunity.getState().syncedAt[id],
+  onError: (error) => { if (__DEV__) console.warn(error); },
+  refresh: async (extra) => {
     const uid = useApp.getState().userId;
     if (!uid || !useApp.getState().onboarded) return;
     for (const p of useCommunity.getState().spots.filter((x) => x.pending)) await publishSpot(p);
@@ -568,14 +563,16 @@ export function syncCommunity(extra?: string): Promise<void> {
     const refreshed = new Map(posts.map((p) => [p.id, p]));
     const known = new Set(app.posts.map((p) => p.id));
     useApp.setState({ posts: [...app.posts.map((p) => refreshed.get(p.id) ?? p), ...posts.filter((p) => !known.has(p.id))], profiles: { ...app.profiles, ...profiles } });
-  })()
-    .catch((e) => {
-      if (__DEV__) console.warn(e);
-    })
-    .finally(() => {
-      syncing = null;
-    });
-  return syncing;
+  },
+});
+
+// Background refreshes stay best-effort; visible screens opt in to an error/retry state.
+export function syncCommunity(extra?: string, options?: CommunitySyncOptions): Promise<void> {
+  if (!hasBackend) {
+    migrateLocalGroups();
+    return Promise.resolve();
+  }
+  return syncRemoteCommunity(extra, options);
 }
 
 // ---------- selectors ----------
