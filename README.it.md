@@ -15,6 +15,7 @@
 
 [![FESAV 2026](https://img.shields.io/badge/FESAV_2026-Good_Vibes_hackathon-152315?style=for-the-badge&labelColor=152315&color=C8E61A)](docs/regolamento.md)
 [![Traccia](https://img.shields.io/badge/Traccia_2-La_mia_sostenibilit%C3%A0-C8E61A?style=for-the-badge&labelColor=152315)](docs/traccia.md)
+[![Team](https://img.shields.io/badge/Team-Magilla_Gorilla-C8E61A?style=for-the-badge&labelColor=152315)](#team)
 [![Verify](https://github.com/xFurti/BeGreen/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/xFurti/BeGreen/actions/workflows/ci.yml)
 
 [![Expo](https://img.shields.io/badge/Expo-SDK_58-000020?style=flat-square&logo=expo&logoColor=white)](https://docs.expo.dev/versions/v58.0.0/)
@@ -41,7 +42,7 @@
 [Architettura](#architettura) ·
 [Brand](#brand-e-design-system) ·
 [Limiti](#limiti-dichiarati) ·
-[Team](#come-lavora-il-team)
+[Team](#team)
 
 <br>
 
@@ -483,9 +484,17 @@ La crescita è **scuola per scuola, città per città**, perché gli effetti di 
 
 Idee per dopo l'hackathon: [`docs/ideas.md`](docs/ideas.md).
 
-## Come lavora il team
+## Team
 
-<img src="docs/readme/icons/git-branch.svg" width="20" alt=""> Realizzata da un team di sei persone per **Good Vibes / FESAV 2026** (Schio, 22–24 ottobre 2026).
+<img src="docs/readme/icons/school.svg" width="20" alt=""> **Magilla Gorilla**: sei studenti del **Liceo Tecnologico Guglielmo Marconi** di Verona, a **Good Vibes / FESAV 2026** (Schio, 22–24 ottobre 2026).
+
+| Classe | Componenti |
+| :---: | --- |
+| **4AI** | Holovan Oleksii · Vitiello Lorenzo |
+| **4BI** | Bassanello Leonardo · Cremonese Luca · Warnakulasuriya Arachchilage Fernando Nipun Samuel |
+| **4SI** | Cipriani Gabriele |
+
+## Come lavora il team
 
 1. Leggi [AGENTS.md](AGENTS.md): vale anche per gli assistenti AI.
 2. Attività e referenti in [docs/team.md](docs/team.md); le nuove idee in [docs/ideas.md](docs/ideas.md).
