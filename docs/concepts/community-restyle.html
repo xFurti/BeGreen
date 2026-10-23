@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>BeGreen · Restyle Community</title>
+  <link rel="stylesheet" href="community-restyle.css">
+  <script src="community-restyle.js" defer></script>
+</head>
+<body>
+<svg class="symbols" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs>
+  <symbol id="map" viewBox="0 0 24 24"><path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2V5Z M9 3v16 M15 5v16"/></symbol>
+  <symbol id="users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2 M16 5a3 3 0 0 1 0 6 M21 20v-2a6 6 0 0 0-3-5"/></symbol>
+  <symbol id="arrow" viewBox="0 0 24 24"><path d="M4 12h16 m-6-6 6 6-6 6"/></symbol>
+  <symbol id="chevron" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+  <symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14 M5 12h14"/></symbol>
+  <symbol id="home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7 M5 9v12h5v-7h4v7h5V9"/></symbol>
+  <symbol id="pulse" viewBox="0 0 24 24"><path d="M2 12h5l3-9 4 18 3-9h5"/></symbol>
+  <symbol id="user" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="9" r="3"/><path d="M5 18a7 7 0 0 1 14 0"/></symbol>
+  <symbol id="pin" viewBox="0 0 24 24"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2"/></symbol>
+  <symbol id="lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="leaf" viewBox="0 0 24 24"><path d="M20 3C8 1 1 9 6 16s17 2 14-13Z M4 21 15 9"/></symbol>
+  <symbol id="code" viewBox="0 0 24 24"><path d="m8 6-6 6 6 6 M16 6l6 6-6 6 M14 3l-4 18"/></symbol>
+  <symbol id="search" viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="m15 15 6 6"/></symbol>
+  <symbol id="close" viewBox="0 0 24 24"><path d="m6 6 12 12 M6 18 18 6"/></symbol>
+</defs></svg>
+
+<aside class="proposal" aria-label="Informazioni sulla proposta">
+  <div class="proposal-top"><span class="proposal-dot"></span> BEGREEN / DESIGN STUDY 01</div>
+  <h2>Un posto per il territorio.<br>Uno per le persone.</h2>
+  <p>Due sezioni, la stessa Community. La mappa e il Comune restano insieme; i gruppi hanno uno spazio tutto loro.</p>
+  <ol>
+    <li><b>Territorio</b><span>Il Comune si sceglie in alto. Una sola scheda per mappa e community locale.</span></li>
+    <li><b>Gruppi</b><span>Crea, entra con un codice e scegli il gruppo da aprire. Senza attraversare la mappa.</span></li>
+    <li><b>Solo ciò che serve</b><span>Le azioni di gestione appaiono nel loro contesto, senza allungare la pagina.</span></li>
+  </ol>
+  <div class="preview-tools">
+    <span class="eyebrow">ESPLORA LA PROPOSTA</span>
+    <button class="scenario" data-scenario="empty">Stato iniziale <span>↗</span></button>
+    <button class="scenario" data-scenario="groups">Con gruppi di esempio <span>↗</span></button>
+    <p>Prototipo locale. Nomi e membri dei gruppi sono esempi; nessuna modifica al tuo account.</p>
+  </div>
+  <span class="proposal-foot">PROPOSTA DA VALUTARE · NON ANCORA NELL’APP</span>
+</aside>
+
+<div class="phone">
+  <header class="masthead">
+    <div class="title-row"><div><span class="eyebrow">IL GREEN, INSIEME</span><h1>Community</h1></div><button class="info" id="info" aria-label="Informazioni sul prototipo">i</button></div>
+    <div class="segmented" role="tablist" aria-label="Sezioni Community">
+      <button id="territory-tab" role="tab" aria-selected="true" aria-controls="territory" tabindex="0"><svg aria-hidden="true"><use href="#map"/></svg>Territorio</button>
+      <button id="groups-tab" role="tab" aria-selected="false" aria-controls="groups" tabindex="-1"><svg aria-hidden="true"><use href="#users"/></svg>Gruppi</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="territory" role="tabpanel" aria-labelledby="territory-tab" tabindex="0">
+      <div class="city-heading"><div><span class="eyebrow">IL TUO COMUNE</span><h2>Verona<span class="live-dot" aria-hidden="true"></span></h2></div><button class="subtle" id="change-city"><svg aria-hidden="true"><use href="#pin"/></svg>Cambia</button></div>
+      <p class="intro">Piccoli gesti. Persone vicine. La tua città.</p>
+
+      <article class="city-card" aria-label="Esplora Verona">
+        <div class="map-preview">
+          <button class="map-hit" data-action="map" aria-label="Apri la mappa di Verona">
+            <span class="map-tiles" aria-hidden="true"><img src="community-assets/13-4345-2932.png" alt=""><img src="community-assets/13-4346-2932.png" alt=""><img src="community-assets/13-4345-2933.png" alt=""><img src="community-assets/13-4346-2933.png" alt=""></span>
+            <span class="map-brand"><img src="../../assets/community/love_your_city_white.svg" alt="Love your city"></span>
+            <span class="map-open"><svg aria-hidden="true"><use href="#map"/></svg>Apri mappa <span>↗</span></span>
+          </button>
+          <a class="attribution" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap contributors</a>
+        </div>
+        <div class="city-card-body"><div><h3>La community di Verona</h3><p>Luoghi, iniziative e gesti condivisi.</p></div><button class="primary" id="explore-city">Esplora Verona<svg aria-hidden="true"><use href="#arrow"/></svg></button></div>
+      </article>
+
+      <div class="section-heading"><h3>Vicino a te</h3><span class="eyebrow muted">DAL TERRITORIO</span></div>
+      <div class="local-empty"><div class="small-icon"><svg aria-hidden="true"><use href="#pin"/></svg></div><div><h4>Il primo luogo può essere il tuo.</h4><p>Condividi un posto utile o un’iniziativa di zona.</p><button class="text-action" id="add-place">Aggiungi un contributo<svg aria-hidden="true"><use href="#plus"/></svg></button></div></div>
+      <button class="other-cities" id="other-cities"><svg aria-hidden="true"><use href="#search"/></svg><span>Le altre community locali<small>Cerca un Comune da esplorare</small></span><svg aria-hidden="true"><use href="#chevron"/></svg></button>
+    </section>
+
+    <section id="groups" role="tabpanel" aria-labelledby="groups-tab" tabindex="0" hidden>
+      <div class="groups-heading"><span class="eyebrow">LA TUA CERCHIA GREEN</span><h2>Meglio, insieme.</h2><p class="intro">Amici, classe o quartiere. Ogni gruppo<br class="wide-only"> è un modo in più per fare la tua parte.</p></div>
+      <div class="group-actions"><button class="primary" id="new-group"><svg aria-hidden="true"><use href="#plus"/></svg>Nuovo gruppo</button><button class="secondary" id="join-code"><svg aria-hidden="true"><use href="#code"/></svg>Ho un codice</button></div>
+      <div id="groups-empty" class="groups-empty"><div class="people-art" aria-hidden="true"><span><svg><use href="#leaf"/></svg></span><span><svg><use href="#users"/></svg></span><span><svg><use href="#leaf"/></svg></span></div><h3>Il prossimo gesto?<br>Fatelo insieme.</h3><p>Crea il tuo primo gruppo o entra in quello<br class="wide-only"> dei tuoi amici con un codice d’invito.</p><div class="privacy-note"><svg aria-hidden="true"><use href="#lock"/></svg>I nuovi gruppi partono privati.<br>Sei tu a scegliere chi invitare.</div></div>
+      <div id="groups-populated" hidden><div class="section-heading"><h3>I tuoi gruppi</h3><span id="group-count" class="count">3</span></div><p class="list-hint">Scegli il gruppo che vuoi aprire.</p><div id="group-list"></div></div>
+      <div class="mobile-scenarios"><span>ANTEPRIMA</span><button id="toggle-examples">Mostra gruppi di esempio</button></div>
+    </section>
+    <footer class="brand-footer"><img src="../../assets/community/love_your_city_white.svg" alt="Love your city"><span class="brand-divider"></span><span class="begreen">BeGreen</span></footer>
+    <p class="concept-caption">PROPOSTA VISIVA · INTERAZIONI DIMOSTRATIVE</p>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Anteprima della navigazione principale">
+    <div class="nav-item"><svg aria-hidden="true"><use href="#home"/></svg>Bacheca</div>
+    <div class="nav-item"><svg aria-hidden="true"><use href="#pulse"/></svg>Dati</div>
+    <div class="capture" aria-hidden="true"><svg><use href="#plus"/></svg></div>
+    <div class="nav-item selected" aria-current="page"><svg aria-hidden="true"><use href="#users"/></svg><span>Community</span></div>
+    <div class="nav-item"><svg aria-hidden="true"><use href="#user"/></svg>Io</div>
+  </nav>
+</div>
+
+<dialog id="sheet" aria-labelledby="sheet-title"><div class="handle"></div><div class="sheet-header"><div><span class="eyebrow" id="sheet-eyebrow">ANTEPRIMA</span><h2 id="sheet-title"></h2></div><button id="close-sheet" class="close" aria-label="Chiudi"><svg aria-hidden="true"><use href="#close"/></svg></button></div><div id="sheet-content"></div></dialog>
+</body>
+</html>
