@@ -9,11 +9,13 @@ import type { Audience, Comment, Explain, Post, Role, Squad } from "@/data/types
 import { DEFAULT_PLACE, type Place, type Pulse } from "@/services/env";
 
 export type Profile = { name: string; handle: string; role: Role };
+export type ThemePref = "system" | "light" | "dark";
 
 type State = {
   onboarded: boolean;
   profile: Profile;
   explain: Explain;
+  theme: ThemePref;
   place: Place;
   pulse: Pulse | null;
   myPosts: Post[];
@@ -28,6 +30,7 @@ type State = {
 type Actions = {
   finishOnboarding: (p: Profile, withDemo: boolean) => void;
   setExplain: (e: Explain) => void;
+  setTheme: (t: ThemePref) => void;
   setPlace: (p: Place) => void;
   setPulse: (p: Pulse) => void;
   addPost: (p: {
@@ -53,6 +56,7 @@ const initial: State = {
   onboarded: false,
   profile: { name: "", handle: "", role: "student" },
   explain: "me",
+  theme: "system",
   place: DEFAULT_PLACE,
   pulse: null,
   myPosts: [],
@@ -98,6 +102,7 @@ export const useApp = create<State & Actions>()(
           myPosts: withDemo ? demoHistory() : [],
         }),
       setExplain: (explain) => set({ explain }),
+      setTheme: (theme) => set({ theme }),
       setPlace: (place) => set({ place }),
       setPulse: (pulse) => set({ pulse }),
       addPost: (input) => {
@@ -166,7 +171,8 @@ export const useApp = create<State & Actions>()(
         return get().squads.find((s) => s.code === c) ?? null;
       },
       nudge: (userId) => set({ nudged: { ...get().nudged, [userId]: Date.now() } }),
-      reset: () => set({ ...initial }),
+      // The theme is a device preference, not demo data: it survives a reset.
+      reset: () => set({ ...initial, theme: get().theme }),
     }),
     {
       name: "begreen-v1",
@@ -176,6 +182,7 @@ export const useApp = create<State & Actions>()(
         onboarded: s.onboarded,
         profile: s.profile,
         explain: s.explain,
+        theme: s.theme,
         place: s.place,
         pulse: s.pulse,
         myPosts: s.myPosts,

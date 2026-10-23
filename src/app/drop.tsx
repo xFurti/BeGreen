@@ -7,9 +7,11 @@ import { Icon } from "@/components/icon";
 import { Button, LiveDot, Mono, SdgTags, SourceBadge } from "@/components/ui";
 import { ACTIONS } from "@/data/actions";
 import { usePulse } from "@/hooks/use-pulse";
-import { C, F, T } from "@/theme/tokens";
+import { F } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 
 export default function DropSheet() {
+  const { C, T } = useTheme();
   const { drop, pulse } = usePulse();
   const a = ACTIONS[drop.action];
   const left = useCountdown();
@@ -24,10 +26,10 @@ export default function DropSheet() {
       <View style={{ gap: 14 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
           <LiveDot color={C.leaf} />
-          <Mono color={C.forest}>Today’s Drop</Mono>
+          <Mono color={C.forestInk}>Today’s Drop</Mono>
           <Mono>· {pulse.place.name}</Mono>
           <View style={{ flex: 1 }} />
-          <Mono color={C.forest} style={{ fontVariant: ["tabular-nums"] }}>
+          <Mono color={C.forestInk} style={{ fontVariant: ["tabular-nums"] }}>
             {left}
           </Mono>
         </View>
@@ -39,7 +41,7 @@ export default function DropSheet() {
         <Mono>Why this, why today</Mono>
         <Text style={[T.body, { fontSize: 17, lineHeight: 25 }]}>{drop.why}</Text>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap", paddingTop: 4 }}>
-          <Text style={{ fontFamily: F.medium, fontSize: 14 }}>{drop.metric}</Text>
+          <Text style={{ fontFamily: F.medium, fontSize: 14, color: C.ink }}>{drop.metric}</Text>
           {drop.sources.map((s) => (
             <SourceBadge key={s} id={s} onPress={() => router.push("/sources")} />
           ))}
@@ -58,7 +60,7 @@ export default function DropSheet() {
               {String(i + 1).padStart(2, "0")}
             </Mono>
             <View style={{ flex: 1, gap: 2 }}>
-              <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3 }}>{s.t}</Text>
+              <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3, color: C.ink }}>{s.t}</Text>
               <Text style={[T.callout, { fontSize: 14, lineHeight: 20 }]}>{s.d}</Text>
             </View>
             <Icon name={s.icon} size={16} color={C.leaf} />

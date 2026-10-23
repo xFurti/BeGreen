@@ -14,10 +14,11 @@ import { usePulse } from "@/hooks/use-pulse";
 import type { Pulse } from "@/services/env";
 import { aqiBand, type Insight, type Level } from "@/services/interpret";
 import { useApp } from "@/store/app-store";
-import { C, F, R, T } from "@/theme/tokens";
+import { F, R, type Palette } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 import { timeAgo } from "@/utils/format";
 
-const DOT: Record<Level, string> = { good: C.green, ok: C.amber, bad: C.red, info: C.faint };
+const dot = (C: Palette): Record<Level, string> => ({ good: C.green, ok: C.amber, bad: C.red, info: C.faint });
 
 const GOALS: Record<Insight["key"], number[]> = {
   air: [3, 11],
@@ -29,6 +30,7 @@ const GOALS: Record<Insight["key"], number[]> = {
 };
 
 function AirChart({ data }: { data: { hour: string; aqi: number }[] }) {
+  const { C } = useTheme();
   const max = Math.max(60, ...data.map((d) => d.aqi));
   return (
     <View style={{ gap: 8 }}>
@@ -40,7 +42,7 @@ function AirChart({ data }: { data: { hour: string; aqi: number }[] }) {
               flex: 1,
               height: `${Math.max(6, (d.aqi / max) * 100)}%`,
               borderRadius: 2,
-              backgroundColor: i === 0 ? C.forest : d.aqi > 60 ? C.red : C.mint2,
+              backgroundColor: i === 0 ? C.forestInk : d.aqi > 60 ? C.red : C.mint2,
             }}
           />
         ))}
@@ -55,6 +57,7 @@ function AirChart({ data }: { data: { hour: string; aqi: number }[] }) {
 }
 
 function RainChart({ data }: { data: { day: string; mm: number }[] }) {
+  const { C } = useTheme();
   const max = Math.max(5, ...data.map((d) => d.mm));
   const todayIdx = data.length - 3;
   return (
@@ -67,7 +70,7 @@ function RainChart({ data }: { data: { day: string; mm: number }[] }) {
               flex: 1,
               height: `${Math.max(4, (d.mm / max) * 100)}%`,
               borderRadius: 2,
-              backgroundColor: i >= todayIdx ? C.mint2 : C.forest,
+              backgroundColor: i >= todayIdx ? C.mint2 : C.forestInk,
             }}
           />
         ))}
@@ -81,6 +84,7 @@ function RainChart({ data }: { data: { day: string; mm: number }[] }) {
 }
 
 function Extra({ k, pulse }: { k: Insight["key"]; pulse: Pulse }) {
+  const { C } = useTheme();
   if (k === "air" && pulse.air?.next24.length) return <AirChart data={pulse.air.next24} />;
   if (k === "water" && pulse.water?.daily.length) return <RainChart data={pulse.water.daily} />;
   if (k === "nature" && pulse.nature?.top.length) {
@@ -97,7 +101,7 @@ function Extra({ k, pulse }: { k: Insight["key"]; pulse: Pulse }) {
                 </Mono>
               </View>
             </View>
-            <Text numberOfLines={1} style={{ fontFamily: F.medium, fontSize: 13, letterSpacing: -0.2 }}>
+            <Text numberOfLines={1} style={{ fontFamily: F.medium, fontSize: 13, letterSpacing: -0.2, color: C.ink }}>
               {s.common ?? s.name}
             </Text>
             <Text numberOfLines={1} style={{ fontFamily: F.regular, fontSize: 11, color: C.mute, fontStyle: "italic", marginTop: -4 }}>
@@ -120,7 +124,7 @@ function Extra({ k, pulse }: { k: Insight["key"]; pulse: Pulse }) {
         {pulse.areas.slice(0, 4).map((a, i) => (
           <View key={a.id} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 10, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
             <Icon name="tree" size={14} color={C.ink} />
-            <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 14 }} numberOfLines={1}>
+            <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 14, color: C.ink }} numberOfLines={1}>
               {a.name}
             </Text>
             <Mono color={C.ink}>{a.km} km</Mono>
@@ -133,6 +137,7 @@ function Extra({ k, pulse }: { k: Insight["key"]; pulse: Pulse }) {
 }
 
 function InsightCard({ i, explain, pulse, index }: { i: Insight; explain: Explain; pulse: Pulse; index: number }) {
+  const { C, T } = useTheme();
   return (
     <Animated.View
       entering={FadeInDown.delay(index * 60).springify().damping(20)}
@@ -141,7 +146,7 @@ function InsightCard({ i, explain, pulse, index }: { i: Insight; explain: Explai
     >
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
         <Mono>{String(index + 1).padStart(2, "0")}</Mono>
-        <Text style={{ fontFamily: F.medium, fontSize: 17, letterSpacing: -0.3, flex: 1 }}>{i.label}</Text>
+        <Text style={{ fontFamily: F.medium, fontSize: 17, letterSpacing: -0.3, flex: 1, color: C.ink }}>{i.label}</Text>
         {i.sources.slice(0, 1).map((s) => (
           <SourceBadge key={s} id={s} onPress={() => router.push("/sources")} />
         ))}
@@ -154,7 +159,7 @@ function InsightCard({ i, explain, pulse, index }: { i: Insight; explain: Explai
         {i.unit && <Text style={{ fontFamily: F.regular, fontSize: 14, color: C.mute, paddingBottom: 10 }}>{i.unit}</Text>}
         <View style={{ flex: 1 }} />
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingBottom: 12 }}>
-          <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: DOT[i.level] }} />
+          <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: dot(C)[i.level] }} />
           <Text style={{ fontFamily: F.medium, fontSize: 14, color: C.ink }}>{i.status}</Text>
         </View>
       </View>
@@ -175,7 +180,7 @@ function InsightCard({ i, explain, pulse, index }: { i: Insight; explain: Explai
         >
           <Icon name={ACTIONS[i.act.action].icon} size={16} color={C.ink} />
           <View style={{ flex: 1, gap: 2 }}>
-            <Text style={{ fontFamily: F.medium, fontSize: 15, letterSpacing: -0.2 }}>{i.act.label}</Text>
+            <Text style={{ fontFamily: F.medium, fontSize: 15, letterSpacing: -0.2, color: C.ink }}>{i.act.label}</Text>
             <Mono>
               {ACTIONS[i.act.action].label} · +{ACTIONS[i.act.action].seeds}
             </Mono>
@@ -188,6 +193,7 @@ function InsightCard({ i, explain, pulse, index }: { i: Insight; explain: Explai
 }
 
 function Cell({ label, value, sub, last }: { label: string; value: string; sub?: string; last?: boolean }) {
+  const { C } = useTheme();
   return (
     <View style={{ flex: 1, gap: 6, paddingRight: 10, borderRightWidth: last ? 0 : 1, borderRightColor: C.line, paddingLeft: 10 }}>
       <Mono>{label}</Mono>
@@ -204,6 +210,7 @@ function Cell({ label, value, sub, last }: { label: string; value: string; sub?:
 }
 
 export default function PulseScreen() {
+  const { C, T } = useTheme();
   const { top } = useSafeAreaInsets();
   const { pulse, insights, drop, loading, refresh, ready } = usePulse();
   const explain = useApp((s) => s.explain);
@@ -340,7 +347,7 @@ export default function PulseScreen() {
           accessibilityLabel="About the data"
         >
           <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Text style={{ fontFamily: F.medium, fontSize: 17, letterSpacing: -0.3, flex: 1 }}>Not all data is equal</Text>
+            <Text style={{ fontFamily: F.medium, fontSize: 17, letterSpacing: -0.3, flex: 1, color: C.ink }}>Not all data is equal</Text>
             <Icon name="arrowRight" size={14} color={C.ink} />
           </View>
           <Text style={[T.callout, { fontSize: 14, lineHeight: 20 }]}>

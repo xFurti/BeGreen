@@ -6,12 +6,13 @@ import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Icon, type IconName } from "@/components/icon";
-import { Avatar, IconButton, Logo, Mono, Press, SectionHeader, TopCover, useCountUp } from "@/components/ui";
+import { Avatar, IconButton, Logo, Mono, Press, SectionHeader, Segmented, TopCover, useCountUp } from "@/components/ui";
 import { ACTIONS } from "@/data/actions";
 import { daysTo2030, SDG_LIST, SDGS } from "@/data/sdgs";
 import type { Post } from "@/data/types";
-import { sdgsOf, seedsOf, streakOf, useApp, useLeague } from "@/store/app-store";
-import { C, F, R, T } from "@/theme/tokens";
+import { sdgsOf, seedsOf, streakOf, useApp, useLeague, type ThemePref } from "@/store/app-store";
+import { F, R } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
 
 const ROLE_LABEL = { student: "Student", teacher: "Teacher", association: "Association", comune: "Comune" } as const;
@@ -29,6 +30,7 @@ function impact(posts: Post[]) {
 }
 
 function Agenda({ posts }: { posts: Post[] }) {
+  const { C, T } = useTheme();
   const { width } = useWindowDimensions();
   const touched = sdgsOf(posts);
   const [sel, setSel] = useState<number | null>(null);
@@ -64,7 +66,7 @@ function Agenda({ posts }: { posts: Post[] }) {
                   justifyContent: "space-between",
                 }}
               >
-                <Text style={{ fontFamily: F.medium, fontSize: 20, letterSpacing: -0.8, color: on ? C.white : C.forestMute }}>{g}</Text>
+                <Text style={{ fontFamily: F.medium, fontSize: 20, letterSpacing: -0.8, color: on ? C.onLeaf : C.forestMute }}>{g}</Text>
                 {on && <Text style={{ fontFamily: F.monoMedium, fontSize: 9, color: C.mint, alignSelf: "flex-end" }}>×{counts.get(g)}</Text>}
               </Pressable>
             </Animated.View>
@@ -97,6 +99,7 @@ function Agenda({ posts }: { posts: Post[] }) {
 }
 
 function Calendar({ posts }: { posts: Post[] }) {
+  const { C } = useTheme();
   const { width } = useWindowDimensions();
   const cell = Math.floor((width - 40) / 7);
   const now = new Date();
@@ -162,6 +165,7 @@ function Calendar({ posts }: { posts: Post[] }) {
 }
 
 function Stat({ value, label, first }: { value: number; label: string; first?: boolean }) {
+  const { C } = useTheme();
   const n = useCountUp(value);
   return (
     <View style={{ flex: 1, gap: 4, paddingLeft: first ? 0 : 14, borderLeftWidth: first ? 0 : 1, borderLeftColor: C.line }}>
@@ -174,8 +178,11 @@ function Stat({ value, label, first }: { value: number; label: string; first?: b
 }
 
 export default function Me() {
+  const { C, T } = useTheme();
   const { top } = useSafeAreaInsets();
   const profile = useApp((s) => s.profile);
+  const themePref = useApp((s) => s.theme);
+  const setTheme = useApp((s) => s.setTheme);
   const posts = useApp((s) => s.myPosts);
   const bonus = useApp((s) => s.bonusSeeds);
   const verifiedCount = useApp((s) => Object.keys(s.verified).length);
@@ -273,6 +280,19 @@ export default function Me() {
           </View>
         </View>
 
+        <View style={{ gap: 12 }}>
+          <Mono color={C.ink}>Appearance</Mono>
+          <Segmented<ThemePref>
+            value={themePref}
+            onChange={setTheme}
+            options={[
+              { value: "system", label: "System" },
+              { value: "light", label: "Light" },
+              { value: "dark", label: "Dark" },
+            ]}
+          />
+        </View>
+
         <View style={{ borderTopWidth: 1, borderTopColor: C.line }}>
           <Row
             icon="doc"
@@ -313,6 +333,7 @@ export default function Me() {
 }
 
 function Imp({ value, label, right }: { value: string; label: string; right?: boolean }) {
+  const { C } = useTheme();
   return (
     <View
       style={{
@@ -333,6 +354,7 @@ function Imp({ value, label, right }: { value: string; label: string; right?: bo
 }
 
 function Row({ icon, label, value, onPress }: { icon: IconName; label: string; value?: string; onPress: () => void }) {
+  const { C } = useTheme();
   return (
     <Press
       scale={0.99}
@@ -341,7 +363,7 @@ function Row({ icon, label, value, onPress }: { icon: IconName; label: string; v
       style={{ flexDirection: "row", alignItems: "center", gap: 14, height: 56, borderBottomWidth: 1, borderBottomColor: C.line }}
     >
       <Icon name={icon} size={16} color={C.leaf} />
-      <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2 }}>{label}</Text>
+      <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2, color: C.ink }}>{label}</Text>
       {value && <Mono color={C.ink}>{value}</Mono>}
       <Icon name="chevron" size={12} color={C.faint} />
     </Press>

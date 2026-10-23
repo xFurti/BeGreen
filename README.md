@@ -77,6 +77,8 @@ npx expo start          # press i for the iOS simulator, or scan the QR code wit
 
 The app runs in **Expo Go**: it uses no custom native code. On a simulator (which has no camera), the capture screen offers **library** and **demo** capture so you can try the whole flow.
 
+**Light and dark theme.** *Me → Appearance* picks System, Light or Dark; System follows the phone. `app.json` sets `userInterfaceStyle: "automatic"`, and Android needs `expo-system-ui` for it, so a development build made before this change has to be rebuilt to follow the phone's theme. Colours live in two palettes in `src/theme/tokens.ts`; components read them through `useTheme()`.
+
 ```bash
 npm run typecheck
 npm run lint

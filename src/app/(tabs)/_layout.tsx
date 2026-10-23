@@ -5,10 +5,11 @@ import { View } from "react-native";
 import { TabBar } from "@/components/tab-bar";
 import { Toaster } from "@/components/ui";
 import { useApp } from "@/store/app-store";
-import { C } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 
 export default function TabsLayout() {
   const onboarded = useApp((s) => s.onboarded);
+  const { C } = useTheme();
   if (!onboarded) return <Redirect href="/onboarding" />;
 
   return (

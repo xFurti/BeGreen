@@ -1,4 +1,4 @@
-import { C } from "@/theme/tokens";
+import { fixed as C } from "@/theme/tokens";
 
 // Not all data is equal. Every number in BeGreen carries one of these kinds,
 // so people can tell an official measurement from a model or a citizen report.
@@ -35,7 +35,7 @@ export const SOURCE_KINDS: Record<
   map: {
     label: "Open map",
     short: "Map",
-    color: C.mute,
+    color: C.grey,
     what: "Places and boundaries drawn by mappers (OpenStreetMap).",
     goodFor: "Finding parks, reserves and protected areas around you.",
     careful: "Boundaries can be incomplete or out of date.",

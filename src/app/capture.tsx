@@ -3,6 +3,7 @@ import { CameraView, useCameraPermissions, type CameraType } from "expo-camera";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef, useState } from "react";
 import { KeyboardAvoidingView, Pressable, ScrollView, Share, Text, TextInput, View } from "react-native";
 import Animated, {
@@ -33,7 +34,8 @@ import type { Audience, Media } from "@/data/types";
 import { usePulse } from "@/hooks/use-pulse";
 import { persistMedia } from "@/services/media";
 import { leagueOf, postedToday, sdgsOf, streakOf, useApp } from "@/store/app-store";
-import { C, F, R, T } from "@/theme/tokens";
+import { F, R } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
 
 type Step = "snap" | "proof" | "review" | "done";
@@ -43,6 +45,7 @@ const MIN_PROOF = 2;
 const ACircle = Animated.createAnimatedComponent(Circle);
 
 function RecordRing({ progress, size = 88 }: { progress: SharedValue<number>; size?: number }) {
+  const { C } = useTheme();
   const r = size / 2 - 3;
   const len = 2 * Math.PI * r;
   const props = useAnimatedProps(() => ({ strokeDashoffset: len * (1 - progress.value) }));
@@ -65,6 +68,7 @@ function RecordRing({ progress, size = 88 }: { progress: SharedValue<number>; si
 }
 
 function Steps({ step }: { step: Step }) {
+  const { C } = useTheme();
   const items = [
     { k: "snap", n: "01", label: "Snap" },
     { k: "proof", n: "02", label: "Prove" },
@@ -106,6 +110,7 @@ function Burst() {
 }
 
 function Bit({ angle, i }: { angle: number; i: number }) {
+  const { C } = useTheme();
   const t = useSharedValue(0);
   const dist = 120 + (i % 4) * 45;
   const size = 6 + (i % 3) * 4;
@@ -142,6 +147,7 @@ type Result = {
 };
 
 function Row({ icon, title, sub, right, delay }: { icon: IconName; title: string; sub?: string; right?: string; delay: number }) {
+  const { C } = useTheme();
   return (
     <Animated.View
       entering={FadeInDown.delay(delay).springify().damping(18)}
@@ -158,6 +164,7 @@ function Row({ icon, title, sub, right, delay }: { icon: IconName; title: string
 }
 
 function Done(r: Result) {
+  const { C, T } = useTheme();
   const { top, bottom } = useSafeAreaInsets();
   const n = useCountUp(r.seeds, 900);
   const a = ACTIONS[r.action];
@@ -229,6 +236,8 @@ function Done(r: Result) {
 // ---------- Screen ----------
 
 export default function Capture() {
+  // The camera steps and the Done screen are dark in both themes; only the review follows it.
+  const { C, scheme } = useTheme();
   const params = useLocalSearchParams<{ action?: ActionId }>();
   const { top, bottom } = useSafeAreaInsets();
   const { drop, pulse } = usePulse();
@@ -380,13 +389,20 @@ export default function Capture() {
 
   // ----- render -----
 
-  if (step === "done" && result) return <Done {...result} />;
+  if (step === "done" && result)
+    return (
+      <>
+        <StatusBar style="light" />
+        <Done {...result} />
+      </>
+    );
 
   if (step === "review" && photo && proof) {
     const a = ACTIONS[action];
     const isDropAct = action === drop.action;
     return (
       <KeyboardAvoidingView behavior={process.env.EXPO_OS === "ios" ? "padding" : undefined} style={{ flex: 1, backgroundColor: C.bg }}>
+        <StatusBar style={scheme === "dark" ? "light" : "dark"} />
         <View
           style={{
             paddingTop: top + 6,
@@ -405,7 +421,7 @@ export default function Capture() {
               setStep("proof");
             }}
           />
-          <Text style={{ fontFamily: F.medium, fontSize: 17, letterSpacing: -0.3 }}>Your BeGreen</Text>
+          <Text style={{ fontFamily: F.medium, fontSize: 17, letterSpacing: -0.3, color: C.ink }}>Your BeGreen</Text>
           <IconButton icon="close" label="Discard" onPress={() => router.back()} />
         </View>
         <ScrollView contentContainerStyle={{ padding: 16, gap: 26, paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
@@ -509,7 +525,7 @@ export default function Capture() {
           <View style={{ flexDirection: "row", alignItems: "center", gap: 12, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 16 }}>
             <Icon name="location" size={16} />
             <View style={{ flex: 1, gap: 2 }}>
-              <Text style={{ fontFamily: F.medium, fontSize: 15 }}>Show area · {pulse.place.name}</Text>
+              <Text style={{ fontFamily: F.medium, fontSize: 15, color: C.ink }}>Show area · {pulse.place.name}</Text>
               <Text style={{ fontFamily: F.regular, fontSize: 13, color: C.mute }}>Neighbourhood only. Never your exact spot.</Text>
             </View>
             <LeafSwitch value={shareSpot} onValueChange={setShareSpot} label="Show my area" />
@@ -529,6 +545,7 @@ export default function Capture() {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.black }}>
+      <StatusBar style="light" />
       <View style={{ paddingTop: top + 6, paddingHorizontal: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
         <IconButton icon="close" label="Close camera" bg={C.night2} color={C.white} onPress={() => router.back()} />
         <Steps step={step} />

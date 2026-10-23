@@ -6,10 +6,12 @@ import { Button, Chip, Mono } from "@/components/ui";
 import { KIND } from "@/data/squad-kinds";
 import type { SquadKind } from "@/data/types";
 import { useApp } from "@/store/app-store";
-import { C, F, T } from "@/theme/tokens";
+import { F } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
 
 export default function NewSquad() {
+  const { C, T } = useTheme();
   const [name, setName] = useState("");
   const [kind, setKind] = useState<SquadKind>("friends");
   const create = useApp((s) => s.createSquad);

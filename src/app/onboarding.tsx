@@ -15,7 +15,8 @@ import { SOURCE_KINDS } from "@/data/sources";
 import type { Role } from "@/data/types";
 import { locate } from "@/hooks/use-pulse";
 import { useApp } from "@/store/app-store";
-import { C, F, R, T } from "@/theme/tokens";
+import { F, R } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
 
 const ROLES: { value: Role; label: string; icon: IconName; hint: string }[] = [
@@ -26,6 +27,7 @@ const ROLES: { value: Role; label: string; icon: IconName; hint: string }[] = [
 ];
 
 function Tile({ src, rotate, x, y, z, w }: { src: number; rotate: string; x: number; y: number; z: number; w: number }) {
+  const { C } = useTheme();
   return (
     <View
       style={{
@@ -50,6 +52,7 @@ function Tile({ src, rotate, x, y, z, w }: { src: number; rotate: string; x: num
 }
 
 function HeroCollage({ width }: { width: number }) {
+  const { C } = useTheme();
   const w = width * 0.5;
   return (
     <View style={{ height: w * 1.45, width: "100%" }}>
@@ -101,6 +104,7 @@ function HeroCollage({ width }: { width: number }) {
 }
 
 function DataPreview() {
+  const { C } = useTheme();
   const rows = [
     { label: "Air", value: "24", unit: "Fair", kind: "model" as const },
     { label: "Species nearby", value: "287", unit: "30 days", kind: "citizen" as const },
@@ -117,13 +121,13 @@ function DataPreview() {
         >
           <Mono style={{ width: 20 }}>{String(i + 1).padStart(2, "0")}</Mono>
           <View style={{ flex: 1, gap: 4 }}>
-            <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3 }}>{r.label}</Text>
+            <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3, color: C.ink }}>{r.label}</Text>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
               <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: SOURCE_KINDS[r.kind].color }} />
               <Mono>{SOURCE_KINDS[r.kind].short}</Mono>
             </View>
           </View>
-          <Text style={{ fontFamily: F.medium, fontSize: 40, letterSpacing: -2, fontVariant: ["tabular-nums"] }}>{r.value}</Text>
+          <Text style={{ fontFamily: F.medium, fontSize: 40, letterSpacing: -2, fontVariant: ["tabular-nums"], color: C.ink }}>{r.value}</Text>
           <Text style={{ fontFamily: F.regular, fontSize: 13, color: C.mute, width: 58 }}>{r.unit}</Text>
         </Animated.View>
       ))}
@@ -133,6 +137,7 @@ function DataPreview() {
 
 // You start last, then climb. Competition, explained in one animation.
 function RacePreview({ active }: { active: boolean }) {
+  const { C } = useTheme();
   const base = [
     { id: "giulia", pts: 345 },
     { id: "aisha", pts: 270 },
@@ -191,6 +196,7 @@ function RacePreview({ active }: { active: boolean }) {
 }
 
 function GoalCell({ g, on, delay, size }: { g: number; on: boolean; delay: number; size: number }) {
+  const { C } = useTheme();
   const t = useSharedValue(0);
   useEffect(() => {
     t.set(on ? withDelay(delay, withSpring(1, { damping: 14 })) : 0);
@@ -200,13 +206,14 @@ function GoalCell({ g, on, delay, size }: { g: number; on: boolean; delay: numbe
     <View style={{ width: size, height: size, borderRadius: 12, backgroundColor: C.mint, overflow: "hidden" }}>
       <Text style={{ position: "absolute", top: 8, left: 9, fontFamily: F.medium, fontSize: 18, letterSpacing: -0.6, color: C.forestMute }}>{g}</Text>
       <Animated.View style={[{ position: "absolute", inset: 0, backgroundColor: C.leaf, borderRadius: 12 } as never, fill]}>
-        <Text style={{ position: "absolute", top: 8, left: 9, fontFamily: F.medium, fontSize: 18, letterSpacing: -0.6, color: C.white }}>{g}</Text>
+        <Text style={{ position: "absolute", top: 8, left: 9, fontFamily: F.medium, fontSize: 18, letterSpacing: -0.6, color: C.onLeaf }}>{g}</Text>
       </Animated.View>
     </View>
   );
 }
 
 function GoalsPreview({ active, width }: { active: boolean; width: number }) {
+  const { C } = useTheme();
   const size = Math.floor((width - 5 * 6) / 6);
   const lit = [3, 6, 11, 12, 13, 14, 15, 17];
   return (
@@ -215,13 +222,14 @@ function GoalsPreview({ active, width }: { active: boolean; width: number }) {
         <GoalCell key={g} g={g} size={size} on={active && lit.includes(g)} delay={lit.indexOf(g) * 140} />
       ))}
       <View style={{ width: size, height: size, borderRadius: 12, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-        <Text style={{ fontFamily: F.medium, fontSize: 13, letterSpacing: -0.4 }}>2030</Text>
+        <Text style={{ fontFamily: F.medium, fontSize: 13, letterSpacing: -0.4, color: C.ink }}>2030</Text>
       </View>
     </View>
   );
 }
 
 export default function Onboarding() {
+  const { C, T } = useTheme();
   const { width } = useWindowDimensions();
   const { top, bottom } = useSafeAreaInsets();
   const pager = useRef<ScrollViewInstance>(null);
@@ -351,7 +359,7 @@ export default function Onboarding() {
           />
 
           <View style={{ gap: 12 }}>
-            <Mono color={C.forest}>I’m joining as</Mono>
+            <Mono color={C.forestInk}>I’m joining as</Mono>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
               {ROLES.map((r) => (
                 <Chip key={r.value} label={r.label} icon={r.icon} active={role === r.value} onPress={() => setRole(r.value)} />
@@ -364,7 +372,7 @@ export default function Onboarding() {
             <View style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: C.line }}>
               <Icon name="location" size={17} color={C.leaf} />
               <View style={{ flex: 1, gap: 2 }}>
-                <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2 }}>Local data</Text>
+                <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2, color: C.ink }}>Local data</Text>
                 <Text style={{ fontFamily: F.regular, color: C.mute, fontSize: 13 }}>
                   {loc === "on" ? "Using your approximate location (~1 km)." : loc === "off" ? "No problem. We’ll use Milano." : "Approximate only. Never on posts unless you choose."}
                 </Text>
@@ -378,7 +386,7 @@ export default function Onboarding() {
             <View style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: C.line }}>
               <Icon name="sparkle" size={17} color={C.leaf} />
               <View style={{ flex: 1, gap: 2 }}>
-                <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2 }}>Demo history</Text>
+                <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2, color: C.ink }}>Demo history</Text>
                 <Text style={{ fontFamily: F.regular, color: C.mute, fontSize: 13 }}>Pre-fill a streak and Memories to explore.</Text>
               </View>
               <LeafSwitch value={demo} onValueChange={setDemo} label="Demo history" />

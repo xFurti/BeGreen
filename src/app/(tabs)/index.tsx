@@ -15,12 +15,14 @@ import { FRIENDS, ME_ID } from "@/data/seed";
 import type { Post } from "@/data/types";
 import { usePulse } from "@/hooks/use-pulse";
 import { postedToday, streakOf, useAllPosts, useApp, useLeague } from "@/store/app-store";
-import { C, F, R } from "@/theme/tokens";
+import { F, R } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 
 type Lens = "friends" | "squads" | "nearby";
 const FRIEND_SET = new Set(FRIENDS);
 
 function NotYet({ streak }: { streak: number }) {
+  const { C } = useTheme();
   const left = useCountdown();
   return (
     <View
@@ -39,10 +41,10 @@ function NotYet({ streak }: { streak: number }) {
         <Sprout size={64} />
       </View>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-        <Mono color={C.forest}>Your BeGreen</Mono>
+        <Mono color={C.forestInk}>Your BeGreen</Mono>
         <View style={{ flex: 1 }} />
-        <Icon name="flame" size={13} color={streak > 0 ? C.forest : C.faint} />
-        <Mono color={streak > 0 ? C.forest : C.mute}>{streak}</Mono>
+        <Icon name="flame" size={13} color={streak > 0 ? C.forestInk : C.faint} />
+        <Mono color={streak > 0 ? C.forestInk : C.mute}>{streak}</Mono>
       </View>
       <View style={{ gap: 8 }}>
         <Text style={{ fontFamily: F.medium, fontSize: 28, lineHeight: 30, letterSpacing: -1.2, color: C.ink, paddingRight: 64 }}>
@@ -68,6 +70,7 @@ function NotYet({ streak }: { streak: number }) {
 }
 
 function Mine({ post }: { post: Post }) {
+  const { C } = useTheme();
   const a = ACTIONS[post.action];
   return (
     <Press
@@ -87,6 +90,7 @@ function Mine({ post }: { post: Post }) {
 }
 
 function Race() {
+  const { C } = useTheme();
   const league = useLeague();
   const i = league.findIndex((r) => r.me);
   const me = league[i];
@@ -101,10 +105,10 @@ function Race() {
     >
       <View style={{ flexDirection: "row", alignItems: "center" }}>
         <Mono style={{ flex: 1 }}>This week · friends</Mono>
-        <Mono color={C.forest}>League →</Mono>
+        <Mono color={C.forestInk}>League →</Mono>
       </View>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
-        <Text style={{ fontFamily: F.medium, fontSize: 44, lineHeight: 46, letterSpacing: -2, color: C.forest }}>#{i + 1}</Text>
+        <Text style={{ fontFamily: F.medium, fontSize: 44, lineHeight: 46, letterSpacing: -2, color: C.forestInk }}>#{i + 1}</Text>
         <View style={{ flex: 1, gap: 4 }}>
           <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3, color: C.ink }} numberOfLines={1}>
             {ahead ? `${gap} seeds behind ${ahead.name}` : "You’re on top. Stay there."}
@@ -121,6 +125,7 @@ function Race() {
 }
 
 export default function Feed() {
+  const { C } = useTheme();
   const { top } = useSafeAreaInsets();
   const all = useAllPosts();
   const myPosts = useApp((s) => s.myPosts);

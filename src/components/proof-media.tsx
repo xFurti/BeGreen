@@ -15,7 +15,8 @@ import Animated, {
 
 import { Icon } from "@/components/icon";
 import type { Media } from "@/data/types";
-import { C, F, R } from "@/theme/tokens";
+import { F, light, R } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
 
 // The BeGreen frame: the "thing" (photo) + the "proof" (5-second clip) in one tile.
@@ -83,6 +84,7 @@ export function ProofMedia({
   onDoubleTap?: () => void;
   popEmoji?: string;
 }) {
+  const { C, scheme } = useTheme();
   const [swapped, setSwapped] = useState(false);
   const [pop, setPop] = useState(0);
   const lastTap = useRef(0);
@@ -143,7 +145,7 @@ export function ProofMedia({
               overflow: "hidden",
               borderWidth: 2,
               borderColor: C.white,
-              backgroundColor: C.ink,
+              backgroundColor: C.black,
               boxShadow: "0 6px 18px rgba(0,0,0,0.22)",
             }}
           >
@@ -191,7 +193,8 @@ export function ProofMedia({
             backgroundColor: C.white,
           }}
         >
-          <Icon name="checkSeal" size={14} color={C.leaf} />
+          {/* A white pill on the photo in both themes, so it keeps the light green. */}
+          <Icon name="checkSeal" size={14} color={light.leaf} />
           <Text style={{ color: C.forest, fontFamily: F.monoMedium, fontSize: 10.5, letterSpacing: 0.5 }}>VERIFIED</Text>
         </Animated.View>
       )}
@@ -200,7 +203,7 @@ export function ProofMedia({
 
       {locked && (
         <Animated.View entering={FadeIn} style={{ position: "absolute", inset: 0 } as never}>
-          <BlurView intensity={70} tint="light" style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 12 }}>
+          <BlurView intensity={70} tint={scheme} style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 12 }}>
             <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: C.forest, alignItems: "center", justifyContent: "center" }}>
               <Icon name="lock" size={19} color={C.lime} />
             </View>

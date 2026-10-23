@@ -11,12 +11,14 @@ import type { Explain } from "@/data/types";
 import { usePulse } from "@/hooks/use-pulse";
 import { askLeaf, SUGGESTED } from "@/services/leaf";
 import { useApp } from "@/store/app-store";
-import { C, F, R, T } from "@/theme/tokens";
+import { F, R } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
 
 type Msg = { id: number; from: "me" | "leaf"; text: string; cites?: SourceId[] };
 
 export default function Leaf() {
+  const { C, T } = useTheme();
   const { bottom } = useSafeAreaInsets();
   const { pulse, insights } = usePulse();
   const explain = useApp((s) => s.explain);
@@ -121,7 +123,7 @@ export default function Leaf() {
                   accessibilityRole="button"
                   style={{ paddingHorizontal: 14, paddingVertical: 10, borderRadius: R.pill, borderWidth: 1, borderColor: C.mint2 }}
                 >
-                  <Text style={{ fontFamily: F.medium, fontSize: 14, letterSpacing: -0.15, color: C.forest }}>{s}</Text>
+                  <Text style={{ fontFamily: F.medium, fontSize: 14, letterSpacing: -0.15, color: C.forestInk }}>{s}</Text>
                 </Pressable>
               ))}
             </View>

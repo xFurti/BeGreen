@@ -8,7 +8,8 @@ import { AvatarStack, LiveDot, Mono, Press, SdgTags } from "@/components/ui";
 import { ACTIONS } from "@/data/actions";
 import { USERS } from "@/data/seed";
 import type { Drop } from "@/services/drop";
-import { C, F, R } from "@/theme/tokens";
+import { F, R } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -43,6 +44,7 @@ export function DropCard({
   doneCount: number;
   ready?: boolean;
 }) {
+  const { C } = useTheme();
   const action = ACTIONS[drop.action];
   const left = useCountdown();
 

@@ -11,9 +11,11 @@ import { ACTIONS, DOMAINS, type ActionId, type Domain } from "@/data/actions";
 import { USERS } from "@/data/seed";
 import { usePulse } from "@/hooks/use-pulse";
 import { useAllPosts, useApp } from "@/store/app-store";
-import { C, F, R, T } from "@/theme/tokens";
+import { F, R } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 
 function Ring({ value, size = 112 }: { value: number; size?: number }) {
+  const { C } = useTheme();
   const r = size / 2 - 5;
   const len = 2 * Math.PI * r;
   return (
@@ -35,6 +37,7 @@ function Ring({ value, size = 112 }: { value: number; size?: number }) {
 }
 
 export default function SquadDetail() {
+  const { C, T } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const squad = useApp((s) => s.squads.find((x) => x.id === id));
   const posts = useAllPosts().filter((p) => p.squadId === id);
@@ -91,7 +94,7 @@ export default function SquadDetail() {
             style={{ flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: C.line, paddingHorizontal: 12, height: 34, borderRadius: R.pill }}
             accessibilityLabel="Share invite code"
           >
-            <Text style={{ fontFamily: F.monoMedium, fontSize: 13, letterSpacing: 1 }}>{squad.code}</Text>
+            <Text style={{ fontFamily: F.monoMedium, fontSize: 13, letterSpacing: 1, color: C.ink }}>{squad.code}</Text>
             <Icon name="share" size={13} />
           </Press>
         </View>
@@ -100,11 +103,11 @@ export default function SquadDetail() {
       <View style={{ flexDirection: "row", alignItems: "center", gap: 20, backgroundColor: C.mint, borderRadius: R.xl, padding: 18 }}>
         <View style={{ alignItems: "center", justifyContent: "center" }}>
           <Ring value={pct} />
-          <Text style={{ position: "absolute", fontFamily: F.medium, fontSize: 26, letterSpacing: -1.2 }}>{Math.round(pct * 100)}%</Text>
+          <Text style={{ position: "absolute", fontFamily: F.medium, fontSize: 26, letterSpacing: -1.2, color: C.ink }}>{Math.round(pct * 100)}%</Text>
         </View>
         <View style={{ flex: 1, gap: 6 }}>
           <Mono>Weekly quest · {squad.quest.endsInDays}d left</Mono>
-          <Text style={{ fontFamily: F.medium, fontSize: 20, lineHeight: 23, letterSpacing: -0.6 }}>{squad.quest.title}</Text>
+          <Text style={{ fontFamily: F.medium, fontSize: 20, lineHeight: 23, letterSpacing: -0.6, color: C.ink }}>{squad.quest.title}</Text>
           <Text style={{ fontFamily: F.regular, fontSize: 13, color: C.mute }}>
             {squad.quest.progress.toLocaleString("en")} / {squad.quest.goal.toLocaleString("en")}
           </Text>
@@ -139,7 +142,7 @@ export default function SquadDetail() {
             <Animated.View key={k} entering={FadeInDown.delay(i * 40)} style={{ gap: 6 }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                 <Icon name={ACTIONS[k].icon} size={13} color={C.ink} />
-                <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 14 }}>{ACTIONS[k].label}</Text>
+                <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 14, color: C.ink }}>{ACTIONS[k].label}</Text>
                 <Mono color={C.ink}>{n.toLocaleString("en")}</Mono>
               </View>
               <Bar value={n / maxN} color={i === 0 ? C.leaf : C.forestMute} height={3} />
@@ -211,9 +214,10 @@ export default function SquadDetail() {
 }
 
 function Metric({ label, value, border }: { label: string; value: string; border?: boolean }) {
+  const { C } = useTheme();
   return (
     <View style={{ flex: 1, paddingVertical: 14, paddingLeft: border ? 12 : 0, borderLeftWidth: border ? 1 : 0, borderLeftColor: C.line, gap: 4 }}>
-      <Text style={{ fontFamily: F.medium, fontSize: 24, letterSpacing: -1, fontVariant: ["tabular-nums"] }} adjustsFontSizeToFit numberOfLines={1}>
+      <Text style={{ fontFamily: F.medium, fontSize: 24, letterSpacing: -1, fontVariant: ["tabular-nums"], color: C.ink }} adjustsFontSizeToFit numberOfLines={1}>
         {value}
       </Text>
       <Mono>{label}</Mono>

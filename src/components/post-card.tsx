@@ -11,7 +11,8 @@ import { ACTIONS } from "@/data/actions";
 import { ME_ID, USERS } from "@/data/seed";
 import type { Post } from "@/data/types";
 import { useApp } from "@/store/app-store";
-import { C, F, R, shadow } from "@/theme/tokens";
+import { F, R, shadow } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 import { compact, haptic, timeAgo } from "@/utils/format";
 
 export const VERIFY_GOAL = 3;
@@ -23,6 +24,7 @@ export function author(id: string, meName: string) {
 }
 
 function Dots({ n, dark }: { n: number; dark?: boolean }) {
+  const { C } = useTheme();
   return (
     <View style={{ flexDirection: "row", gap: 3 }}>
       {Array.from({ length: VERIFY_GOAL }).map((_, i) => (
@@ -36,6 +38,7 @@ function Dots({ n, dark }: { n: number; dark?: boolean }) {
 }
 
 export function VerifyBar({ post }: { post: Post }) {
+  const { C } = useTheme();
   const verify = useApp((s) => s.verify);
   const meName = useApp((s) => s.profile.name);
   const n = post.verifiedBy.length;
@@ -100,6 +103,7 @@ export function VerifyBar({ post }: { post: Post }) {
 }
 
 function Reactions({ post }: { post: Post }) {
+  const { C } = useTheme();
   const react = useApp((s) => s.react);
   const mine = useApp((s) => s.reacted[post.id]);
   const [open, setOpen] = useState(false);
@@ -135,7 +139,7 @@ function Reactions({ post }: { post: Post }) {
             right: -48,
             flexDirection: "row",
             gap: 2,
-            backgroundColor: C.bg,
+            backgroundColor: C.raised,
             borderRadius: R.pill,
             padding: 4,
             boxShadow: shadow.lift,
@@ -182,6 +186,7 @@ export const PostCard = memo(function PostCard({
   lockHint?: boolean;
   index?: number;
 }) {
+  const { C } = useTheme();
   const meName = useApp((s) => s.profile.name);
   const react = useApp((s) => s.react);
   const mine = useApp((s) => s.reacted[post.id]);

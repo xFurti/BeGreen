@@ -1,19 +1,16 @@
 import { Geist_400Regular, Geist_500Medium, Geist_600SemiBold } from "@expo-google-fonts/geist";
 import { GeistMono_400Regular, GeistMono_500Medium } from "@expo-google-fonts/geist-mono";
 import { useFonts } from "expo-font";
-import { DefaultTheme, Stack, ThemeProvider } from "expo-router";
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
+import * as SystemUI from "expo-system-ui";
+import { useEffect, useMemo } from "react";
 
-import { C, F } from "@/theme/tokens";
+import { F } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 
 SplashScreen.preventAutoHideAsync();
-
-const theme = {
-  ...DefaultTheme,
-  colors: { ...DefaultTheme.colors, background: C.bg, card: C.bg, text: C.ink, primary: C.ink, border: C.line },
-};
 
 const sheet = {
   presentation: "formSheet",
@@ -24,16 +21,26 @@ const sheet = {
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({ Geist_400Regular, Geist_500Medium, Geist_600SemiBold, GeistMono_400Regular, GeistMono_500Medium });
+  const { C, scheme } = useTheme();
+  const theme = useMemo(() => {
+    const base = scheme === "dark" ? DarkTheme : DefaultTheme;
+    return { ...base, colors: { ...base.colors, background: C.bg, card: C.bg, text: C.ink, primary: C.ink, border: C.line } };
+  }, [C, scheme]);
 
   useEffect(() => {
     if (loaded || error) SplashScreen.hide();
   }, [loaded, error]);
 
+  // The root view shows behind sheets and during transitions; keep it on the page colour.
+  useEffect(() => {
+    SystemUI.setBackgroundColorAsync(C.bg);
+  }, [C.bg]);
+
   if (!loaded && !error) return null;
 
   return (
     <ThemeProvider value={theme}>
-      <StatusBar style="dark" />
+      <StatusBar style={scheme === "dark" ? "light" : "dark"} />
       <Stack
         screenOptions={{
           headerShadowVisible: false,

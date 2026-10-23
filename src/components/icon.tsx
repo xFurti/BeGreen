@@ -2,7 +2,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
 import type { ComponentProps } from "react";
 
-import { C } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 
 type Ion = ComponentProps<typeof Ionicons>["name"];
 
@@ -87,7 +87,9 @@ const MAP = {
 
 export type IconName = keyof typeof MAP;
 
-export function Icon({ name, size = 22, color = C.ink }: { name: IconName; size?: number; color?: string }) {
+export function Icon({ name, size = 22, color: tint }: { name: IconName; size?: number; color?: string }) {
+  const { C } = useTheme();
+  const color = tint ?? C.ink;
   const [sf, ion] = MAP[name];
   if (process.env.EXPO_OS === "ios") {
     return <Image source={`sf:${sf}`} style={{ width: size, height: size }} tintColor={color} contentFit="contain" />;

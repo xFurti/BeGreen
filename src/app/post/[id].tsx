@@ -11,10 +11,12 @@ import { Avatar, Mono, SdgTags, Tag } from "@/components/ui";
 import { ACTIONS } from "@/data/actions";
 import { SDGS } from "@/data/sdgs";
 import { useAllPosts, useApp } from "@/store/app-store";
-import { C, F, R, T } from "@/theme/tokens";
+import { F, R } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 import { haptic, timeAgo } from "@/utils/format";
 
 export default function PostDetail() {
+  const { C, T } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { bottom } = useSafeAreaInsets();
   const post = useAllPosts().find((p) => p.id === id);
@@ -48,7 +50,7 @@ export default function PostDetail() {
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
           <Avatar src={a.avatar} name={a.name} size={42} />
           <View style={{ flex: 1, gap: 3 }}>
-            <Text style={{ fontFamily: F.semibold, fontSize: 16, letterSpacing: -0.2 }}>{a.name}</Text>
+            <Text style={{ fontFamily: F.semibold, fontSize: 16, letterSpacing: -0.2, color: C.ink }}>{a.name}</Text>
             <Mono>
               {a.tag} · {post.place} · {timeAgo(post.createdAt)}
             </Mono>
@@ -69,7 +71,7 @@ export default function PostDetail() {
         <View style={{ gap: 12 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <Icon name={action.icon} size={16} color={C.leaf} />
-            <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 18, letterSpacing: -0.4 }}>{action.label}</Text>
+            <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 18, letterSpacing: -0.4, color: C.ink }}>{action.label}</Text>
           </View>
           {!!post.caption && (
             <Text selectable style={[T.body, { fontSize: 17, lineHeight: 25 }]}>
@@ -81,7 +83,7 @@ export default function PostDetail() {
 
         <View style={{ borderTopWidth: 1, borderBottomWidth: 1, borderColor: C.line, paddingVertical: 16, gap: 12 }}>
           <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
-            <Text style={{ fontFamily: F.medium, fontSize: 28, letterSpacing: -1.2 }}>
+            <Text style={{ fontFamily: F.medium, fontSize: 28, letterSpacing: -1.2, color: C.ink }}>
               ≈ {action.impact.value} <Text style={{ fontSize: 16, letterSpacing: -0.3 }}>{action.impact.unit}</Text>
             </Text>
             <Mono>estimate</Mono>
@@ -102,7 +104,7 @@ export default function PostDetail() {
                 return (
                   <View key={v} style={{ alignItems: "center", gap: 6 }}>
                     <Avatar src={u?.avatar} name={u?.name ?? "?"} size={42} />
-                    <Text style={{ fontFamily: F.medium, fontSize: 12 }}>{u?.name}</Text>
+                    <Text style={{ fontFamily: F.medium, fontSize: 12, color: C.ink }}>{u?.name}</Text>
                   </View>
                 );
               })}
@@ -119,7 +121,7 @@ export default function PostDetail() {
               <Animated.View key={c.id} entering={FadeInDown.delay(i * 40)} style={{ flexDirection: "row", gap: 10 }}>
                 <Avatar src={u?.avatar} name={u?.name ?? "?"} size={30} />
                 <View style={{ flex: 1, gap: 2 }}>
-                  <Text style={{ fontFamily: F.semibold, fontSize: 14 }}>
+                  <Text style={{ fontFamily: F.semibold, fontSize: 14, color: C.ink }}>
                     {u?.name} <Text style={{ fontFamily: F.regular, color: C.mute }}>{timeAgo(c.createdAt)}</Text>
                   </Text>
                   <Text style={[T.body, { fontSize: 15, lineHeight: 21 }]}>{c.text}</Text>

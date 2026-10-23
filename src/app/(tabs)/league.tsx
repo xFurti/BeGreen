@@ -11,7 +11,8 @@ import { LEAGUE, USERS } from "@/data/seed";
 import { KIND } from "@/data/squad-kinds";
 import type { Squad } from "@/data/types";
 import { nudgedRecently, useApp, useLeague, weekResetIn, type Racer } from "@/store/app-store";
-import { C, F, R, T } from "@/theme/tokens";
+import { F, R } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 import { compact, haptic } from "@/utils/format";
 
 type View_ = "friends" | "squads" | "schools";
@@ -19,6 +20,7 @@ type View_ = "friends" | "squads" | "schools";
 const NUDGES = ["Time to BeGreen. Everyone’s waiting.", "Your streak called. It misses you.", "The planet left you on read.", "5 seconds. That’s all it takes."];
 
 function Podium({ top3 }: { top3: Racer[] }) {
+  const { C } = useTheme();
   // 2 · 1 · 3, like a real podium.
   const order = [top3[1], top3[0], top3[2]].filter(Boolean);
   const h = [74, 104, 56];
@@ -47,7 +49,7 @@ function Podium({ top3 }: { top3: Racer[] }) {
                 paddingTop: 10,
               }}
             >
-              <Text style={{ fontFamily: F.medium, fontSize: 24, letterSpacing: -1, color: place === 1 ? C.lime : C.forest }}>{place}</Text>
+              <Text style={{ fontFamily: F.medium, fontSize: 24, letterSpacing: -1, color: place === 1 ? C.lime : C.forestInk }}>{place}</Text>
             </View>
           </Animated.View>
         );
@@ -57,6 +59,7 @@ function Podium({ top3 }: { top3: Racer[] }) {
 }
 
 function RacerRow({ r, rank, index }: { r: Racer; rank: number; index: number }) {
+  const { C } = useTheme();
   const recentlyNudged = nudgedRecently(useApp((s) => s.nudged[r.id]));
   const nudge = useApp((s) => s.nudge);
   return (
@@ -108,7 +111,7 @@ function RacerRow({ r, rank, index }: { r: Racer; rank: number; index: number })
           }}
         >
           <Icon name="hand" size={12} color={C.leaf} />
-          <Text style={{ fontFamily: F.medium, fontSize: 13 }}>{recentlyNudged ? "Nudged" : "Nudge"}</Text>
+          <Text style={{ fontFamily: F.medium, fontSize: 13, color: C.ink }}>{recentlyNudged ? "Nudged" : "Nudge"}</Text>
         </Press>
       )}
       <Text style={{ fontFamily: F.medium, fontSize: 17, letterSpacing: -0.5, color: r.me ? C.white : C.ink, fontVariant: ["tabular-nums"], minWidth: 40, textAlign: "right" }}>
@@ -119,6 +122,7 @@ function RacerRow({ r, rank, index }: { r: Racer; rank: number; index: number })
 }
 
 function SquadCard({ s, index }: { s: Squad; index: number }) {
+  const { C } = useTheme();
   const pct = s.quest.progress / s.quest.goal;
   return (
     <Animated.View entering={FadeInDown.delay(index * 70).springify().damping(20)}>
@@ -157,6 +161,7 @@ function SquadCard({ s, index }: { s: Squad; index: number }) {
 }
 
 export default function League() {
+  const { C, T } = useTheme();
   const { top } = useSafeAreaInsets();
   const squads = useApp((s) => s.squads);
   const join = useApp((s) => s.joinSquad);
