@@ -338,7 +338,8 @@ async function send(post: Post): Promise<void> {
     // Already did today's challenge (e.g. from another phone): post it as a regular proof.
     if ((e as { code?: string }).code === "23505" && post.challengeId) return send({ ...post, challengeId: undefined, isDrop: false });
     if (__DEV__) console.warn(e);
-    toast(tr("shared.savedLocally"), "refresh");
+    const detail = e instanceof Error ? e.message : String(e);
+    toast(__DEV__ ? `${tr("shared.savedLocally")} — ${detail.slice(0, 160)}` : tr("shared.savedLocally"), "refresh");
   }
 }
 

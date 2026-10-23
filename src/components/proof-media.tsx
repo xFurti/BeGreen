@@ -108,7 +108,15 @@ export function ProofMedia({
       onError={() => setLoadedPhoto(photo)}
     />
   );
-  const insetPhoto = <Image source={photo} style={{ position: "absolute", inset: 0 } as never} priority="low" contentFit="cover" />;
+  const insetPhoto = (
+    <Image
+      source={photo}
+      style={{ position: "absolute", inset: 0 } as never}
+      priority="low"
+      contentFit="cover"
+      blurRadius={swapped ? 0 : 14}
+    />
+  );
 
   const onTap = () => {
     const now = Date.now();
@@ -174,6 +182,14 @@ export function ProofMedia({
           >
             <View style={{ flex: 1 }}>
               {insetPhoto}
+              {!showClip && !swapped && (
+                <View
+                  pointerEvents="none"
+                  style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(0,0,0,0.35)" }}
+                >
+                  <Icon name="play" size={18} color={C.white} />
+                </View>
+              )}
               {showClip && !swapped && <Proof src={proof} playing={active && !locked} />}
             </View>
           </Pressable>
