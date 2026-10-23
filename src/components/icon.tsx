@@ -2,7 +2,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
 import type { ComponentProps } from "react";
 
-import { C } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 
 type Ion = ComponentProps<typeof Ionicons>["name"];
 
@@ -35,7 +35,7 @@ const MAP = {
   sun: ["sun.max.fill", "sunny"],
   drop: ["drop.fill", "water"],
   soil: ["square.stack.3d.down.forward.fill", "layers"],
-  nature: ["tortoise.fill", "bug"],
+  nature: ["leaf.fill", "leaf"],
   tree: ["tree.fill", "leaf"],
   people: ["person.2.fill", "people"],
   bike: ["bicycle", "bicycle"],
@@ -66,6 +66,7 @@ const MAP = {
   seed: ["circle.hexagongrid.fill", "ellipse"],
   calendar: ["calendar", "calendar-outline"],
   shield: ["checkmark.shield.fill", "shield-checkmark"],
+  flag: ["flag", "flag-outline"],
   doc: ["doc.text.fill", "document-text"],
   link: ["arrow.up.right", "open-outline"],
   thermometer: ["thermometer.medium", "thermometer"],
@@ -87,7 +88,9 @@ const MAP = {
 
 export type IconName = keyof typeof MAP;
 
-export function Icon({ name, size = 22, color = C.ink }: { name: IconName; size?: number; color?: string }) {
+export function Icon({ name, size = 22, color: tint }: { name: IconName; size?: number; color?: string }) {
+  const { C } = useTheme();
+  const color = tint ?? C.ink;
   const [sf, ion] = MAP[name];
   if (process.env.EXPO_OS === "ios") {
     return <Image source={`sf:${sf}`} style={{ width: size, height: size }} tintColor={color} contentFit="contain" />;

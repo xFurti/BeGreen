@@ -1,14 +1,15 @@
 import { Stack, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Alert, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { DropTag } from "@/components/drop-tag";
 import { Icon } from "@/components/icon";
 import { VERIFY_GOAL, VerifyBar } from "@/components/post-card";
 import { ProofMedia } from "@/components/proof-media";
 import { TitledName } from "@/components/titled-name";
-import { Avatar, Mono, SdgTags, Tag } from "@/components/ui";
+import { Avatar, Mono, Press, SdgTags, Tag } from "@/components/ui";
 import { demoPostsFor } from "@/data/demo";
 import { useKeyboardCover } from "@/hooks/use-keyboard-cover";
 import { usePulse } from "@/hooks/use-pulse";
@@ -17,10 +18,12 @@ import { formatNumber, timeAgo } from "@/i18n/format";
 import { useI18n } from "@/i18n/use-i18n";
 import { composerInset } from "@/services/keyboard-inset";
 import { useApp, useAuthor } from "@/store/app-store";
-import { C, F, R, T } from "@/theme/tokens";
+import { F, R } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
 
 export default function PostDetail() {
+  const { C, T } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { bottom } = useSafeAreaInsets();
   const { ref: keyboardRoot, cover } = useKeyboardCover();
@@ -31,6 +34,9 @@ export default function PostDetail() {
   const comment = useApp((s) => s.comment);
   const react = useApp((s) => s.react);
   const mine = useApp((s) => s.reacted[id]);
+  const flagged = useApp((s) => !!s.flagged[id]);
+  const flag = useApp((s) => s.flag);
+  const userId = useApp((s) => s.userId);
   const [text, setText] = useState("");
   const { t, language } = useI18n();
 
@@ -65,7 +71,7 @@ export default function PostDetail() {
             </Mono>
           </View>
           {post.isDemo && <Tag label={t("common.demo")} />}
-          {post.isDrop && <Tag label={t("common.drop")} solid />}
+          {post.isDrop && <DropTag post={post} />}
         </View>
 
         <ProofMedia
@@ -82,7 +88,7 @@ export default function PostDetail() {
         <View style={{ gap: 12 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <Icon name={action.icon} size={16} color={C.leaf} />
-            <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 18, letterSpacing: -0.4 }}>{action.label}</Text>
+            <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 18, letterSpacing: -0.4, color: C.ink }}>{action.label}</Text>
           </View>
           {!!caption && (
             <Text selectable style={[T.body, { fontSize: 17, lineHeight: 25 }]}>
@@ -94,7 +100,7 @@ export default function PostDetail() {
 
         <View style={{ borderTopWidth: 1, borderBottomWidth: 1, borderColor: C.line, paddingVertical: 16, gap: 12 }}>
           <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
-            <Text style={{ fontFamily: F.medium, fontSize: 28, letterSpacing: -1.2 }}>
+            <Text style={{ fontFamily: F.medium, fontSize: 28, letterSpacing: -1.2, color: C.ink }}>
               ≈ {formatNumber(action.impact.value, language)} <Text style={{ fontSize: 16, letterSpacing: -0.3 }}>{action.impact.unitLabel}</Text>
             </Text>
             <Mono>{t("common.estimate")}</Mono>
@@ -149,19 +155,36 @@ export default function PostDetail() {
           </View>
         )}
 
-        {!post.isDemo && (
-          <Pressable
-            onPress={() =>
-              Alert.alert(t("post.flagTitle"), t("post.flagBody"), [
-                { text: t("common.cancel"), style: "cancel" },
-                { text: t("post.flagConfirm"), style: "destructive" },
-              ])
-            }
-            style={{ alignSelf: "center", paddingTop: 8 }}
-            accessibilityRole="button"
-          >
-            <Mono>{t("post.flag")}</Mono>
-          </Pressable>
+        {!post.isDemo && post.authorId !== userId && (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 12, borderTopWidth: 1, borderColor: C.line, paddingTop: 16 }}>
+            <View style={{ flex: 1, gap: 3 }}>
+              <Mono color={C.ink}>{t("post.flagHint")}</Mono>
+              <Text style={T.caption}>{t(flagged ? "post.flaggedLocal" : "post.flagLocal")}</Text>
+            </View>
+            <Press
+              disabled={flagged}
+              hitSlop={6}
+              accessibilityLabel={t(flagged ? "post.flagged" : "post.flagTitle")}
+              onPress={() => {
+                const confirm = () => {
+                  flag(post.id);
+                  haptic.success();
+                };
+                if (Platform.OS === "web") {
+                  if (window.confirm(`${t("post.flagTitle")}\n\n${t("post.flagBody")}`)) confirm();
+                } else {
+                  Alert.alert(t("post.flagTitle"), t("post.flagBody"), [
+                    { text: t("common.cancel"), style: "cancel" },
+                    { text: t("post.flagConfirm"), style: "destructive", onPress: confirm },
+                  ]);
+                }
+              }}
+              style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 12, minHeight: 44, borderRadius: R.pill, borderWidth: 1, borderColor: C.mint2 }}
+            >
+              <Icon name={flagged ? "check" : "flag"} size={12} color={C.leaf} />
+              <Text style={{ fontFamily: F.medium, fontSize: 13, color: C.ink }}>{t(flagged ? "post.flagged" : "post.flag")}</Text>
+            </Press>
+          </View>
         )}
       </ScrollView>
 

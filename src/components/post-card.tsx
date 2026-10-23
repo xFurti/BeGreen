@@ -3,6 +3,7 @@ import { memo, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import Animated, { FadeIn, FadeInDown, ZoomIn } from "react-native-reanimated";
 
+import { DropTag } from "@/components/drop-tag";
 import { Icon } from "@/components/icon";
 import { LeafBurst } from "@/components/nature";
 import { ProofMedia } from "@/components/proof-media";
@@ -13,19 +14,21 @@ import { actionCopy, placeLabel, textOf } from "@/i18n/content";
 import { compact, timeAgo } from "@/i18n/format";
 import { useI18n } from "@/i18n/use-i18n";
 import { useApp, useAuthor } from "@/store/app-store";
-import { C, F, R, shadow } from "@/theme/tokens";
+import { F, R, shadow } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
 
 export const VERIFY_GOAL = 3;
 export const REACTIONS = ["💚", "🔥", "😂", "😮", "🌍"];
 
 function Dots({ n, dark }: { n: number; dark?: boolean }) {
+  const { C } = useTheme();
   return (
     <View style={{ flexDirection: "row", gap: 3 }}>
       {Array.from({ length: VERIFY_GOAL }).map((_, i) => (
         <View
           key={i}
-          style={{ width: 12, height: 3, borderRadius: 2, backgroundColor: i < n ? (dark ? C.lime : C.leaf) : dark ? C.nightLine : C.mint2 }}
+          style={{ width: 12, height: 3, borderRadius: 2, backgroundColor: i < n ? (dark ? C.lime : C.leaf) : dark ? C.nightLine : C.band }}
         />
       ))}
     </View>
@@ -33,6 +36,7 @@ function Dots({ n, dark }: { n: number; dark?: boolean }) {
 }
 
 export function VerifyBar({ post }: { post: Post }) {
+  const { C } = useTheme();
   const verify = useApp((s) => s.verify);
   const me = useApp((s) => s.userId);
   const author = useAuthor();
@@ -116,6 +120,7 @@ export function VerifyBar({ post }: { post: Post }) {
 }
 
 function Reactions({ post }: { post: Post }) {
+  const { C } = useTheme();
   const react = useApp((s) => s.react);
   const mine = useApp((s) => s.reacted[post.id]);
   const { t, language } = useI18n();
@@ -152,7 +157,7 @@ function Reactions({ post }: { post: Post }) {
             right: -48,
             flexDirection: "row",
             gap: 2,
-            backgroundColor: C.bg,
+            backgroundColor: C.raised,
             borderRadius: R.pill,
             padding: 4,
             boxShadow: shadow.lift,
@@ -199,8 +204,10 @@ export const PostCard = memo(function PostCard({
   lockHint?: boolean;
   index?: number;
 }) {
+  const { C } = useTheme();
   const react = useApp((s) => s.react);
   const mine = useApp((s) => s.reacted[post.id]);
+  const flagged = useApp((s) => !!s.flagged[post.id]);
   const { t, language } = useI18n();
   const a = useAuthor()(post.authorId);
   const action = actionCopy(t, post.action);
@@ -218,7 +225,8 @@ export const PostCard = memo(function PostCard({
           </Mono>
         </View>
         {post.isDemo && <Tag label={t("common.demo")} />}
-        {post.isDrop && <Tag label={t("common.drop")} solid />}
+        {post.isDrop && <DropTag post={post} />}
+        {flagged && <Tag label={t("post.flaggedTag")} />}
       </View>
 
       <ProofMedia

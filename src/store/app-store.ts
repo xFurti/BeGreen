@@ -30,9 +30,12 @@ import {
   saveProfile,
   setReaction,
 } from "@/services/social";
+import { canClaimDrop, DROP_BONUS, publishWithReward, seedsFor } from "@/services/rewards";
 import { ensureSession, hasBackend } from "@/services/supabase";
 
 export type Profile = { name: string; handle: string; role: Role; badgeId: BadgeId | null };
+
+export type ThemePref = "system" | "light" | "dark";
 
 type State = {
   language: Language;
@@ -41,6 +44,7 @@ type State = {
   userId: string;
   profile: Profile;
   explain: Explain;
+  theme: ThemePref;
   comune: Comune | null;
   place: Place;
   pulse: Pulse | null;
@@ -49,6 +53,7 @@ type State = {
   posts: Post[];
   profiles: Record<string, User>;
   reacted: Record<string, string>;
+  flagged: Record<string, true>;
   squads: Squad[];
   localSquads: Squad[];
   localMedia: Record<string, { photo?: string; proof?: string }>;
@@ -71,13 +76,15 @@ type NewPost = {
 type Actions = {
   finishOnboarding: (p: Omit<Profile, "badgeId"> & { badgeId?: BadgeId | null }) => void;
   setExplain: (e: Explain) => void;
+  setTheme: (t: ThemePref) => void;
   setComune: (c: Comune) => void;
   setPulse: (p: Pulse) => void;
   setChallenge: (d: Drop) => void;
-  addPost: (p: NewPost) => Post;
+  addPost: (p: NewPost) => Promise<Post>;
   verify: (postId: string) => void;
   react: (postId: string, emoji: string) => void;
   comment: (postId: string, text: string) => void;
+  flag: (postId: string) => void;
   createSquad: (s: Pick<Squad, "name" | "kind" | "place" | "quest">) => Promise<Squad>;
   joinSquad: (code: string) => Promise<Squad | null>;
   nudge: (userId: string) => void;
@@ -94,6 +101,7 @@ const initial: State = {
   userId: "",
   profile: { name: "", handle: "", role: "student", badgeId: null },
   explain: "me",
+  theme: "system",
   comune: null,
   place: DEFAULT_PLACE,
   pulse: null,
@@ -101,6 +109,7 @@ const initial: State = {
   posts: [],
   profiles: {},
   reacted: {},
+  flagged: {},
   squads: [],
   localSquads: [],
   localMedia: {},
@@ -134,6 +143,7 @@ export const useApp = create<State & Actions>()(
         });
       },
       setExplain: (explain) => set({ explain }),
+      setTheme: (theme) => set({ theme }),
       setComune: (comune) => {
         const same = get().comune?.id === comune.id;
         set({
@@ -153,8 +163,11 @@ export const useApp = create<State & Actions>()(
       },
       setPulse: (pulse) => set({ pulse }),
       setChallenge: (challenge) => set({ challenge }),
-      addPost: (input) => {
+      addPost: async (input) => {
         const s = get();
+        const eligible = s.challenge && input.challengeId === s.challenge.id && input.action === s.challenge.action &&
+          canClaimDrop(s.challenge, s.posts, s.userId, hasBackend);
+        input = { ...input, challengeId: eligible ? input.challengeId : undefined };
         const post: Post = {
           id: localId(),
           authorId: s.userId,
@@ -174,7 +187,7 @@ export const useApp = create<State & Actions>()(
                 q.id === input.squadId
                   ? {
                       ...q,
-                      points: q.points + ACTIONS[input.action].seeds + (input.challengeId ? 10 : 0),
+                      points: q.points + seedsFor(post),
                       quest: q.quest.action === input.action ? { ...q.quest, progress: q.quest.progress + 1 } : q.quest,
                       monthly: { ...q.monthly, [input.action]: (q.monthly[input.action] ?? 0) + 1 },
                     }
@@ -182,8 +195,7 @@ export const useApp = create<State & Actions>()(
               )
             : s.squads,
         });
-        if (hasBackend) void publish(post);
-        return post;
+        return hasBackend ? await publish(post) : post;
       },
       verify: (postId) => {
         const s = get();
@@ -217,6 +229,12 @@ export const useApp = create<State & Actions>()(
         const c = { id: localId(), authorId: s.userId, text, createdAt: Date.now() };
         set({ posts: patchPost(s.posts, postId, (p) => ({ ...p, comments: [...p.comments, c] })) });
         if (hasBackend && !post.pending) addComment(postId, text).catch(fail);
+      },
+      flag: (postId) => {
+        const s = get();
+        const post = s.posts.find((p) => p.id === postId);
+        if (!post || post.isDemo || post.authorId === s.userId || s.flagged[postId]) return;
+        set({ flagged: { ...s.flagged, [postId]: true } });
       },
       createSquad: async ({ name, kind, place, quest }) => {
         const s = get();
@@ -263,7 +281,8 @@ export const useApp = create<State & Actions>()(
         if (hasBackend && s.onboarded && s.userId) saveProfile(s.userId, profile, s.comune).catch(fail);
       },
       setLanguage: (language) => set({ language }),
-      reset: () => set({ ...initial, language: get().language }),
+      // Theme and language are device preferences, not demo data: both survive a reset.
+      reset: () => set({ ...initial, theme: get().theme, language: get().language }),
     }),
     {
       name: "begreen-v2",
@@ -275,6 +294,7 @@ export const useApp = create<State & Actions>()(
         userId: s.userId,
         profile: s.profile,
         explain: s.explain,
+        theme: s.theme,
         comune: s.comune,
         place: s.place,
         pulse: s.pulse,
@@ -282,6 +302,7 @@ export const useApp = create<State & Actions>()(
         posts: s.posts,
         profiles: s.profiles,
         reacted: s.reacted,
+        flagged: s.flagged,
         squads: s.squads,
         localSquads: s.localSquads,
         localMedia: s.localMedia,
@@ -314,18 +335,27 @@ const publishing = new Set<string>();
 const published = new Map<string, number>();
 
 async function publish(post: Post) {
-  if (publishing.has(post.id)) return;
+  if (publishing.has(post.id)) return post;
   publishing.add(post.id);
   try {
-    await send(post);
+    return await send(post);
   } finally {
     publishing.delete(post.id);
   }
 }
 
-async function send(post: Post): Promise<void> {
+async function send(post: Post): Promise<Post> {
+  let current = post;
   try {
-    const saved = await publishPost(useApp.getState().userId, post);
+    const saved = await publishWithReward(post, (p) => publishPost(useApp.getState().userId, p), (regular) => {
+      current = regular;
+      const s = useApp.getState();
+      useApp.setState({
+        posts: patchPost(s.posts, post.id, () => regular),
+        squads: s.squads.map((q) => q.id === post.squadId ? { ...q, points: q.points - DROP_BONUS } : q),
+      });
+      toast(tr("shared.challengeAlreadyDone"), "info");
+    });
     published.set(saved.id, Date.now());
     // Keep the local files on screen: no flicker while the uploaded copies load.
     const photo = typeof post.photo === "string" && post.photo.startsWith("file:") ? post.photo : undefined;
@@ -334,11 +364,12 @@ async function send(post: Post): Promise<void> {
       posts: patchPost(useApp.getState().posts, post.id, () => ({ ...saved, photo: post.photo, proof: post.proof })),
       ...(photo || proof ? { localMedia: { ...useApp.getState().localMedia, [saved.id]: { photo, proof } } } : {}),
     });
+    return saved;
   } catch (e) {
-    // Already did today's challenge (e.g. from another phone): post it as a regular proof.
-    if ((e as { code?: string }).code === "23505" && post.challengeId) return send({ ...post, challengeId: undefined, isDrop: false });
     if (__DEV__) console.warn(e);
-    toast(tr("shared.savedLocally"), "refresh");
+    const detail = e instanceof Error ? e.message : String(e);
+    toast(__DEV__ ? `${tr("shared.savedLocally")} — ${detail.slice(0, 160)}` : tr("shared.savedLocally"), "refresh");
+    return current;
   }
 }
 
@@ -463,7 +494,6 @@ export function dropStaleBadge() {
   if (s.profile.badgeId && !badgeById(s.profile.badgeId).earned(badgeStatsOf(mineOf(s.posts, s.userId), s.verifiedCount))) useApp.getState().equipBadge(null);
 }
 
-const seedsFor = (p: Post) => ACTIONS[p.action].seeds + (p.isDrop ? 10 : 0);
 
 // Two seeds for every proof you verify.
 export function seedsOf(posts: Post[], verified: number) {

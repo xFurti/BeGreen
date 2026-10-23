@@ -16,10 +16,13 @@ import { formatNumber, timeAgo } from "@/i18n/format";
 import { useI18n } from "@/i18n/use-i18n";
 import type { Pulse } from "@/services/env";
 import { aqiBand, type Insight, type Level } from "@/services/interpret";
+import { canClaimDrop, seedsFor } from "@/services/rewards";
+import { hasBackend } from "@/services/supabase";
 import { useApp } from "@/store/app-store";
-import { C, F, R, T } from "@/theme/tokens";
+import { F, R, type Palette } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 
-const DOT: Record<Level, string> = { good: C.green, ok: C.amber, bad: C.red, info: C.faint };
+const dot = (C: Palette): Record<Level, string> => ({ good: C.green, ok: C.amber, bad: C.red, info: C.faint });
 
 const GOALS: Record<Insight["key"], number[]> = {
   air: [3, 11],
@@ -31,6 +34,7 @@ const GOALS: Record<Insight["key"], number[]> = {
 };
 
 function AirChart({ data }: { data: { hour: string; aqi: number }[] }) {
+  const { C } = useTheme();
   const { t } = useI18n();
   const max = Math.max(60, ...data.map((d) => d.aqi));
   return (
@@ -43,7 +47,7 @@ function AirChart({ data }: { data: { hour: string; aqi: number }[] }) {
               flex: 1,
               height: `${Math.max(6, (d.aqi / max) * 100)}%`,
               borderRadius: 2,
-              backgroundColor: i === 0 ? C.forest : d.aqi > 60 ? C.red : C.mint2,
+              backgroundColor: i === 0 ? C.forestInk : d.aqi > 60 ? C.red : C.band,
             }}
           />
         ))}
@@ -58,6 +62,7 @@ function AirChart({ data }: { data: { hour: string; aqi: number }[] }) {
 }
 
 function RainChart({ data }: { data: { day: string; mm: number }[] }) {
+  const { C } = useTheme();
   const { t } = useI18n();
   const max = Math.max(5, ...data.map((d) => d.mm));
   const todayIdx = data.length - 3;
@@ -71,7 +76,7 @@ function RainChart({ data }: { data: { day: string; mm: number }[] }) {
               flex: 1,
               height: `${Math.max(4, (d.mm / max) * 100)}%`,
               borderRadius: 2,
-              backgroundColor: i >= todayIdx ? C.mint2 : C.forest,
+              backgroundColor: i >= todayIdx ? C.band : C.forestInk,
             }}
           />
         ))}
@@ -85,6 +90,7 @@ function RainChart({ data }: { data: { day: string; mm: number }[] }) {
 }
 
 function Extra({ k, pulse }: { k: Insight["key"]; pulse: Pulse }) {
+  const { C } = useTheme();
   if (k === "air" && pulse.air?.next24.length) return <AirChart data={pulse.air.next24} />;
   if (k === "water" && pulse.water?.daily.length) return <RainChart data={pulse.water.daily} />;
   if (k === "nature" && pulse.nature?.top.length) {
@@ -95,13 +101,13 @@ function Extra({ k, pulse }: { k: Insight["key"]; pulse: Pulse }) {
           <View key={s.id} style={{ width: 120, gap: 6 }}>
             <View style={{ width: 120, height: 150, borderRadius: 16, overflow: "hidden", backgroundColor: C.card }}>
               {s.photo ? <Image source={s.photo} style={{ flex: 1 }} contentFit="cover" transition={200} priority="low" /> : null}
-              <View style={{ position: "absolute", top: 8, left: 8, backgroundColor: "rgba(0,0,0,0.5)", paddingHorizontal: 6, height: 18, borderRadius: 9, justifyContent: "center" }}>
+              <View style={{ position: "absolute", top: 8, left: 8, backgroundColor: C.scrim, paddingHorizontal: 6, height: 18, borderRadius: 9, justifyContent: "center" }}>
                 <Mono color={C.white} size={10}>
                   ×{s.count}
                 </Mono>
               </View>
             </View>
-            <Text numberOfLines={1} style={{ fontFamily: F.medium, fontSize: 13, letterSpacing: -0.2 }}>
+            <Text numberOfLines={1} style={{ fontFamily: F.medium, fontSize: 13, letterSpacing: -0.2, color: C.ink }}>
               {s.common ?? s.name}
             </Text>
             <Text numberOfLines={1} style={{ fontFamily: F.regular, fontSize: 11, color: C.mute, fontStyle: "italic", marginTop: -4 }}>
@@ -124,7 +130,7 @@ function Extra({ k, pulse }: { k: Insight["key"]; pulse: Pulse }) {
         {pulse.areas.slice(0, 4).map((a, i) => (
           <View key={a.id} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 10, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
             <Icon name="tree" size={14} color={C.ink} />
-            <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 14 }} numberOfLines={1}>
+            <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 14, color: C.ink }} numberOfLines={1}>
               {a.name}
             </Text>
             <Mono color={C.ink}>{a.km} km</Mono>
@@ -137,6 +143,7 @@ function Extra({ k, pulse }: { k: Insight["key"]; pulse: Pulse }) {
 }
 
 function InsightCard({ i, explain, pulse, index }: { i: Insight; explain: Explain; pulse: Pulse; index: number }) {
+  const { C, T } = useTheme();
   const { t } = useI18n();
   return (
     <Animated.View
@@ -146,7 +153,7 @@ function InsightCard({ i, explain, pulse, index }: { i: Insight; explain: Explai
     >
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
         <Mono>{String(index + 1).padStart(2, "0")}</Mono>
-        <Text style={{ fontFamily: F.medium, fontSize: 17, letterSpacing: -0.3, flex: 1 }}>{i.label}</Text>
+        <Text style={{ fontFamily: F.medium, fontSize: 17, letterSpacing: -0.3, flex: 1, color: C.ink }}>{i.label}</Text>
         {i.sources.slice(0, 1).map((s) => (
           <SourceBadge key={s} id={s} onPress={() => router.push("/sources")} />
         ))}
@@ -159,7 +166,7 @@ function InsightCard({ i, explain, pulse, index }: { i: Insight; explain: Explai
         {i.unit && <Text style={{ fontFamily: F.regular, fontSize: 14, color: C.mute, paddingBottom: 10 }}>{i.unit}</Text>}
         <View style={{ flex: 1 }} />
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingBottom: 12 }}>
-          <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: DOT[i.level] }} />
+          <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: dot(C)[i.level] }} />
           <Text style={{ fontFamily: F.medium, fontSize: 14, color: C.ink }}>{i.status}</Text>
         </View>
       </View>
@@ -180,7 +187,7 @@ function InsightCard({ i, explain, pulse, index }: { i: Insight; explain: Explai
         >
           <Icon name={ACTIONS[i.act.action].icon} size={16} color={C.ink} />
           <View style={{ flex: 1, gap: 2 }}>
-            <Text style={{ fontFamily: F.medium, fontSize: 15, letterSpacing: -0.2 }}>{i.act.label}</Text>
+            <Text style={{ fontFamily: F.medium, fontSize: 15, letterSpacing: -0.2, color: C.ink }}>{i.act.label}</Text>
             <Mono>
               {actionCopy(t, i.act.action).label} · +{ACTIONS[i.act.action].seeds}
             </Mono>
@@ -193,6 +200,7 @@ function InsightCard({ i, explain, pulse, index }: { i: Insight; explain: Explai
 }
 
 function Cell({ label, value, sub, last }: { label: string; value: string; sub?: string; last?: boolean }) {
+  const { C } = useTheme();
   return (
     <View style={{ flex: 1, gap: 6, paddingRight: 10, borderRightWidth: last ? 0 : 1, borderRightColor: C.line, paddingLeft: 10 }}>
       <Mono>{label}</Mono>
@@ -209,6 +217,7 @@ function Cell({ label, value, sub, last }: { label: string; value: string; sub?:
 }
 
 export default function PulseScreen() {
+  const { C, T } = useTheme();
   const { top } = useSafeAreaInsets();
   const { pulse, insights, drop, loading, refresh, ready } = usePulse();
   const explain = useApp((s) => s.explain);
@@ -220,6 +229,7 @@ export default function PulseScreen() {
   const lever = bad[0];
   const air = pulse.air ? aqiBand(pulse.air.aqi, language) : null;
   const da = actionCopy(t, drop.action);
+  const bonus = useApp((s) => canClaimDrop(drop, s.posts, s.userId, hasBackend));
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
@@ -313,7 +323,7 @@ export default function PulseScreen() {
                 kind="inverse"
                 icon={da.icon}
                 label={t("pulse.doDrop")}
-                trailing={`+${da.seeds + 10}`}
+                trailing={`+${seedsFor({ action: drop.action, isDrop: bonus })}`}
                 onPress={() => router.push({ pathname: "/capture", params: { action: drop.action } })}
               />
             </Animated.View>
@@ -345,7 +355,7 @@ export default function PulseScreen() {
           accessibilityLabel={t("pulse.about")}
         >
           <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Text style={{ fontFamily: F.medium, fontSize: 17, letterSpacing: -0.3, flex: 1 }}>{t("pulse.unequal")}</Text>
+            <Text style={{ fontFamily: F.medium, fontSize: 17, letterSpacing: -0.3, flex: 1, color: C.ink }}>{t("pulse.unequal")}</Text>
             <Icon name="arrowRight" size={14} color={C.ink} />
           </View>
           <Text style={[T.callout, { fontSize: 14, lineHeight: 20 }]}>

@@ -15,7 +15,8 @@ import { questTitle, squadKindLabel } from "@/i18n/content";
 import { compact, formatNumber } from "@/i18n/format";
 import { useI18n } from "@/i18n/use-i18n";
 import { nudgedRecently, useApp, useAuthor, useLeague, weekResetIn, type Racer } from "@/store/app-store";
-import { C, F, R, T } from "@/theme/tokens";
+import { F, R } from "@/theme/tokens";
+import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
 
 type View_ = "people" | "squads" | "ranking";
@@ -23,6 +24,7 @@ type View_ = "people" | "squads" | "ranking";
 const NUDGE_KEYS = ["league.n1", "league.n2", "league.n3", "league.n4"] as const satisfies readonly MessageKey[];
 
 function Podium({ top3 }: { top3: Racer[] }) {
+  const { C } = useTheme();
   // 2 · 1 · 3, like a real podium.
   const order = [top3[1], top3[0], top3[2]].filter(Boolean);
   const h = [74, 104, 56];
@@ -49,7 +51,7 @@ function Podium({ top3 }: { top3: Racer[] }) {
                 paddingTop: 10,
               }}
             >
-              <Text style={{ fontFamily: F.medium, fontSize: 24, letterSpacing: -1, color: place === 1 ? C.lime : C.forest }}>{place}</Text>
+              <Text style={{ fontFamily: F.medium, fontSize: 24, letterSpacing: -1, color: place === 1 ? C.lime : C.forestInk }}>{place}</Text>
             </View>
           </Animated.View>
         );
@@ -59,6 +61,7 @@ function Podium({ top3 }: { top3: Racer[] }) {
 }
 
 function RacerRow({ r, rank, index }: { r: Racer; rank: number; index: number }) {
+  const { C } = useTheme();
   const recentlyNudged = nudgedRecently(useApp((s) => s.nudged[r.id]));
   const nudge = useApp((s) => s.nudge);
   const { t } = useI18n();
@@ -112,11 +115,11 @@ function RacerRow({ r, rank, index }: { r: Racer; rank: number; index: number })
             height: 30,
             borderRadius: R.pill,
             borderWidth: 1,
-            borderColor: C.mint2,
+            borderColor: C.band,
           }}
         >
           <Icon name="hand" size={12} color={C.leaf} />
-          <Text style={{ fontFamily: F.medium, fontSize: 13 }}>{recentlyNudged ? t("league.nudged") : t("league.nudge")}</Text>
+          <Text style={{ fontFamily: F.medium, fontSize: 13, color: C.ink }}>{recentlyNudged ? t("league.nudged") : t("league.nudge")}</Text>
         </Press>
       )}
       <Text style={{ fontFamily: F.medium, fontSize: 17, letterSpacing: -0.5, color: r.me ? C.white : C.ink, fontVariant: ["tabular-nums"], minWidth: 40, textAlign: "right" }}>
@@ -127,6 +130,7 @@ function RacerRow({ r, rank, index }: { r: Racer; rank: number; index: number })
 }
 
 function SquadCard({ s, index }: { s: Squad; index: number }) {
+  const { C } = useTheme();
   const { t, language } = useI18n();
   const author = useAuthor();
   const pct = Math.min(1, s.quest.progress / s.quest.goal);
@@ -169,6 +173,7 @@ function SquadCard({ s, index }: { s: Squad; index: number }) {
 }
 
 export default function League() {
+  const { C, T } = useTheme();
   const { top } = useSafeAreaInsets();
   const squads = useApp((s) => s.squads);
   const localSquads = useApp((s) => s.localSquads);
