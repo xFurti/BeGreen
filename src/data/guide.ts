@@ -5,13 +5,13 @@ import { messages } from "@/i18n/catalog";
 
 export type BinId = "plastic" | "paper" | "glass" | "organic" | "residual" | "special";
 
-export const BINS: Record<BinId, { swatch: string }> = {
-  plastic: { swatch: "#F2C230" },
-  paper: { swatch: "#3E63DD" },
-  glass: { swatch: "#1F9D55" },
-  organic: { swatch: "#8B5E3C" },
-  residual: { swatch: "#8E8E93" },
-  special: { swatch: "#0A0A0A" },
+export const BINS: Record<BinId, { swatch: string; examples: readonly GuideItemId[] }> = {
+  plastic: { swatch: "#F2C230", examples: ["plasticBottle", "drinkCan", "yogurtPot"] },
+  paper: { swatch: "#3E63DD", examples: ["cardboardBox", "notebook", "pizzaBox"] },
+  glass: { swatch: "#1F9D55", examples: ["glassBottle", "glassJar"] },
+  organic: { swatch: "#8B5E3C", examples: ["coffeeGrounds", "eggshells", "leftovers"] },
+  residual: { swatch: "#8E8E93", examples: ["receipt", "toothbrush", "pen"] },
+  special: { swatch: "#0A0A0A", examples: ["battery", "medicines", "oil"] },
 };
 
 export type GuideItemId = keyof typeof messages.en.items;
