@@ -7,12 +7,40 @@ import { Icon } from "@/components/icon";
 import { Button, LiveDot, Mono, SdgTags, SourceBadge } from "@/components/ui";
 import { ACTIONS } from "@/data/actions";
 import { usePulse } from "@/hooks/use-pulse";
+import type { Drop } from "@/services/drop";
+import { useApp } from "@/store/app-store";
 import { C, F, T } from "@/theme/tokens";
+
+const READINGS: Record<string, { label: string; fmt?: (v: number) => string; unit?: string }> = {
+  aqi: { label: "Air quality", unit: "EAQI" },
+  pm25: { label: "PM2.5", unit: "µg/m³" },
+  no2: { label: "NO₂", unit: "µg/m³" },
+  temp: { label: "Temperature", unit: "°C" },
+  rain7: { label: "Rain, last 7 days", unit: "mm" },
+  dryDays: { label: "Dry days in a row" },
+  soilMoisture: { label: "Top-soil moisture", fmt: (v) => `${Math.round(v * 100)}%` },
+  species: { label: "Species seen · 30 days", unit: "within 10 km" },
+  area: { label: "Nearest protected area" },
+};
+
+function readings(d: Drop["data"]) {
+  return Object.entries(READINGS)
+    .filter(([k]) => d[k] !== undefined)
+    .map(([k, r]) => {
+      const v = d[k];
+      const value = typeof v === "number" ? (r.fmt ? r.fmt(v) : v.toLocaleString("en")) : v;
+      const unit = k === "area" && d.areaKm !== undefined ? `${d.areaKm} km` : r.unit;
+      return { key: k, label: r.label, value, unit };
+    });
+}
 
 export default function DropSheet() {
   const { drop, pulse } = usePulse();
+  const comune = useApp((s) => s.comune);
+  const place = comune?.name ?? pulse.place.name;
   const a = ACTIONS[drop.action];
   const left = useCountdown();
+  const rows = readings(drop.data);
 
   const go = (path: "/capture" | "/guide") => {
     router.back();
@@ -25,7 +53,7 @@ export default function DropSheet() {
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
           <LiveDot color={C.leaf} />
           <Mono color={C.forest}>Today’s Drop</Mono>
-          <Mono>· {pulse.place.name}</Mono>
+          <Mono>· {place}</Mono>
           <View style={{ flex: 1 }} />
           <Mono color={C.forest} style={{ fontVariant: ["tabular-nums"] }}>
             {left}
@@ -46,12 +74,31 @@ export default function DropSheet() {
         </View>
       </Animated.View>
 
+      {rows.length > 0 && (
+        <Animated.View entering={FadeInDown.delay(120)} style={{ gap: 2, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 18 }}>
+          <Mono style={{ marginBottom: 8 }}>The readings behind it · {place}</Mono>
+          {rows.map((r) => (
+            <View key={r.key} style={{ flexDirection: "row", alignItems: "baseline", gap: 10, paddingVertical: 7 }}>
+              <Text style={{ flex: 1, fontFamily: F.regular, fontSize: 15, color: C.ink2 }}>{r.label}</Text>
+              <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3, fontVariant: ["tabular-nums"] }} numberOfLines={1}>
+                {r.value}
+              </Text>
+              {r.unit && <Text style={{ fontFamily: F.regular, fontSize: 12, color: C.mute }}>{r.unit}</Text>}
+            </View>
+          ))}
+        </Animated.View>
+      )}
+
       <Animated.View entering={FadeInDown.delay(160)} style={{ gap: 4, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 18 }}>
         <Mono style={{ marginBottom: 10 }}>How it works</Mono>
         {[
           { icon: "camera" as const, t: "Snap the thing", d: "The bike, the bin, the bottle, the plant." },
           { icon: "video" as const, t: "Prove it in 5 seconds", d: a.proofHint },
-          { icon: "checkSeal" as const, t: "3 friends verify", d: "Then it counts for your streak, squad and city." },
+          {
+            icon: "checkSeal" as const,
+            t: "3 people verify",
+            d: "Others in your Comune or squad check it. Then it counts for your streak, squad and city.",
+          },
         ].map((s, i) => (
           <View key={i} style={{ flexDirection: "row", gap: 14, alignItems: "flex-start", paddingVertical: 10 }}>
             <Mono color={C.leaf} style={{ width: 20, paddingTop: 3 }}>
@@ -67,7 +114,11 @@ export default function DropSheet() {
       </Animated.View>
 
       <Text style={T.caption}>
-        No alarm, no panic. Everyone in {pulse.place.name} gets the same Drop today. Post it whenever you actually do it, before midnight.
+        {drop.offline
+          ? `Offline: this Drop uses sample data and isn’t ${place}’s shared challenge yet. Pull to refresh on the feed.`
+          : drop.shared
+            ? `No alarm, no panic. Built from ${place}’s live data, and everyone in ${place} gets this same Drop today. One proof each, whenever you actually do it, before midnight.`
+            : `Built from ${place}’s live data. No BeGreen server is set up, so this Drop lives on this phone only.`}
       </Text>
 
       <View style={{ gap: 8 }}>

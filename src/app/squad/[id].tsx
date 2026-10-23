@@ -1,6 +1,6 @@
 import { Image } from "expo-image";
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import { ScrollView, Share, Text, useWindowDimensions, View } from "react-native";
+import { Alert, ScrollView, Share, Text, useWindowDimensions, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import Svg, { Circle } from "react-native-svg";
 
@@ -8,9 +8,8 @@ import { Icon } from "@/components/icon";
 import { AvatarStack, Bar, Button, Mono, Press, SdgTags, SourceBadge } from "@/components/ui";
 import { KIND } from "@/data/squad-kinds";
 import { ACTIONS, DOMAINS, type ActionId, type Domain } from "@/data/actions";
-import { USERS } from "@/data/seed";
 import { usePulse } from "@/hooks/use-pulse";
-import { useAllPosts, useApp } from "@/store/app-store";
+import { useApp, useAuthor } from "@/store/app-store";
 import { C, F, R, T } from "@/theme/tokens";
 
 function Ring({ value, size = 112 }: { value: number; size?: number }) {
@@ -36,8 +35,12 @@ function Ring({ value, size = 112 }: { value: number; size?: number }) {
 
 export default function SquadDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const squad = useApp((s) => s.squads.find((x) => x.id === id));
-  const posts = useAllPosts().filter((p) => p.squadId === id);
+  const squad = useApp((s) => s.squads.find((x) => x.id === id) ?? s.localSquads.find((x) => x.id === id));
+  const member = useApp((s) => s.squads.some((x) => x.id === id));
+  const join = useApp((s) => s.joinSquad);
+  const allPosts = useApp((s) => s.posts);
+  const posts = allPosts.filter((p) => p.squadId === id);
+  const author = useAuthor();
   const { insights, pulse } = usePulse();
   const { width } = useWindowDimensions();
   const tile = Math.floor((width - 40 - 8) / 3);
@@ -50,7 +53,7 @@ export default function SquadDetail() {
     );
   }
 
-  const pct = squad.quest.progress / squad.quest.goal;
+  const pct = Math.min(1, squad.quest.progress / squad.quest.goal);
   const monthly = (Object.entries(squad.monthly) as [ActionId, number][]).sort((a, b) => b[1] - a[1]);
   const total = monthly.reduce((a, [, n]) => a + n, 0);
   const maxN = Math.max(1, ...monthly.map(([, n]) => n));
@@ -84,8 +87,10 @@ export default function SquadDetail() {
         </View>
         <Text style={[T.hero, { fontSize: 38, lineHeight: 40 }]}>{squad.name}</Text>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingTop: 4 }}>
-          <AvatarStack people={squad.memberIds.slice(0, 5).map((m) => ({ avatar: USERS[m]?.avatar, name: USERS[m]?.name ?? "You" }))} size={28} />
-          <Text style={{ flex: 1, fontFamily: F.regular, color: C.ink2 }}>{squad.memberCount.toLocaleString("en")} members</Text>
+          <AvatarStack people={squad.memberIds.slice(0, 5).map(author)} size={28} />
+          <Text style={{ flex: 1, fontFamily: F.regular, color: C.ink2 }}>
+            {squad.memberCount.toLocaleString("en")} {squad.memberCount === 1 ? "member" : "members"}
+          </Text>
           <Press
             onPress={() => Share.share({ message: `Join my BeGreen squad “${squad.name}” with code ${squad.code}` })}
             style={{ flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: C.line, paddingHorizontal: 12, height: 34, borderRadius: R.pill }}
@@ -108,13 +113,23 @@ export default function SquadDetail() {
           <Text style={{ fontFamily: F.regular, fontSize: 13, color: C.mute }}>
             {squad.quest.progress.toLocaleString("en")} / {squad.quest.goal.toLocaleString("en")}
           </Text>
-          <Button
-            size="sm"
-            label="Add yours"
-            icon={ACTIONS[squad.quest.action].icon}
-            style={{ alignSelf: "flex-start", marginTop: 6 }}
-            onPress={() => router.push({ pathname: "/capture", params: { action: squad.quest.action } })}
-          />
+          {member ? (
+            <Button
+              size="sm"
+              label="Add yours"
+              icon={ACTIONS[squad.quest.action].icon}
+              style={{ alignSelf: "flex-start", marginTop: 6 }}
+              onPress={() => router.push({ pathname: "/capture", params: { action: squad.quest.action } })}
+            />
+          ) : (
+            <Button
+              size="sm"
+              label="Join squad"
+              icon="plus"
+              style={{ alignSelf: "flex-start", marginTop: 6 }}
+              onPress={() => join(squad.code).catch(() => Alert.alert("Couldn’t join", "Check your connection and try again."))}
+            />
+          )}
         </View>
       </View>
 

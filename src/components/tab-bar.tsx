@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon, type IconName } from "@/components/icon";
 import { LeafMark } from "@/components/nature";
 import { Press } from "@/components/ui";
-import { postedToday, useApp } from "@/store/app-store";
+import { postedToday, useMyPosts } from "@/store/app-store";
 import { C, F } from "@/theme/tokens";
 import { haptic } from "@/utils/format";
 
@@ -19,7 +19,7 @@ const TABS: Record<string, { label: string; icon: IconName; on: IconName }> = {
 
 // The shutter. Looks like the camera it opens, in deep green with a lime ring.
 function CaptureButton() {
-  const done = postedToday(useApp((s) => s.myPosts));
+  const done = postedToday(useMyPosts());
   return (
     <Press
       scale={0.88}

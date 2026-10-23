@@ -15,6 +15,13 @@
 - Scelta: BeGreen, app Expo/React Native (Expo Router, Zustand, expo-sqlite), introdotta con la PR #1 e portata alla root della repository. La repo è rinominata da AU a BeGreen.
 - Conseguenza: lo scaffold `src/index.ts` è rimosso; `npm run verify` esegue typecheck, `expo lint` e i test del workflow di review, ed è il check `Verify` della CI.
 
+## 2026-10-23 — Feed condiviso, profili reali e sfide dal Comune
+
+- Problema: feed, profili, squad e league erano contenuto demo salvato sul singolo dispositivo, quindi più utenti non vedevano i post degli altri. La Drop veniva calcolata localmente dalla posizione GPS, senza un Comune scelto e senza garanzia che fosse uguale per tutti.
+- Opzioni considerate: Supabase, Firebase, Neon con API proprie, API custom su Render. Per gli account: email OTP, email e password, account anonimi.
+- Scelta (concordata con Leonardo): Supabase (Postgres, Storage, Realtime) con account anonimi (nome e handle pubblici). L'utente sceglie il Comune; ogni giorno c'è una sola sfida per Comune, generata dai dati live di quel Comune e salvata sul backend, con una sola prova per persona. I profili demo sono stati rimossi; restano post d'esempio etichettati DEMO per la sfida del giorno, esclusi da verifiche e conteggi.
+- Conseguenza: servono un progetto Supabase con accesso anonimo attivo, la migrazione in `supabase/migrations` e le variabili `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. Senza queste variabili l'app resta utilizzabile in locale. `npm test` verifica anche RLS e vincoli della migrazione su PGlite.
+
 ## Come registrare una nuova decisione
 
 Indica data, problema, opzioni considerate, scelta, motivo e conseguenza pratica. Collega issue o PR e indica chi ha concordato la scelta. Non usare questo registro come elenco di idee non ancora decise.
