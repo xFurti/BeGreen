@@ -360,6 +360,7 @@ export function Segmented<V extends string>({
             accessibilityRole="tab"
             accessibilityLabel={o.label}
             accessibilityState={{ selected: on }}
+            aria-selected={process.env.EXPO_OS === "web" ? on : undefined}
             onPress={() => {
               if (on) return;
               haptic.tap();
