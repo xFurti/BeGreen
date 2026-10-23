@@ -600,7 +600,7 @@ export function useJoined(): { cities: Community[]; groups: Community[] } {
 
 const norm2 = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
-// This week's leaderboard. A group ranks its members wherever they post; a city ranks whoever posted there.
+// Rolling seven-day boards: only explicit group proofs count for a group; cities exclude all group proofs.
 export function useStandings(c?: Community): Standing[] {
   const posts = useApp((s) => s.posts);
   const me = useApp((s) => s.userId);

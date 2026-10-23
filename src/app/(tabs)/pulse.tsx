@@ -1,216 +1,76 @@
-import { Image } from "expo-image";
 import { router } from "expo-router";
-import { useState } from "react";
-import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from "react-native";
-import Animated, { FadeIn, FadeInDown, LinearTransition } from "react-native-reanimated";
+import { useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Platform, RefreshControl, ScrollView, Text, View } from "react-native";
+import Animated, { cancelAnimation, FadeIn, FadeInDown, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { DailyCard } from "@/components/drop-card";
-import { SeedTip } from "@/components/seed-ui";
 import { Icon } from "@/components/icon";
-import { IconButton, Mono, Press, SdgTags, Segmented, SourceBadge, TopCover } from "@/components/ui";
-import { ACTIONS } from "@/data/actions";
-import type { Explain } from "@/data/types";
+import { levelColor, PulseDetail } from "@/components/pulse-detail";
+import { SeedTip } from "@/components/seed-ui";
+import { IconButton, Press, TopCover } from "@/components/ui";
+import { SOURCES } from "@/data/sources";
 import { usePulse } from "@/hooks/use-pulse";
-import { actionCopy } from "@/i18n/content";
-import { formatNumber, timeAgo } from "@/i18n/format";
+import { sourceKindCopy } from "@/i18n/content";
+import { timeAgo } from "@/i18n/format";
 import { useI18n } from "@/i18n/use-i18n";
-import type { Pulse } from "@/services/env";
-import { aqiBand, type Insight, type Level } from "@/services/interpret";
+import { pulseCards, type PulseCard } from "@/services/pulse-cards";
 import { useApp } from "@/store/app-store";
-import { F, R, type Palette } from "@/theme/tokens";
+import { F, R } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
 
-const dot = (C: Palette): Record<Level, string> => ({ good: C.green, ok: C.amber, bad: C.red, info: C.faint });
-
-const GOALS: Record<Insight["key"], number[]> = {
-  air: [3, 11],
-  weather: [13],
-  water: [6],
-  soil: [15, 2],
-  nature: [15],
-  areas: [15, 11],
-};
-
-function AirChart({ data }: { data: { hour: string; aqi: number }[] }) {
-  const { C } = useTheme();
-  const { t } = useI18n();
-  const max = Math.max(60, ...data.map((d) => d.aqi));
-  return (
-    <View style={{ gap: 8 }}>
-      <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 3, height: 52 }}>
-        {data.map((d, i) => (
-          <View
-            key={i}
-            style={{
-              flex: 1,
-              height: `${Math.max(6, (d.aqi / max) * 100)}%`,
-              borderRadius: 2,
-              backgroundColor: i === 0 ? C.forestInk : d.aqi > 60 ? C.red : C.band,
-            }}
-          />
-        ))}
-      </View>
-      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-        <Mono>{t("pulse.now")}</Mono>
-        <Mono>{data[12]?.hour ?? ""}:00</Mono>
-        <Mono>{t("pulse.plus24")}</Mono>
-      </View>
-    </View>
-  );
-}
-
-function RainChart({ data }: { data: { day: string; mm: number }[] }) {
-  const { C } = useTheme();
-  const { t } = useI18n();
-  const max = Math.max(5, ...data.map((d) => d.mm));
-  const todayIdx = data.length - 3;
-  return (
-    <View style={{ gap: 8 }}>
-      <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 5, height: 44 }}>
-        {data.map((d, i) => (
-          <View
-            key={i}
-            style={{
-              flex: 1,
-              height: `${Math.max(4, (d.mm / max) * 100)}%`,
-              borderRadius: 2,
-              backgroundColor: i >= todayIdx ? C.band : C.forestInk,
-            }}
-          />
-        ))}
-      </View>
-      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-        <Mono>{t("pulse.minus7")}</Mono>
-        <Mono>{t("pulse.forecast")}</Mono>
-      </View>
-    </View>
-  );
-}
-
-function Extra({ k, pulse }: { k: Insight["key"]; pulse: Pulse }) {
-  const { C } = useTheme();
-  if (k === "air" && pulse.air?.next24.length) return <AirChart data={pulse.air.next24} />;
-  if (k === "water" && pulse.water?.daily.length) return <RainChart data={pulse.water.daily} />;
-  if (k === "nature" && pulse.nature?.top.length) {
-    return (
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }} style={{ marginHorizontal: -20 }}>
-        <View style={{ width: 10 }} />
-        {pulse.nature.top.slice(0, 10).map((s) => (
-          <View key={s.id} style={{ width: 120, gap: 6 }}>
-            <View style={{ width: 120, height: 150, borderRadius: 16, overflow: "hidden", backgroundColor: C.card }}>
-              {s.photo ? <Image source={s.photo} style={{ flex: 1 }} contentFit="cover" transition={200} priority="low" /> : null}
-              <View style={{ position: "absolute", top: 8, left: 8, backgroundColor: C.scrim, paddingHorizontal: 6, height: 18, borderRadius: 9, justifyContent: "center" }}>
-                <Mono color={C.white} size={10}>
-                  ×{s.count}
-                </Mono>
-              </View>
-            </View>
-            <Text numberOfLines={1} style={{ fontFamily: F.medium, fontSize: 13, letterSpacing: -0.2, color: C.ink }}>
-              {s.common ?? s.name}
-            </Text>
-            <Text numberOfLines={1} style={{ fontFamily: F.regular, fontSize: 11, color: C.mute, fontStyle: "italic", marginTop: -4 }}>
-              {s.name}
-            </Text>
-            {!!s.attribution && (
-              <Text numberOfLines={1} style={{ fontFamily: F.regular, fontSize: 9, color: C.faint, marginTop: -4 }}>
-                {s.attribution}
-              </Text>
-            )}
-          </View>
-        ))}
-        <View style={{ width: 10 }} />
-      </ScrollView>
-    );
-  }
-  if (k === "areas" && pulse.areas?.length) {
-    return (
-      <View>
-        {pulse.areas.slice(0, 4).map((a, i) => (
-          <View key={a.id} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 10, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
-            <Icon name="tree" size={14} color={C.ink} />
-            <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 14, color: C.ink }} numberOfLines={1}>
-              {a.name}
-            </Text>
-            <Mono color={C.ink}>{a.km} km</Mono>
-          </View>
-        ))}
-      </View>
-    );
-  }
-  return null;
-}
-
-function InsightCard({ i, explain, pulse, index }: { i: Insight; explain: Explain; pulse: Pulse; index: number }) {
+function PulseTile({ card, index, onOpen }: { card: PulseCard; index: number; onOpen: () => void }) {
   const { C, T } = useTheme();
   const { t } = useI18n();
+  const reduced = useReducedMotion();
+  const source = SOURCES[card.sources[0]];
+  const value = card.key === "areas" && card.state === "unavailable" ? t("pulse.mapPaused") : card.value;
+  const unit = card.key === "nature" ? t("pulse.plantSpecies") : card.unit;
+  const status = card.key === "nature" && card.state === "ready" ? t("pulse.natureWindow") : card.status;
   return (
-    <Animated.View
-      entering={FadeInDown.delay(index * 60).springify().damping(20)}
-      layout={LinearTransition}
-      style={{ borderTopWidth: 1, borderTopColor: C.line, paddingTop: 18, paddingBottom: 26, gap: 16 }}
-    >
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-        <Mono>{String(index + 1).padStart(2, "0")}</Mono>
-        <Text style={{ fontFamily: F.medium, fontSize: 17, letterSpacing: -0.3, flex: 1, color: C.ink }}>{i.label}</Text>
-        {i.sources.slice(0, 1).map((s) => (
-          <SourceBadge key={s} id={s} onPress={() => router.push("/sources")} />
-        ))}
-      </View>
-
-      <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 8 }}>
-        <Text selectable style={{ fontFamily: F.medium, fontSize: 56, lineHeight: 58, letterSpacing: -3, fontVariant: ["tabular-nums"], color: C.ink }}>
-          {i.value}
-        </Text>
-        {i.unit && <Text style={{ fontFamily: F.regular, fontSize: 14, color: C.mute, paddingBottom: 10 }}>{i.unit}</Text>}
-        <View style={{ flex: 1 }} />
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingBottom: 12 }}>
-          <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: dot(C)[i.level] }} />
-          <Text style={{ fontFamily: F.medium, fontSize: 14, color: C.ink }}>{i.status}</Text>
+    <Animated.View entering={reduced ? undefined : FadeInDown.delay(index * 55).duration(340)} style={{ flex: 1, minWidth: 0 }}>
+      <Press onPress={onOpen} scale={reduced ? 1 : 0.97}
+        accessibilityLabel={t("pulse.openCard", { label: card.label, value: `${value} ${unit ?? ""}`, status })}
+        style={{ flex: 1, backgroundColor: card.key === "nature" ? C.mint : C.card, borderWidth: 1, borderColor: C.line, borderRadius: R.lg, padding: 15, minHeight: 176, gap: 11 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
+          <Icon name={card.icon} size={18} color={C.forestInk} />
+          <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 13, color: C.ink2 }}>{card.label}</Text>
+          <Icon name="link" size={13} color={C.mute} />
         </View>
-      </View>
-
-      <Extra k={i.key} pulse={pulse} />
-
-      <Animated.Text key={explain} entering={FadeIn.duration(250)} selectable style={[T.callout, { fontSize: 15, lineHeight: 22 }]}>
-        {i.explain[explain]}
-      </Animated.Text>
-
-      <SdgTags goals={GOALS[i.key]} />
-
-      {i.act && (
-        <Press
-          onPress={() => router.push({ pathname: "/capture", params: { action: i.act!.action } })}
-          accessibilityLabel={i.act.label}
-          style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderRadius: R.md, padding: 14 }}
-        >
-          <Icon name={ACTIONS[i.act.action].icon} size={16} color={C.ink} />
-          <View style={{ flex: 1, gap: 2 }}>
-            <Text style={{ fontFamily: F.medium, fontSize: 15, letterSpacing: -0.2, color: C.ink }}>{i.act.label}</Text>
-            <Mono>
-              {actionCopy(t, i.act.action).label} · +{ACTIONS[i.act.action].seeds}
-            </Mono>
-          </View>
-          <Icon name="arrowRight" size={14} color={C.ink} />
-        </Press>
-      )}
+        <Animated.View key={`${card.value}-${card.state}`} entering={reduced ? undefined : FadeIn.duration(200)} style={{ gap: 2 }}>
+          <Text style={{ fontFamily: F.medium, fontSize: value.length > 8 ? 21 : 36, letterSpacing: -1.1, fontVariant: ["tabular-nums"], color: C.ink }}>{value}</Text>
+          {!!unit && card.state === "ready" && <Text style={{ fontFamily: F.regular, fontSize: 11, color: C.mute }}>{unit}</Text>}
+        </Animated.View>
+        <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 6 }}>
+          {card.state === "loading" ? <ActivityIndicator size="small" color={C.mute} /> : <View style={{ width: 6, height: 6, marginTop: 5, borderRadius: 3, backgroundColor: card.state === "unavailable" ? C.amber : levelColor(C)[card.level] }} />}
+          <Text style={{ flex: 1, fontFamily: F.regular, fontSize: 12, lineHeight: 17, color: C.ink2 }}>{status}</Text>
+        </View>
+        <Text style={[T.caption, { fontSize: 10, lineHeight: 14, marginTop: "auto" }]}>{sourceKindCopy(t, source.kind).short} · {source.mark}</Text>
+      </Press>
     </Animated.View>
   );
 }
 
-function Cell({ label, value, sub, last }: { label: string; value: string; sub?: string; last?: boolean }) {
+function PulseSkeleton() {
   const { C } = useTheme();
+  const { t } = useI18n();
+  const reduced = useReducedMotion();
+  const opacity = useSharedValue(0.55);
+  useEffect(() => {
+    if (!reduced) opacity.set(withRepeat(withTiming(1, { duration: 850 }), -1, true));
+    return () => cancelAnimation(opacity);
+  }, [opacity, reduced]);
+  const shimmer = useAnimatedStyle(() => ({ opacity: opacity.value }));
   return (
-    <View style={{ flex: 1, gap: 6, paddingRight: 10, borderRightWidth: last ? 0 : 1, borderRightColor: C.line, paddingLeft: 10 }}>
-      <Mono>{label}</Mono>
-      <Text numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: F.medium, fontSize: 24, letterSpacing: -1, color: C.ink }}>
-        {value}
-      </Text>
-      {sub && (
-        <Text numberOfLines={1} style={{ fontFamily: F.regular, fontSize: 12, color: C.mute }}>
-          {sub}
-        </Text>
-      )}
+    <View accessibilityLabel={t("pulse.updating")} accessibilityState={{ busy: true }} aria-busy style={{ gap: 16 }}>
+      <Animated.View accessible={false} style={[{ height: 180, borderRadius: R.xl, backgroundColor: C.mint }, shimmer]} />
+      {[0, 1, 2].map((row) => <View key={row} accessible={false} style={{ flexDirection: "row", gap: 10 }}>
+        {[0, 1].map((col) => <Animated.View key={col} style={[{ flex: 1, height: 176, borderRadius: R.lg, backgroundColor: C.card, padding: 18, gap: 18 }, shimmer]}>
+          <View style={{ width: "55%", height: 12, borderRadius: 6, backgroundColor: C.card2 }} />
+          <View style={{ width: "65%", height: 34, borderRadius: 8, backgroundColor: C.card2 }} />
+          <View style={{ width: "80%", height: 10, borderRadius: 6, backgroundColor: C.card2 }} />
+        </Animated.View>)}
+      </View>)}
     </View>
   );
 }
@@ -222,122 +82,69 @@ export default function PulseScreen() {
   const explain = useApp((s) => s.explain);
   const setExplain = useApp((s) => s.setExplain);
   const { t, language } = useI18n();
+  const reduced = useReducedMotion();
   const [refreshing, setRefreshing] = useState(false);
-
-  const air = pulse.air ? aqiBand(pulse.air.aqi, language) : null;
-
+  const [selected, setSelected] = useState<PulseCard["key"] | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const pendingNavigation = useRef<(() => void) | null>(null);
+  const cards = pulseCards(pulse, insights, t);
+  const selectedCard = cards.find((c) => c.key === selected);
+  async function reload() {
+    setRefreshing(true);
+    try { await refresh(); } finally { setRefreshing(false); }
+  }
+  function navigateFromDetail(navigate: () => void) {
+    // iOS must finish dismissing its native Modal before presenting a router sheet.
+    if (detailOpen && Platform.OS === "ios") pendingNavigation.current = navigate;
+    else navigate();
+    setDetailOpen(false);
+  }
+  function openSources() {
+    navigateFromDetail(() => router.push("/sources"));
+  }
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
-      <ScrollView
-        style={{ flex: 1, backgroundColor: C.bg }}
-        contentContainerStyle={{ paddingTop: top + 10, paddingHorizontal: 20, paddingBottom: 140, gap: 22 }}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            tintColor={C.ink}
-            onRefresh={async () => {
-              setRefreshing(true);
-              await refresh();
-              setRefreshing(false);
-            }}
-          />
-        }
-      >
-        <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" }}>
-          <View style={{ gap: 6 }}>
-            <Text style={T.display}>{t("pulse.title")}</Text>
-            <Press
-              scale={0.98}
-              onPress={() => router.push("/comune")}
-              accessibilityLabel={t("comune.change", { name: pulse.place.name })}
-              style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
-            >
-              <Icon name="location" size={11} color={C.mute} />
-              <Mono>
-                {pulse.place.name} · {loading ? t("pulse.updating") : t("pulse.ago", { time: timeAgo(pulse.fetchedAt, language) })}
-              </Mono>
-              {loading && <ActivityIndicator size="small" color={C.mute} />}
-            </Press>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingTop: top + 16, paddingHorizontal: 20, paddingBottom: 140, gap: 22 }}
+        refreshControl={<RefreshControl refreshing={refreshing} tintColor={C.ink} onRefresh={reload} />}>
+        <View style={{ gap: 12 }}>
+          <Text style={{ fontFamily: F.monoMedium, fontSize: 10, letterSpacing: 1, textTransform: "uppercase", color: C.forestInk }}>{t("pulse.glance")}</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+            <Text style={[T.display, { flex: 1 }]}>{t("pulse.title")}</Text>
+            <IconButton icon="info" label={t("pulse.how")} onPress={openSources} size={44} />
+            <IconButton icon="sparkle" label={t("common.askLeaf")} bg={C.forest} color={C.lime} onPress={() => router.push("/leaf")} size={44} />
           </View>
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <IconButton icon="info" label={t("pulse.how")} onPress={() => router.push("/sources")} />
-            <IconButton icon="sparkle" label={t("common.askLeaf")} bg={C.forest} color={C.lime} onPress={() => router.push("/leaf")} />
+          <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
+            <Press onPress={() => router.push("/comune")} scale={reduced ? 1 : 0.98} accessibilityLabel={t("comune.change", { name: pulse.place.name })}
+              style={{ flexDirection: "row", alignItems: "center", minHeight: 44, backgroundColor: C.card, borderRadius: R.pill, paddingHorizontal: 13, paddingVertical: 9, gap: 8 }}>
+              <Icon name="location" size={13} color={C.forestInk} /><Text style={{ fontFamily: F.medium, fontSize: 14, color: C.ink }}>{pulse.place.name}</Text><Icon name="chevron" size={11} color={C.mute} />
+            </Press>
+            <Text style={[T.caption, { fontSize: 11 }]}>{loading ? t("pulse.updating") : t("pulse.ago", { time: timeAgo(pulse.fetchedAt, language) })}</Text>
+            {loading && <ActivityIndicator size="small" color={C.leaf} />}
           </View>
         </View>
-
-        <SeedTip id="pulse" text={t("seed.tips.pulse")} />
-
-        {ready && pulse.sample && (
-          <View style={{ flexDirection: "row", gap: 10, alignItems: "center", backgroundColor: C.card, borderRadius: R.md, padding: 12 }}>
-            <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: C.amber }} />
-            <Text style={{ flex: 1, fontFamily: F.regular, color: C.ink2, fontSize: 13 }}>{t("pulse.offline")}</Text>
-          </View>
-        )}
-
-        {!ready ? (
+        {ready && pulse.sample && <View style={{ backgroundColor: C.card, borderRadius: R.md, padding: 12, borderLeftWidth: 3, borderLeftColor: C.amber }}><Text style={T.callout}>{t("pulse.offline")}</Text></View>}
+        {!ready ? <PulseSkeleton /> : <>
+          <Animated.View entering={reduced ? undefined : FadeInDown.duration(350)}>
+            <DailyCard />
+          </Animated.View>
           <View style={{ gap: 12 }}>
-            {[110, 200, 200].map((h, i) => (
-              <View key={i} style={{ height: h, borderRadius: R.lg, backgroundColor: C.mint, alignItems: "center", justifyContent: "center", gap: 10 }}>
-                {i === 0 && (
-                  <>
-                    <ActivityIndicator color={C.leaf} />
-                    <Mono>{t("pulse.reading", { place: pulse.place.name })}</Mono>
-                  </>
-                )}
-              </View>
-            ))}
+            <View style={{ gap: 4 }}><Text accessibilityRole="header" style={T.title}>{t("pulse.explore")}</Text><Text style={T.caption}>{t("pulse.tapCard")}</Text></View>
+            {[0, 2, 4].map((start) => <View key={start} style={{ flexDirection: "row", alignItems: "stretch", gap: 10 }}>
+              {cards.slice(start, start + 2).map((card, offset) => <PulseTile key={card.key} card={card} index={start + offset} onOpen={() => { setSelected(card.key); setDetailOpen(true); }} />)}
+            </View>)}
           </View>
-        ) : (
-          <>
-            <Animated.View entering={FadeIn} style={{ flexDirection: "row", marginHorizontal: -10, paddingVertical: 4 }}>
-              {air && <Cell label={t("insights.labels.air")} value={air.label} sub={`EAQI ${pulse.air!.aqi}`} />}
-              {pulse.weather && <Cell label={t("pulse.temp")} value={`${pulse.weather.temp}°`} sub={`${pulse.weather.tmin}° / ${pulse.weather.tmax}°`} />}
-              {pulse.water && (
-                <Cell label={t("pulse.dryDays")} value={String(pulse.water.dryDays)} sub={t("pulse.rainSub", { mm: formatNumber(Math.round(pulse.water.rain7), language) })} />
-              )}
-              {pulse.nature && <Cell label={t("pulse.species")} value={formatNumber(pulse.nature.speciesCount, language)} sub="10 km" last />}
-            </Animated.View>
-
-            <Animated.View entering={FadeInDown.delay(80)}>
-              <DailyCard />
-            </Animated.View>
-
-            <View style={{ gap: 12, paddingTop: 8 }}>
-              <Mono color={C.ink}>{t("common.explainFor")}</Mono>
-              <Segmented<Explain>
-                value={explain}
-                onChange={setExplain}
-                options={[
-                  { value: "me", label: t("common.me") },
-                  { value: "class", label: t("common.myClass") },
-                  { value: "comune", label: t("common.comune") },
-                ]}
-              />
-            </View>
-
-            <View>
-              {insights.map((i, idx) => (
-                <InsightCard key={i.key} i={i} explain={explain} pulse={pulse} index={idx} />
-              ))}
-            </View>
-          </>
-        )}
-
-        <Press
-          onPress={() => router.push("/sources")}
-          style={{ padding: 20, borderRadius: R.lg, backgroundColor: C.card, gap: 8 }}
-          accessibilityLabel={t("pulse.about")}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Text style={{ fontFamily: F.medium, fontSize: 17, letterSpacing: -0.3, flex: 1, color: C.ink }}>{t("pulse.unequal")}</Text>
-            <Icon name="arrowRight" size={14} color={C.ink} />
-          </View>
-          <Text style={[T.callout, { fontSize: 14, lineHeight: 20 }]}>
-            {t("pulse.unequalBody")}
-          </Text>
+        </>}
+        <Press onPress={openSources} accessibilityLabel={t("pulse.sourcesLink")} scale={reduced ? 1 : 0.98}
+          style={{ minHeight: 54, padding: 15, borderRadius: R.md, borderWidth: 1, borderColor: C.line, backgroundColor: C.card, flexDirection: "row", alignItems: "center", gap: 10 }}>
+          <Icon name="info" size={17} color={C.forestInk} /><Text style={{ flex: 1, fontFamily: F.medium, fontSize: 13, color: C.ink2 }}>{t("pulse.sourcesLink")}</Text><Icon name="link" size={14} color={C.mute} />
         </Press>
+        <SeedTip id="pulse" text={t("seed.tips.pulse")} />
       </ScrollView>
       <TopCover />
+      {selectedCard && <PulseDetail key={selectedCard.key} card={selectedCard} pulse={pulse} visible={detailOpen} explain={explain} onExplain={setExplain}
+        onClose={() => setDetailOpen(false)} onSources={openSources} onRetry={reload} refreshing={refreshing}
+        onDismiss={() => { const navigate = pendingNavigation.current; pendingNavigation.current = null; navigate?.(); }}
+        onAction={(action) => navigateFromDetail(() => router.push({ pathname: "/capture", params: { action } }))} />}
     </View>
   );
 }

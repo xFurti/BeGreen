@@ -16,7 +16,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon, type IconName } from "@/components/icon";
 import { FollowCounts, PhotoGrid } from "@/components/friends";
-import { ImpactPanel, MemoriesPanel } from "@/components/profile-panels";
+import { ImpactPanel } from "@/components/profile-panels";
 import { ProfileMap } from "@/components/profile-map";
 import { LanguageSwitch } from "@/components/language-switch";
 import { GrowthCard, SeedPicker } from "@/components/seed-ui";
@@ -38,11 +38,10 @@ import { F, type Palette } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
 import { cleanProfile, validProfile } from "@/utils/profile";
-type ProfileTab = "impact" | "photos" | "memories" | "map";
+type ProfileTab = "impact" | "photos" | "map";
 const TABS = [
   { id: "impact", label: "me.impact", icon: "leaf" },
   { id: "photos", label: "profile.photos.title", icon: "camera" },
-  { id: "memories", label: "me.memories", icon: "calendar" },
   { id: "map", label: "profile.map", icon: "map" },
 ] as const;
 const ROLE_ICON: Record<Role, IconName> = { student: "school", teacher: "book", association: "people", comune: "building" };
@@ -162,7 +161,6 @@ export default function Me() {
           <View style={s.panel}>
             {tab === "impact" && <ImpactPanel posts={posts} verifications={verifications} onBadgeOpen={setBadgeOpen} />}
             {tab === "photos" && <PhotoGrid posts={posts} empty={t("profile.photos.emptyMine")} />}
-            {tab === "memories" && <MemoriesPanel posts={posts} />}
             {tab === "map" && <ProfileMap posts={posts} />}
           </View>
         </View>

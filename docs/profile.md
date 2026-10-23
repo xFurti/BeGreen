@@ -2,7 +2,7 @@
 
 Il profilo usa cover con avatar sovrapposto, identità centrata, statistiche compatte e tre schede. La cover riutilizza `assets/demo/forest.jpg`; la palette segue il tema dell’app.
 
-- **Impatto**: conteggi calcolati sulle proprie prove reali, con avvertenza sulle stime. Include Agenda 2030, conto alla rovescia, badge e scelta esplicita del titolo. I badge usano il catalogo condiviso, senza traguardi paralleli. I dati ambientali locali si consultano nella scheda Dati: il profilo non contiene il blocco «Il mio Comune».
+- **Impatto**: conteggi calcolati sulle proprie prove reali, con avvertenza sulle stime. Include Agenda 2030, il conto alla rovescia fino al 1° gennaio 2030, badge e scelta esplicita del titolo. I badge usano il catalogo condiviso, senza traguardi paralleli. I dati ambientali locali si consultano nella scheda Dati: il profilo non contiene il blocco «Il mio Comune».
 - **Ricordi**: calendario da lunedì, navigazione fra mesi, filtro per giorno e foto che aprono la prova originale. Più prove nello stesso giorno restano accessibili. Nomi, date e testi seguono italiano/inglese.
 - **Mappa**: aree delle prove salvate su questo dispositivo. Nessun segnaposto fittizio per le prove precedenti o con zona nascosta. Ogni nuova prova con «Mostra zona» attivo registra il **centro del Comune scelto**, non la posizione del gesto. Le coordinate restano sul dispositivo e sopravvivono alla pubblicazione e alla sincronizzazione del post. Il backend attuale continua a ricevere soltanto i campi già supportati: non servono migrazioni. Dopo un reset o su un altro telefono le vecchie aree non sono disponibili.
 

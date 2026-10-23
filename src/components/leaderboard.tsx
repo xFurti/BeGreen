@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { Text, View } from "react-native";
-import Animated, { FadeInDown, LinearTransition } from "react-native-reanimated";
+import Animated, { FadeInDown, LinearTransition, useReducedMotion } from "react-native-reanimated";
 
 import { TitledName } from "@/components/titled-name";
 import { Avatar, Button, Mono } from "@/components/ui";
@@ -20,11 +20,12 @@ function Row({ r, rank, index }: { r: Standing; rank: number; index: number }) {
   const { C } = useTheme();
   const { t, language } = useI18n();
   const who = useAuthor()(r.userId);
+  const reduced = useReducedMotion();
   const name = r.me ? t("community.board.you") : who.name;
   return (
     <Animated.View
-      entering={FadeInDown.delay(80 + index * 40).springify().damping(20)}
-      layout={LinearTransition}
+      entering={reduced ? undefined : FadeInDown.delay(80 + index * 40).duration(260)}
+      layout={reduced ? undefined : LinearTransition}
       style={{
         flexDirection: "row",
         alignItems: "center",
@@ -58,6 +59,7 @@ export function Leaderboard({ community, limit, title }: { community: Community;
   const top = limit ? board.slice(0, limit) : board;
   const showMine = limit && rank > limit;
   const alone = board.length < 2;
+  const hasProofs = board.some((row) => row.proofs > 0);
   const line = alone
     ? isCity(community)
       ? t("community.board.aloneCity")
@@ -74,7 +76,12 @@ export function Leaderboard({ community, limit, title }: { community: Community;
         </Mono>
         <Mono color={C.forestMute}>{t("groups.rollingWeek")}</Mono>
       </View>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+      {!hasProofs ? (
+        <View style={{ paddingVertical: 14, gap: 10 }}>
+          <Text style={{ fontFamily: F.medium, fontSize: 25, lineHeight: 29, letterSpacing: -0.7, color: C.white }}>{t("community.hub.emptyRankingTitle")}</Text>
+          <Text style={{ fontFamily: F.regular, fontSize: 14, lineHeight: 20, color: C.forestMute }}>{t("community.hub.emptyRankingBody")}</Text>
+        </View>
+      ) : <><View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
         <Text style={{ fontFamily: F.medium, fontSize: 44, lineHeight: 46, letterSpacing: -2, color: C.white, fontVariant: ["tabular-nums"] }}>#{rank}</Text>
         <Text style={{ flex: 1, fontFamily: F.regular, fontSize: 14, lineHeight: 19, color: C.forestMute }}>{line}</Text>
         <Button label={t("community.board.post")} kind="inverse" size="sm" icon="camera" onPress={() => router.push(isCity(community) ? "/capture" : { pathname: "/capture", params: { group: community.id } })} />
@@ -91,6 +98,7 @@ export function Leaderboard({ community, limit, title }: { community: Community;
           </>
         )}
       </View>
+      </>}
       <Text style={{ fontFamily: F.regular, fontSize: 12, color: C.forestMute }}>{t("groups.boardHow")}</Text>
     </View>
   );
