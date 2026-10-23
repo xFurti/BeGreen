@@ -85,7 +85,7 @@ export function resolveMedia(m: string): Media {
 }
 
 // Name and tag are shown in the active language (see useAuthor).
-export const DEMO_AUTHOR: User = { id: "demo", name: "BeGreen example", handle: "example", tag: "Demo" };
+export const DEMO_AUTHOR: User = { id: "demo", name: "BeGreen Team", handle: "example", tag: "Demo" };
 
 const CAPTIONS = ["a", "b", "c"] as const;
 

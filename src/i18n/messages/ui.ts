@@ -448,7 +448,7 @@ export const uiMessages = defineMessages(
       someone: "BeGreen user",
       checkConnection: "Check your connection and try again.",
     },
-    demo: { author: "BeGreen example", tag: "Demo" },
+    demo: { author: "BeGreen Team", tag: "Demo" },
     comune: {
       yourTitle: "Your Comune",
       yours: "your Comune",
@@ -949,7 +949,7 @@ export const uiMessages = defineMessages(
       someone: "Utente BeGreen",
       checkConnection: "Controlla la connessione e riprova.",
     },
-    demo: { author: "Esempio BeGreen", tag: "Demo" },
+    demo: { author: "Team BeGreen", tag: "Demo" },
     comune: {
       yourTitle: "Il tuo Comune",
       yours: "il tuo Comune",

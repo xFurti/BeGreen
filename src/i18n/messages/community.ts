@@ -134,7 +134,7 @@ export const communityMessages = defineMessages(
       community: "From the community",
     },
     examples: {
-      author: "BeGreen example",
+      author: "BeGreen Team",
       repair: { title: "Example: a repair workshop", body: "This is what a useful place looks like on the map: opening times, what they fix, who runs it. Add a real one near you." },
       thrift: { title: "Example: a second-hand shop", body: "A discovery: a shop, a market stall or a corner worth knowing. Examples disappear as soon as there are enough real places." },
       garden: { title: "Example: a community garden", body: "Gardens, associations and local groups go here, with how to take part." },
@@ -537,7 +537,7 @@ export const communityMessages = defineMessages(
       community: "Dalla community",
     },
     examples: {
-      author: "Esempio BeGreen",
+      author: "Team BeGreen",
       repair: { title: "Esempio: un laboratorio di riparazione", body: "Così appare un luogo utile sulla mappa: orari, cosa riparano, chi lo gestisce. Aggiungine uno vero vicino a te." },
       thrift: { title: "Esempio: un negozio dell’usato", body: "Una scoperta: un negozio, una bancarella o un angolo da conoscere. Gli esempi spariscono appena ci sono abbastanza luoghi veri." },
       garden: { title: "Esempio: un orto comunitario", body: "Orti, associazioni e gruppi locali vanno qui, con come partecipare." },
