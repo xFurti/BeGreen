@@ -15,3 +15,16 @@ test("conta i giorni di calendario fino alla fine del 2030", () => {
   assert.equal(daysTo2030(new Date(2026, 9, 24, 23, 30).getTime()), 1530);
   assert.equal(daysTo2030(new Date(2026, 9, 25, 0, 30).getTime()), 1529);
 });
+
+test("il traguardo resta il 1 gennaio 2031 anche cambiando fuso durante la sessione", () => {
+  const previous = process.env.TZ;
+  try {
+    for (const zone of ["Europe/Rome", "America/New_York", "Pacific/Honolulu", "Asia/Tokyo"]) {
+      process.env.TZ = zone;
+      assert.equal(daysTo2030(new Date(2030, 11, 31, 12).getTime()), 1, zone);
+      assert.equal(daysTo2030(new Date(2031, 0, 1, 0, 1).getTime()), 0, zone);
+    }
+  } finally {
+    process.env.TZ = previous;
+  }
+});

@@ -4,7 +4,7 @@
 export const SDG_LIST = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
 
 // The Agenda ends at the close of 31 December 2030: the first instant of 2031.
-const END = new Date(2031, 0, 1);
+const END_DAY = civilDayNumber(2031, 1, 1);
 
 // Days between two civil dates, independent of time zones and DST.
 function civilDayNumber(year: number, month: number, day: number): number {
@@ -19,7 +19,7 @@ function civilDayNumber(year: number, month: number, day: number): number {
 
 export function daysTo2030(now = Date.now()) {
   const date = new Date(now);
-  const remaining = civilDayNumber(END.getFullYear(), END.getMonth() + 1, END.getDate())
+  const remaining = END_DAY
     - civilDayNumber(date.getFullYear(), date.getMonth() + 1, date.getDate());
   return Math.max(0, remaining);
 }
