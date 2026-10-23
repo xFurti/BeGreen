@@ -77,10 +77,16 @@ test("esclude draft, PR chiuse, fork e altre destinazioni usando lo stato attual
   }
 });
 
-test("review automatica solo all'apertura o quando il draft diventa pronto", async () => {
+test("review automatica all'apertura, all'uscita dal draft e sui nuovi commit", async () => {
   for (const action of ["opened", "ready_for_review", "synchronize", "edited", "reopened"]) {
     const f = fixture("pull_request_target", { action, pull_request: pr });
     await prepare(f.args);
-    assert.equal(f.outputs.run, ["opened", "ready_for_review"].includes(action) ? "true" : "false");
+    assert.equal(f.outputs.run, ["opened", "ready_for_review", "synchronize"].includes(action) ? "true" : "false");
   }
+});
+
+test("un nuovo commit su un draft non usa il modello", async () => {
+  const f = fixture("pull_request_target", { action: "synchronize", pull_request: pr }, "write", { ...pr, draft: true });
+  await prepare(f.args);
+  assert.equal(f.outputs.run, "false");
 });
