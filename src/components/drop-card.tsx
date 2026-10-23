@@ -6,7 +6,7 @@ import { Icon } from "@/components/icon";
 import { Blobs, LeafMark } from "@/components/nature";
 import { AvatarStack, LiveDot, Mono, Press, SdgTags } from "@/components/ui";
 import { ACTIONS } from "@/data/actions";
-import { USERS } from "@/data/seed";
+import type { User } from "@/data/types";
 import type { Drop } from "@/services/drop";
 import { F, R } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
@@ -29,19 +29,18 @@ export function useCountdown() {
   return t;
 }
 
-const crowd = ["giulia", "aisha", "nico"].map((id) => USERS[id]);
-
 export function DropCard({
   drop,
   done,
   place,
-  doneCount,
+  crowd,
   ready = true,
 }: {
   drop: Drop;
   done: boolean;
   place: string;
-  doneCount: number;
+  // Real people in this Comune who already did today's challenge.
+  crowd: User[];
   ready?: boolean;
 }) {
   const { C } = useTheme();
@@ -96,14 +95,18 @@ export function DropCard({
           </View>
           <View style={{ height: 1, backgroundColor: C.forestLine }} />
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-            <AvatarStack people={crowd} size={22} ring={C.forest} />
+            {crowd.length > 0 && <AvatarStack people={crowd.slice(0, 3)} size={22} ring={C.forest} />}
             <Text style={{ flex: 1, fontFamily: F.regular, fontSize: 13, color: C.forestMute }} numberOfLines={1}>
               {done ? (
-                <Text style={{ color: C.lime, fontFamily: F.medium }}>You’re in. +10 bonus</Text>
-              ) : (
+                <Text style={{ color: C.lime, fontFamily: F.medium }}>
+                  You’re in. +10 bonus{crowd.length > 1 ? ` · ${crowd.length - 1} more in ${place}` : ""}
+                </Text>
+              ) : crowd.length ? (
                 <>
-                  <Text style={{ color: C.white, fontFamily: F.medium }}>{doneCount.toLocaleString("en")}</Text> did it today
+                  <Text style={{ color: C.white, fontFamily: F.medium }}>{crowd.length.toLocaleString("en")}</Text> in {place} did it today
                 </>
+              ) : (
+                `Nobody in ${place} yet. Be the first.`
               )}
             </Text>
             <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: C.lime, alignItems: "center", justifyContent: "center" }}>

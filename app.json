@@ -52,7 +52,7 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "BeGreen uses your approximate location to show local air, water, soil and nature data and to build today's Drop."
+          "locationWhenInUsePermission": "BeGreen uses your approximate location to suggest your Comune, whose live air, water, soil and nature data build today's Drop."
         }
       ],
       [

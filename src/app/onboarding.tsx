@@ -1,4 +1,3 @@
-import * as Location from "expo-location";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
@@ -7,17 +6,28 @@ import Animated, { FadeIn, FadeInDown, LinearTransition, useAnimatedStyle, useSh
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Icon, type IconName } from "@/components/icon";
-import { Blobs, LeafScatter, LeafSwitch } from "@/components/nature";
-import { Avatar, Button, Chip, Logo, Mono } from "@/components/ui";
+import { Blobs, LeafScatter } from "@/components/nature";
+import { Avatar, Button, Chip, Logo, Mono, Press } from "@/components/ui";
+import { HERO_PHOTOS } from "@/data/demo";
 import { SDG_LIST } from "@/data/sdgs";
-import { HERO_PHOTOS, USERS } from "@/data/seed";
 import { SOURCE_KINDS } from "@/data/sources";
 import type { Role } from "@/data/types";
-import { locate } from "@/hooks/use-pulse";
-import { useApp } from "@/store/app-store";
+import { comuneLabel } from "@/services/comuni";
+import { HandleTaken } from "@/services/social";
+import { hasBackend } from "@/services/supabase";
+import { registerProfile, useApp } from "@/store/app-store";
 import { F, R } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
+
+const HANDLE = /^[a-z0-9._]{2,24}$/;
+const toHandle = (name: string) =>
+  name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9._]/g, "")
+    .slice(0, 24);
 
 const ROLES: { value: Role; label: string; icon: IconName; hint: string }[] = [
   { value: "student", label: "Student", icon: "school", hint: "Short, direct, with something to do." },
@@ -139,10 +149,10 @@ function DataPreview() {
 function RacePreview({ active }: { active: boolean }) {
   const { C } = useTheme();
   const base = [
-    { id: "giulia", pts: 345 },
-    { id: "aisha", pts: 270 },
-    { id: "elena", pts: 205 },
-    { id: "marco", pts: 160 },
+    { id: "a", name: "A classmate", pts: 345 },
+    { id: "b", name: "A neighbour", pts: 270 },
+    { id: "c", name: "Your teacher", pts: 205 },
+    { id: "d", name: "A squad mate", pts: 160 },
   ];
   const [mine, setMine] = useState(120);
   useEffect(() => {
@@ -160,7 +170,7 @@ function RacePreview({ active }: { active: boolean }) {
       clearTimeout(b);
     };
   }, [active]);
-  const rows = [...base.map((b) => ({ ...b, me: false })), { id: "me", pts: mine, me: true }].sort((x, y) => y.pts - x.pts);
+  const rows = [...base.map((b) => ({ ...b, me: false })), { id: "me", name: "You", pts: mine, me: true }].sort((x, y) => y.pts - x.pts);
   return (
     <View style={{ paddingTop: 10 }}>
       {rows.map((r, i) => (
@@ -183,10 +193,8 @@ function RacePreview({ active }: { active: boolean }) {
           <Mono color={r.me ? C.lime : C.mute} style={{ width: 20 }}>
             {String(i + 1).padStart(2, "0")}
           </Mono>
-          {r.me ? <Avatar name="You" size={34} invert /> : <Avatar src={USERS[r.id].avatar} name={USERS[r.id].name} size={34} />}
-          <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3, color: r.me ? C.white : C.ink }}>
-            {r.me ? "You" : USERS[r.id].name}
-          </Text>
+          <Avatar name={r.me ? "You" : (r.name.split(" ").pop() ?? r.name)} size={34} invert={r.me} />
+          <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3, color: r.me ? C.white : C.ink }}>{r.name}</Text>
           {r.me && i === 0 && <Icon name="crown" size={14} color={C.lime} />}
           <Text style={{ fontFamily: F.medium, fontSize: 17, color: r.me ? C.white : C.ink, fontVariant: ["tabular-nums"] }}>{r.pts}</Text>
         </Animated.View>
@@ -235,12 +243,16 @@ export default function Onboarding() {
   const pager = useRef<ScrollViewInstance>(null);
   const [page, setPage] = useState(0);
   const [name, setName] = useState("");
+  const [handle, setHandle] = useState("");
+  const [handleEdited, setHandleEdited] = useState(false);
   const [role, setRole] = useState<Role>("student");
-  const [demo, setDemo] = useState(true);
-  const [loc, setLoc] = useState<"idle" | "asking" | "on" | "off">("idle");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const finish = useApp((s) => s.finishOnboarding);
-  const setPlace = useApp((s) => s.setPlace);
+  const comune = useApp((s) => s.comune);
   const inner = width - 40;
+  const h = handleEdited ? handle : toHandle(name);
+  const canStart = name.trim().length > 0 && HANDLE.test(h) && !!comune && !busy;
 
   const go = (i: number) => {
     haptic.tap();
@@ -248,21 +260,23 @@ export default function Onboarding() {
     setPage(i);
   };
 
-  const askLocation = async () => {
-    setLoc("asking");
-    const r = await Location.requestForegroundPermissionsAsync().catch(() => null);
-    if (r?.granted) {
-      const here = await locate();
-      if (here) setPlace(here);
-      setLoc("on");
-    } else setLoc("off");
-  };
-
-  const start = () => {
-    haptic.success();
-    const n = name.trim() || "You";
-    finish({ name: n, handle: n.toLowerCase().replace(/[^a-z0-9]/g, "") || "you", role }, demo);
-    router.replace("/");
+  const start = async () => {
+    if (!canStart) return;
+    const profile = { name: name.trim(), handle: h, role };
+    setBusy(true);
+    setError(null);
+    try {
+      await registerProfile(profile, comune);
+      haptic.success();
+      finish(profile);
+      router.replace("/");
+    } catch (e) {
+      setError(
+        e instanceof HandleTaken ? `@${h} is taken. Try another handle.` : "Couldn’t reach BeGreen. Check your connection and try again.",
+      );
+    } finally {
+      setBusy(false);
+    }
   };
 
   const slides = [
@@ -281,7 +295,7 @@ export default function Onboarding() {
     {
       kicker: "Friends · squads · schools",
       title: "Beat your friends.\nSave the planet.",
-      body: "(In that order.) Weekly races, streaks, nudges for slackers, and a league between schools.",
+      body: "(In that order.) A weekly race with everyone in your Comune, streaks, nudges for slackers, and squads for your class or crew.",
       visual: <RacePreview key={page === 2 ? "on" : "off"} active={page === 2} />,
     },
     {
@@ -358,6 +372,41 @@ export default function Onboarding() {
             }}
           />
 
+          <View style={{ gap: 8 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 4,
+                borderBottomWidth: 1,
+                borderBottomColor: HANDLE.test(h) ? C.line : C.red,
+              }}
+            >
+              <Text style={{ fontFamily: F.monoMedium, fontSize: 17, color: C.mute }}>@</Text>
+              <TextInput
+                value={h}
+                onChangeText={(t) => {
+                  setHandleEdited(true);
+                  setHandle(
+                    t
+                      .toLowerCase()
+                      .replace(/[^a-z0-9._]/g, "")
+                      .slice(0, 24),
+                  );
+                }}
+                placeholder="handle"
+                placeholderTextColor={C.faint}
+                autoCapitalize="none"
+                autoCorrect={false}
+                accessibilityLabel="Your handle"
+                style={{ flex: 1, height: 46, fontSize: 17, fontFamily: F.monoMedium, color: C.ink }}
+              />
+            </View>
+            <Text style={T.caption}>
+              Your public name on proofs, verifications and the league. 2–24 letters, numbers, dots or underscores.
+            </Text>
+          </View>
+
           <View style={{ gap: 12 }}>
             <Mono color={C.forestInk}>I’m joining as</Mono>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
@@ -369,37 +418,43 @@ export default function Onboarding() {
           </View>
 
           <View style={{ borderTopWidth: 1, borderTopColor: C.line }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: C.line }}>
+            <Press
+              scale={0.99}
+              onPress={() => router.push("/comune")}
+              accessibilityLabel={comune ? `Your Comune: ${comune.name}. Change` : "Choose your Comune"}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 14,
+                paddingVertical: 16,
+                borderBottomWidth: 1,
+                borderBottomColor: C.line,
+              }}
+            >
               <Icon name="location" size={17} color={C.leaf} />
               <View style={{ flex: 1, gap: 2 }}>
-                <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2, color: C.ink }}>Local data</Text>
+                <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2, color: C.ink }}>
+                  {comune ? comuneLabel(comune) : "Your Comune"}
+                </Text>
                 <Text style={{ fontFamily: F.regular, color: C.mute, fontSize: 13 }}>
-                  {loc === "on" ? "Using your approximate location (~1 km)." : loc === "off" ? "No problem. We’ll use Milano." : "Approximate only. Never on posts unless you choose."}
+                  {comune ? "Today’s challenge comes from its live data." : "Pick where you live or study. Needed for the daily challenge."}
                 </Text>
               </View>
-              {loc === "on" ? (
-                <Icon name="checkSeal" size={20} color={C.leaf} />
-              ) : (
-                <Button size="sm" label={loc === "asking" ? "…" : "Allow"} onPress={askLocation} />
-              )}
-            </View>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: C.line }}>
-              <Icon name="sparkle" size={17} color={C.leaf} />
-              <View style={{ flex: 1, gap: 2 }}>
-                <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.2, color: C.ink }}>Demo history</Text>
-                <Text style={{ fontFamily: F.regular, color: C.mute, fontSize: 13 }}>Pre-fill a streak and Memories to explore.</Text>
-              </View>
-              <LeafSwitch value={demo} onValueChange={setDemo} label="Demo history" />
-            </View>
+              {comune ? <Icon name="checkSeal" size={20} color={C.leaf} /> : <Mono color={C.ink}>Choose</Mono>}
+            </Press>
           </View>
+          {!hasBackend && (
+            <Text style={T.caption}>Offline prototype: no BeGreen server is configured, so your proofs stay on this phone.</Text>
+          )}
         </ScrollView>
       </ScrollView>
 
-      <View style={{ paddingHorizontal: 20, paddingBottom: bottom + 12, paddingTop: 8 }}>
+      <View style={{ paddingHorizontal: 20, paddingBottom: bottom + 12, paddingTop: 8, gap: 10 }}>
+        {page === last && error && <Text style={[T.caption, { color: C.red, textAlign: "center" }]}>{error}</Text>}
         {page < last ? (
           <Button label={page === 0 ? "Let’s go" : "Next"} onPress={() => go(page + 1)} />
         ) : (
-          <Button label="Start BeGreen" kind="green" icon="leaf" onPress={start} />
+          <Button label={busy ? "Joining…" : "Start BeGreen"} kind="green" icon="leaf" disabled={!canStart} onPress={start} />
         )}
       </View>
     </KeyboardAvoidingView>

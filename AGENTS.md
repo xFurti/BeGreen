@@ -25,9 +25,9 @@ Le skills sono condivise con Codex in `.agents/skills` e Pi in `.pi/skills`: mod
 - Usa `main` aggiornato come base e un branch dedicato all'attività, per esempio `feat/12-demo`, `fix/18-login`, `docs/pitch`. La destinazione delle PR è `main`.
 - In un workspace locale gestito da GitButler usa `but` per le operazioni di version control. In un checkout isolato senza GitButler segui gli strumenti del suo ambiente.
 - Mantieni le modifiche circoscritte all'issue; le nuove idee vanno nel backlog (`docs/ideas.md`), senza diventare automaticamente scope della PR corrente.
-- Aggiorna istruzioni e test quando cambia un comportamento. Esegui `npm run verify` (typecheck, lint e test dei workflow) prima della consegna.
+- Aggiorna istruzioni e test quando cambia un comportamento. Esegui `npm run verify` (typecheck, lint, test dei workflow e delle migrazioni Supabase) prima della consegna.
 - Non fare push su `main`, force push, merge, deploy o modifiche alle regole GitHub senza una richiesta esplicita. L'autorizzazione già data per il compito non richiede una seconda conferma.
-- Non committare secrets. Le chiavi dei modelli AI stanno solo sul backend (`EXPO_PUBLIC_LEAF_ENDPOINT`), mai nell'app. Non creare token personali per invitare collaboratori: gli inviti usano gli username GitHub forniti dal responsabile.
+- Non committare secrets. Le chiavi dei modelli AI stanno solo sul backend (`EXPO_PUBLIC_LEAF_ENDPOINT`), mai nell'app. Di Supabase l'app usa solo URL e publishable key; ogni nuova tabella va protetta con RLS in `supabase/migrations` e coperta in `supabase/tests`. Non creare token personali per invitare collaboratori: gli inviti usano gli username GitHub forniti dal responsabile.
 
 ## Pull request e consegna
 

@@ -5,12 +5,15 @@ import { Alert, Pressable, ScrollView, Share, Text, useWindowDimensions, View } 
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { ComuneSection } from "@/components/comune-card";
 import { Icon, type IconName } from "@/components/icon";
 import { Avatar, IconButton, Logo, Mono, Press, SectionHeader, Segmented, TopCover, useCountUp } from "@/components/ui";
 import { ACTIONS } from "@/data/actions";
 import { daysTo2030, SDG_LIST, SDGS } from "@/data/sdgs";
 import type { Post } from "@/data/types";
-import { sdgsOf, seedsOf, streakOf, useApp, useLeague, type ThemePref } from "@/store/app-store";
+import { useComune } from "@/hooks/use-comune";
+import { supabase } from "@/services/supabase";
+import { sdgsOf, seedsOf, streakOf, useApp, useLeague, useMyPosts, type ThemePref } from "@/store/app-store";
 import { F, R } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
@@ -183,19 +186,22 @@ export default function Me() {
   const profile = useApp((s) => s.profile);
   const themePref = useApp((s) => s.theme);
   const setTheme = useApp((s) => s.setTheme);
-  const posts = useApp((s) => s.myPosts);
-  const bonus = useApp((s) => s.bonusSeeds);
-  const verifiedCount = useApp((s) => Object.keys(s.verified).length);
+  const posts = useMyPosts();
+  const verifiedCount = useApp((s) => s.verifiedCount);
+  const comune = useApp((s) => s.comune);
   const explain = useApp((s) => s.explain);
   const setExplain = useApp((s) => s.setExplain);
   const reset = useApp((s) => s.reset);
+  const pulse = useApp((s) => s.pulse);
+  const comuneView = useComune();
   const league = useLeague();
   const rank = league.findIndex((r) => r.me) + 1;
 
   const { width } = useWindowDimensions();
   const badgeSize = Math.floor((width - 40 - 16) / 3);
   const streak = streakOf(posts);
-  const seeds = seedsOf(posts, bonus);
+  const seeds = seedsOf(posts, verifiedCount);
+  const place = comune?.name ?? "your Comune";
   const imp = impact(posts);
   const kinds = new Set(posts.map((p) => p.action));
   const goals = sdgsOf(posts);
@@ -219,14 +225,14 @@ export default function Me() {
               icon="share"
               label="Share profile"
               onPress={() =>
-                Share.share({ message: `I’m on a ${streak}-day BeGreen streak and #${rank} among my friends this week. Beat that. 🌱 #BeGreen` })
+                Share.share({ message: `I’m on a ${streak}-day BeGreen streak and #${rank} in ${place} this week. Beat that. 🌱 #BeGreen` })
               }
             />
           </View>
           <View style={{ gap: 6 }}>
             <Text style={[T.hero, { fontSize: 40, lineHeight: 42 }]}>{profile.name || "You"}</Text>
             <Mono>
-              @{profile.handle || "you"} · {ROLE_LABEL[profile.role]} · #{rank} this week
+              @{profile.handle || "you"} · {ROLE_LABEL[profile.role]} · #{rank} in {place}
             </Mono>
           </View>
           <View style={{ flexDirection: "row" }}>
@@ -241,8 +247,13 @@ export default function Me() {
           <Agenda posts={posts} />
         </Animated.View>
 
+        <Animated.View entering={FadeInDown.delay(120)} style={{ gap: 16 }}>
+          <SectionHeader index="02" title="My Comune" action="Sources →" onAction={() => router.push("/sources")} />
+          <ComuneSection view={comuneView} pulse={pulse} />
+        </Animated.View>
+
         <View style={{ gap: 16 }}>
-          <SectionHeader index="02" title="Impact" action="How we count →" onAction={() => router.push("/sources")} />
+          <SectionHeader index="03" title="Impact" action="How we count →" onAction={() => router.push("/sources")} />
           <View style={{ flexDirection: "row", flexWrap: "wrap", borderTopWidth: 1, borderTopColor: C.line }}>
             <Imp value={imp.co2.toFixed(1)} label="kg CO₂e avoided" />
             <Imp value={String(imp.items)} label="items kept from waste" right />
@@ -253,12 +264,12 @@ export default function Me() {
         </View>
 
         <View style={{ gap: 16 }}>
-          <SectionHeader index="03" title="Memories" action={new Date().toLocaleString("en", { month: "long" })} />
+          <SectionHeader index="04" title="Memories" action={new Date().toLocaleString("en", { month: "long" })} />
           <Calendar posts={posts} />
         </View>
 
         <View style={{ gap: 16 }}>
-          <SectionHeader index="04" title="Badges" action={`${badges.filter((b) => b.on).length}/${badges.length}`} />
+          <SectionHeader index="05" title="Badges" action={`${badges.filter((b) => b.on).length}/${badges.length}`} />
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             {badges.map((b) => (
               <View
@@ -294,6 +305,7 @@ export default function Me() {
         </View>
 
         <View style={{ borderTopWidth: 1, borderTopColor: C.line }}>
+          <Row icon="location" label="Comune" value={comune?.name} onPress={() => router.push("/comune")} />
           <Row
             icon="doc"
             label="Explanations"
@@ -305,19 +317,26 @@ export default function Me() {
           <Row icon="sparkle" label="Ask Leaf" onPress={() => router.push("/leaf")} />
           <Row
             icon="refresh"
-            label="Reset demo"
+            label="Sign out & reset"
             onPress={() =>
-              Alert.alert("Reset BeGreen?", "This clears your posts and returns to onboarding.", [
-                { text: "Cancel", style: "cancel" },
-                {
-                  text: "Reset",
-                  style: "destructive",
-                  onPress: () => {
-                    reset();
-                    router.replace("/onboarding");
+              Alert.alert(
+                "Sign out of BeGreen?",
+                supabase
+                  ? "Your account is anonymous and tied to this phone: once you sign out, you can’t get it back. Your shared proofs stay on the feed."
+                  : "This clears your proofs from this phone and returns to onboarding.",
+                [
+                  { text: "Cancel", style: "cancel" },
+                  {
+                    text: "Sign out",
+                    style: "destructive",
+                    onPress: async () => {
+                      await supabase?.auth.signOut().catch(() => {});
+                      reset();
+                      router.replace("/onboarding");
+                    },
                   },
-                },
-              ])
+                ],
+              )
             }
           />
         </View>

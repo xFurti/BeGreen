@@ -178,7 +178,7 @@ export async function fetchNature(p: Place): Promise<NatureData> {
   };
 }
 
-function km(a: Place, lat: number, lon: number) {
+export function km(a: Place, lat: number, lon: number) {
   const R = 6371;
   const dLat = ((lat - a.lat) * Math.PI) / 180;
   const dLon = ((lon - a.lon) * Math.PI) / 180;

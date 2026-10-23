@@ -11,15 +11,17 @@ import { Sprout } from "@/components/nature";
 import { PostCard, VerifyBar } from "@/components/post-card";
 import { Avatar, Bar, Button, Logo, Mono, Press, TextTabs } from "@/components/ui";
 import { ACTIONS } from "@/data/actions";
-import { FRIENDS, ME_ID } from "@/data/seed";
-import type { Post } from "@/data/types";
+import { demoPostsFor } from "@/data/demo";
+import type { Post, User } from "@/data/types";
 import { usePulse } from "@/hooks/use-pulse";
-import { postedToday, streakOf, useAllPosts, useApp, useLeague } from "@/store/app-store";
+import { postedToday, streakOf, syncSocial, useApp, useAuthor, useLeague, useMyPosts } from "@/store/app-store";
 import { F, R } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
 
-type Lens = "friends" | "squads" | "nearby";
-const FRIEND_SET = new Set(FRIENDS);
+type Lens = "comune" | "squads" | "everyone";
+
+// Below this many real proofs for today's challenge, example proofs fill the Comune feed.
+const DEMO_UNDER = 3;
 
 function NotYet({ streak }: { streak: number }) {
   const { C } = useTheme();
@@ -89,13 +91,14 @@ function Mine({ post }: { post: Post }) {
   );
 }
 
-function Race() {
+function Race({ place }: { place: string }) {
   const { C } = useTheme();
   const league = useLeague();
   const i = league.findIndex((r) => r.me);
   const me = league[i];
   const ahead = league[i - 1];
   const gap = ahead ? ahead.points - me.points : 0;
+  const alone = league.length < 2;
   return (
     <Press
       scale={0.985}
@@ -104,17 +107,21 @@ function Race() {
       style={{ backgroundColor: C.card, borderRadius: R.xl, borderCurve: "continuous", padding: 18, gap: 14 }}
     >
       <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <Mono style={{ flex: 1 }}>This week · friends</Mono>
+        <Mono style={{ flex: 1 }}>This week · {place}</Mono>
         <Mono color={C.forestInk}>League →</Mono>
       </View>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
         <Text style={{ fontFamily: F.medium, fontSize: 44, lineHeight: 46, letterSpacing: -2, color: C.forestInk }}>#{i + 1}</Text>
         <View style={{ flex: 1, gap: 4 }}>
           <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3, color: C.ink }} numberOfLines={1}>
-            {ahead ? `${gap} seeds behind ${ahead.name}` : "You’re on top. Stay there."}
+            {alone ? "First on the board." : ahead ? `${gap} seeds behind ${ahead.name}` : "You’re on top. Stay there."}
           </Text>
           <Text style={{ fontFamily: F.regular, fontSize: 13, color: C.mute }} numberOfLines={1}>
-            {ahead ? `One proof could do it.` : `${me.points - (league[1]?.points ?? 0)} seeds ahead of ${league[1]?.name ?? "everyone"}`}
+            {alone
+              ? `Nobody else in ${place} has posted this week.`
+              : ahead
+                ? `One proof could do it.`
+                : `${me.points - (league[1]?.points ?? 0)} seeds ahead of ${league[1]?.name}`}
           </Text>
         </View>
         {ahead && <Avatar src={ahead.avatar} name={ahead.name} size={36} />}
@@ -127,30 +134,40 @@ function Race() {
 export default function Feed() {
   const { C } = useTheme();
   const { top } = useSafeAreaInsets();
-  const all = useAllPosts();
-  const myPosts = useApp((s) => s.myPosts);
+  const all = useApp((s) => s.posts);
+  const me = useApp((s) => s.userId);
+  const myPosts = useMyPosts();
   const profile = useApp((s) => s.profile);
   const squads = useApp((s) => s.squads);
+  const comune = useApp((s) => s.comune);
+  const author = useAuthor();
   const { drop, pulse, refresh, ready } = usePulse();
-  const [lens, setLens] = useState<Lens>("friends");
+  const [lens, setLens] = useState<Lens>("comune");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const place = comune?.name ?? pulse.place.name;
 
   const unlocked = postedToday(myPosts);
   const streak = streakOf(myPosts);
   const today = new Date().toDateString();
-  const mineToday = all.find((p) => p.authorId === ME_ID && new Date(p.createdAt).toDateString() === today);
-  const didDrop = myPosts.some((p) => p.isDrop && new Date(p.createdAt).toDateString() === today);
-  const comune = squads.find((s) => s.kind === "comune");
-  const doneCount = Math.round((comune?.monthly[drop.action] ?? 900) / 22) + (didDrop ? 1 : 0);
+  const mineToday = myPosts.find((p) => new Date(p.createdAt).toDateString() === today);
+  const didDrop = myPosts.some((p) => p.challengeId === drop.id);
+
+  const challengePosts = useMemo(() => all.filter((p) => p.challengeId === drop.id && !p.isDemo), [all, drop.id]);
+  const crowd = useMemo(() => {
+    const ids = [...new Set(challengePosts.map((p) => p.authorId))].sort((a, b) => Number(b === me) - Number(a === me));
+    return ids.map((id): User => author(id));
+  }, [challengePosts, me, author]);
 
   const mySquadIds = useMemo(() => new Set(squads.map((s) => s.id)), [squads]);
   const posts = useMemo(() => {
-    const others = all.filter((p) => p.authorId !== ME_ID);
-    if (lens === "friends") return others.filter((p) => FRIEND_SET.has(p.authorId));
+    const others = all.filter((p) => p.authorId !== me && !p.isDemo);
     if (lens === "squads") return others.filter((p) => p.squadId && mySquadIds.has(p.squadId));
-    return others.filter((p) => p.audience === "public");
-  }, [all, lens, mySquadIds]);
+    if (lens === "everyone") return others.filter((p) => p.audience === "public");
+    const local = others.filter((p) => p.comuneId === comune?.id && p.audience !== "squad");
+    if (!ready || challengePosts.length >= DEMO_UNDER) return local;
+    return [...local, ...demoPostsFor(drop, place)];
+  }, [all, me, lens, mySquadIds, comune?.id, ready, challengePosts.length, drop, place]);
 
   // FlatList forbids swapping this callback after mount, so keep one instance for the screen's lifetime.
   const [onViewable] = useState(() => ({ viewableItems }: { viewableItems: (ListViewToken & { item: Post })[] }) => {
@@ -160,13 +177,13 @@ export default function Feed() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await refresh();
+    await Promise.all([refresh(), syncSocial()]);
     setRefreshing(false);
   }, [refresh]);
 
   const header = (
     <View style={{ gap: 14, paddingBottom: 10 }}>
-      <DropCard drop={drop} done={didDrop} place={pulse.place.name} doneCount={doneCount} ready={ready} />
+      <DropCard drop={drop} done={didDrop} place={place} crowd={crowd} ready={ready} />
       {mineToday ? (
         <View style={{ paddingVertical: 8 }}>
           <Mine post={mineToday} />
@@ -174,15 +191,15 @@ export default function Feed() {
       ) : (
         <NotYet streak={streak} />
       )}
-      <Race />
+      <Race place={place} />
       <View style={{ paddingTop: 18 }}>
         <TextTabs<Lens>
           value={lens}
           onChange={setLens}
           options={[
-            { value: "friends", label: "Friends" },
+            { value: "comune", label: place },
             { value: "squads", label: "Squads" },
-            { value: "nearby", label: "Nearby" },
+            { value: "everyone", label: "Everyone" },
           ]}
         />
       </View>
@@ -233,9 +250,15 @@ export default function Feed() {
             <Sprout size={56} />
             <Text style={{ fontFamily: F.medium, fontSize: 20, letterSpacing: -0.6, color: C.ink }}>Quiet here.</Text>
             <Text style={{ fontFamily: F.regular, color: C.mute, textAlign: "center" }}>
-              Join a squad to see what your class or town is doing.
+              {lens === "squads"
+                ? "Join a squad to see what your class or crew is doing."
+                : lens === "everyone"
+                  ? "No public proofs in the last few days. Post one with “Everyone”."
+                  : `Nobody in ${place} has posted yet. Invite someone, or be the first.`}
             </Text>
-            <Button label="Find a squad" size="md" onPress={() => router.navigate("/league")} style={{ marginTop: 6 }} />
+            {lens === "squads" && (
+              <Button label="Find a squad" size="md" onPress={() => router.navigate("/league")} style={{ marginTop: 6 }} />
+            )}
           </Animated.View>
         }
         showsVerticalScrollIndicator={false}

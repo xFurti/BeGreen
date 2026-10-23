@@ -63,6 +63,7 @@ export default function RootLayout() {
         <Stack.Screen name="guide" options={{ ...sheet, sheetAllowedDetents: [0.92] }} />
         <Stack.Screen name="sources" options={{ ...sheet, sheetAllowedDetents: [0.8, 1] }} />
         <Stack.Screen name="new-squad" options={{ ...sheet, sheetAllowedDetents: [0.6] }} />
+        <Stack.Screen name="comune" options={{ ...sheet, sheetAllowedDetents: [0.92] }} />
       </Stack>
     </ThemeProvider>
   );

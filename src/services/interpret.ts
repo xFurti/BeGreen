@@ -110,7 +110,7 @@ export function buildInsights(p: Pulse, community: { carFree: number; areaName: 
         comune:
           `Modelled EAQI ${a.aqi} (${b.label}). PM2.5 ${a.pm25}, PM10 ${a.pm10}, NO₂ ${a.no2}, O₃ ${a.o3} µg/m³. ` +
           `Source is the CAMS ensemble on a ~10 km grid: indicative, not a substitute for ARPA reference stations. ` +
-          `Community response: ${community.carFree.toLocaleString("en")} verified car-free trips logged in ${community.areaName} this month.`,
+          `Community response: ${community.carFree.toLocaleString("en")} car-free proofs posted on BeGreen in ${community.areaName} this month.`,
       },
       act: { action: "move", label: b.level === "good" ? "Ride it" : "Go car-free" },
       sources: ["cams", "begreen"],

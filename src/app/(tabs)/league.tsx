@@ -7,15 +7,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon } from "@/components/icon";
 import { Avatar, AvatarStack, Bar, Button, IconButton, Mono, Press, SectionHeader, TextTabs, toast, TopCover } from "@/components/ui";
 import { ACTIONS } from "@/data/actions";
-import { LEAGUE, USERS } from "@/data/seed";
 import { KIND } from "@/data/squad-kinds";
 import type { Squad } from "@/data/types";
-import { nudgedRecently, useApp, useLeague, weekResetIn, type Racer } from "@/store/app-store";
+import { nudgedRecently, useApp, useAuthor, useLeague, weekResetIn, type Racer } from "@/store/app-store";
 import { F, R } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
 import { compact, haptic } from "@/utils/format";
 
-type View_ = "friends" | "squads" | "schools";
+type View_ = "people" | "squads" | "ranking";
 
 const NUDGES = ["Time to BeGreen. Everyone’s waiting.", "Your streak called. It misses you.", "The planet left you on read.", "5 seconds. That’s all it takes."];
 
@@ -123,7 +122,8 @@ function RacerRow({ r, rank, index }: { r: Racer; rank: number; index: number })
 
 function SquadCard({ s, index }: { s: Squad; index: number }) {
   const { C } = useTheme();
-  const pct = s.quest.progress / s.quest.goal;
+  const author = useAuthor();
+  const pct = Math.min(1, s.quest.progress / s.quest.goal);
   return (
     <Animated.View entering={FadeInDown.delay(index * 70).springify().damping(20)}>
       <Press
@@ -149,8 +149,10 @@ function SquadCard({ s, index }: { s: Squad; index: number }) {
           </View>
           <Bar value={pct} />
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingTop: 4 }}>
-            <AvatarStack people={s.memberIds.slice(0, 4).map((id) => ({ avatar: USERS[id]?.avatar, name: USERS[id]?.name ?? "You" }))} size={22} />
-            <Text style={{ flex: 1, fontFamily: F.regular, fontSize: 13, color: C.mute }}>{s.memberCount.toLocaleString("en")} members</Text>
+            <AvatarStack people={s.memberIds.slice(0, 4).map(author)} size={22} />
+            <Text style={{ flex: 1, fontFamily: F.regular, fontSize: 13, color: C.mute }}>
+              {s.memberCount.toLocaleString("en")} members
+            </Text>
             <Icon name={ACTIONS[s.quest.action].icon} size={13} color={C.mute} />
             <Mono>{s.quest.endsInDays}d left</Mono>
           </View>
@@ -164,10 +166,15 @@ export default function League() {
   const { C, T } = useTheme();
   const { top } = useSafeAreaInsets();
   const squads = useApp((s) => s.squads);
+  const localSquads = useApp((s) => s.localSquads);
+  const place = useApp((s) => s.comune?.name ?? s.place.name);
   const join = useApp((s) => s.joinSquad);
   const league = useLeague();
   const [code, setCode] = useState("");
-  const [tab, setTab] = useState<View_>("friends");
+  const [joining, setJoining] = useState(false);
+  const [tab, setTab] = useState<View_>("people");
+  const mySquadIds = new Set(squads.map((s) => s.id));
+  const ranking = [...localSquads].sort((a, b) => b.points - a.points);
 
   const myRank = league.findIndex((r) => r.me) + 1;
   const ahead = league[myRank - 2];
@@ -194,19 +201,21 @@ export default function League() {
           value={tab}
           onChange={setTab}
           options={[
-            { value: "friends", label: "Friends" },
+            { value: "people", label: place },
             { value: "squads", label: "Squads", count: squads.length },
-            { value: "schools", label: "Schools" },
+            { value: "ranking", label: "Ranking" },
           ]}
         />
 
-        {tab === "friends" && (
+        {tab === "people" && (
           <View style={{ gap: 18 }}>
-            <Podium top3={league.slice(0, 3)} />
+            {league.length > 1 && <Podium top3={league.slice(0, 3)} />}
             <View style={{ backgroundColor: C.card, borderRadius: R.lg, padding: 16, flexDirection: "row", alignItems: "center", gap: 12 }}>
               <Text style={{ fontFamily: F.medium, fontSize: 32, letterSpacing: -1.4, color: C.ink }}>#{myRank}</Text>
               <Text style={{ flex: 1, fontFamily: F.regular, fontSize: 14, lineHeight: 19, color: C.ink2 }}>
-                {ahead ? (
+                {league.length < 2 ? (
+                  `Nobody else in ${place} has posted this week. Share BeGreen and race someone real.`
+                ) : ahead ? (
                   <>
                     <Text style={{ fontFamily: F.medium, color: C.ink }}>{ahead.points - me.points} seeds</Text> to pass {ahead.name}. A litter pick is worth 25.
                   </>
@@ -221,7 +230,9 @@ export default function League() {
                 <RacerRow key={r.id} r={r} rank={i + 1} index={i} />
               ))}
             </View>
-            <Text style={[T.caption, { textAlign: "center" }]}>Seeds from verified proofs this week. Fake proofs get flagged and lose them.</Text>
+            <Text style={[T.caption, { textAlign: "center" }]}>
+              Everyone who posted in {place} in the last 7 days, by seeds. Fake proofs get flagged and lose them.
+            </Text>
           </View>
         )}
 
@@ -230,7 +241,22 @@ export default function League() {
             {squads.map((s, i) => (
               <SquadCard key={s.id} s={s} index={i} />
             ))}
-            <View style={{ flexDirection: "row", gap: 8, alignItems: "center", backgroundColor: C.card, borderRadius: R.pill, padding: 5, paddingLeft: 18 }}>
+            {squads.length === 0 && (
+              <Text style={T.callout}>
+                No squads yet. Start one for your class, association or Comune, or join with a code from your teacher or captain.
+              </Text>
+            )}
+            <View
+              style={{
+                flexDirection: "row",
+                gap: 8,
+                alignItems: "center",
+                backgroundColor: C.card,
+                borderRadius: R.pill,
+                padding: 5,
+                paddingLeft: 18,
+              }}
+            >
               <TextInput
                 value={code}
                 onChangeText={setCode}
@@ -241,25 +267,35 @@ export default function League() {
               />
               <Button
                 size="sm"
-                label="Join"
-                disabled={code.trim().length < 4}
-                onPress={() => {
-                  const s = join(code);
-                  if (s) router.push({ pathname: "/squad/[id]", params: { id: s.id } });
-                  else Alert.alert("No squad found", "Check the code with your teacher or squad captain.");
-                  setCode("");
+                label={joining ? "…" : "Join"}
+                disabled={code.trim().length < 4 || joining}
+                onPress={async () => {
+                  setJoining(true);
+                  try {
+                    const s = await join(code);
+                    if (s) router.push({ pathname: "/squad/[id]", params: { id: s.id } });
+                    else Alert.alert("No squad found", "Check the code with your teacher or squad captain.");
+                    setCode("");
+                  } catch {
+                    Alert.alert("Couldn’t join", "Check your connection and try again.");
+                  } finally {
+                    setJoining(false);
+                  }
                 }}
               />
             </View>
           </View>
         )}
 
-        {tab === "schools" && (
+        {tab === "ranking" && (
           <View style={{ gap: 4 }}>
-            <SectionHeader title="City league" action="Milano" />
-            <Text style={[T.caption, { marginBottom: 10 }]}>Schools ranked by verified acts. Resets every month.</Text>
-            {LEAGUE.map((l, i) => {
-              const mine = l.name === "Liceo Volta";
+            <SectionHeader title="Squads in town" action={place} />
+            <Text style={[T.caption, { marginBottom: 10 }]}>
+              Classes, associations and crews in {place}, ranked by seeds from their proofs.
+            </Text>
+            {ranking.length === 0 && <Text style={T.callout}>No squads in {place} yet. Start the first one with +.</Text>}
+            {ranking.map((l, i) => {
+              const mine = mySquadIds.has(l.id);
               return (
                 <Animated.View
                   key={l.id}
@@ -280,16 +316,21 @@ export default function League() {
                   <Mono color={mine ? C.lime : C.mute} style={{ width: 22 }}>
                     {String(i + 1).padStart(2, "0")}
                   </Mono>
-                  <View style={{ flex: 1, gap: 2 }}>
+                  <Press
+                    scale={0.99}
+                    onPress={() => router.push({ pathname: "/squad/[id]", params: { id: l.id } })}
+                    accessibilityLabel={l.name}
+                    style={{ flex: 1, gap: 2 }}
+                  >
                     <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3, color: mine ? C.white : C.ink }}>{l.name}</Text>
-                    {mine && <Text style={{ fontFamily: F.regular, fontSize: 12, color: C.forestMute }}>Your school</Text>}
-                  </View>
+                    <Text style={{ fontFamily: F.regular, fontSize: 12, color: mine ? C.forestMute : C.mute }}>
+                      {mine ? "Your squad · " : ""}
+                      {KIND[l.kind].label} · {l.memberCount} {l.memberCount === 1 ? "member" : "members"}
+                    </Text>
+                  </Press>
                   <Text style={{ fontFamily: F.medium, fontSize: 16, color: mine ? C.white : C.ink, fontVariant: ["tabular-nums"] }}>
                     {l.points.toLocaleString("en")}
                   </Text>
-                  <Mono color={l.delta > 0 ? (mine ? C.lime : C.green) : l.delta < 0 ? C.red : C.mute} style={{ width: 28, textAlign: "right" }}>
-                    {l.delta > 0 ? `↑${l.delta}` : l.delta < 0 ? `↓${-l.delta}` : "–"}
-                  </Mono>
                 </Animated.View>
               );
             })}

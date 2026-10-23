@@ -5,12 +5,14 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Icon } from "@/components/icon";
-import { author, VERIFY_GOAL, VerifyBar } from "@/components/post-card";
+import { VERIFY_GOAL, VerifyBar } from "@/components/post-card";
 import { ProofMedia } from "@/components/proof-media";
 import { Avatar, Mono, SdgTags, Tag } from "@/components/ui";
 import { ACTIONS } from "@/data/actions";
+import { demoPostsFor } from "@/data/demo";
 import { SDGS } from "@/data/sdgs";
-import { useAllPosts, useApp } from "@/store/app-store";
+import { usePulse } from "@/hooks/use-pulse";
+import { useApp, useAuthor } from "@/store/app-store";
 import { F, R } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
 import { haptic, timeAgo } from "@/utils/format";
@@ -19,8 +21,10 @@ export default function PostDetail() {
   const { C, T } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { bottom } = useSafeAreaInsets();
-  const post = useAllPosts().find((p) => p.id === id);
-  const meName = useApp((s) => s.profile.name);
+  const { drop, pulse } = usePulse();
+  const known = useApp((s) => s.posts.find((p) => p.id === id));
+  const post = known ?? demoPostsFor(drop, pulse.place.name).find((p) => p.id === id);
+  const author = useAuthor();
   const comment = useApp((s) => s.comment);
   const react = useApp((s) => s.react);
   const mine = useApp((s) => s.reacted[id]);
@@ -34,7 +38,7 @@ export default function PostDetail() {
     );
   }
 
-  const a = author(post.authorId, meName);
+  const a = author(post.authorId);
   const action = ACTIONS[post.action];
   const send = () => {
     if (!text.trim()) return;
@@ -52,9 +56,10 @@ export default function PostDetail() {
           <View style={{ flex: 1, gap: 3 }}>
             <Text style={{ fontFamily: F.semibold, fontSize: 16, letterSpacing: -0.2, color: C.ink }}>{a.name}</Text>
             <Mono>
-              {a.tag} · {post.place} · {timeAgo(post.createdAt)}
+              @{a.handle} · {post.place} · {timeAgo(post.createdAt)}
             </Mono>
           </View>
+          {post.isDemo && <Tag label="DEMO" />}
           {post.isDrop && <Tag label="DROP" solid />}
         </View>
 
@@ -100,11 +105,11 @@ export default function PostDetail() {
             <Mono color={C.ink}>Verified by</Mono>
             <View style={{ flexDirection: "row", gap: 16, flexWrap: "wrap" }}>
               {post.verifiedBy.map((v) => {
-                const u = author(v, meName);
+                const u = author(v);
                 return (
                   <View key={v} style={{ alignItems: "center", gap: 6 }}>
-                    <Avatar src={u?.avatar} name={u?.name ?? "?"} size={42} />
-                    <Text style={{ fontFamily: F.medium, fontSize: 12, color: C.ink }}>{u?.name}</Text>
+                    <Avatar src={u.avatar} name={u.name} size={42} />
+                    <Text style={{ fontFamily: F.medium, fontSize: 12, color: C.ink }}>{u.name}</Text>
                   </View>
                 );
               })}
@@ -112,70 +117,98 @@ export default function PostDetail() {
           </View>
         )}
 
-        <View style={{ gap: 16, paddingTop: 4 }}>
-          <Mono color={C.ink}>Comments · {post.comments.length}</Mono>
-          {post.comments.length === 0 && <Text style={T.callout}>Be the first to hype this up.</Text>}
-          {post.comments.map((c, i) => {
-            const u = author(c.authorId, meName);
-            return (
-              <Animated.View key={c.id} entering={FadeInDown.delay(i * 40)} style={{ flexDirection: "row", gap: 10 }}>
-                <Avatar src={u?.avatar} name={u?.name ?? "?"} size={30} />
-                <View style={{ flex: 1, gap: 2 }}>
-                  <Text style={{ fontFamily: F.semibold, fontSize: 14, color: C.ink }}>
-                    {u?.name} <Text style={{ fontFamily: F.regular, color: C.mute }}>{timeAgo(c.createdAt)}</Text>
-                  </Text>
-                  <Text style={[T.body, { fontSize: 15, lineHeight: 21 }]}>{c.text}</Text>
-                </View>
-              </Animated.View>
-            );
-          })}
-        </View>
+        {post.isDemo && (
+          <Text style={T.callout}>
+            An example of today’s challenge, so you know what a proof looks like. It can’t be verified and doesn’t count for anyone.
+          </Text>
+        )}
 
-        <Pressable
-          onPress={() =>
-            Alert.alert("Flag this proof?", "Squad moderators will review it. Fake proofs lose their Seeds.", [
-              { text: "Cancel", style: "cancel" },
-              { text: "Flag", style: "destructive" },
-            ])
-          }
-          style={{ alignSelf: "center", paddingTop: 8 }}
-          accessibilityRole="button"
-        >
-          <Mono>Doesn’t look real? Flag proof</Mono>
-        </Pressable>
+        {!post.isDemo && (
+          <View style={{ gap: 16, paddingTop: 4 }}>
+            <Mono color={C.ink}>Comments · {post.comments.length}</Mono>
+            {post.comments.length === 0 && <Text style={T.callout}>Be the first to hype this up.</Text>}
+            {post.comments.map((c, i) => {
+              const u = author(c.authorId);
+              return (
+                <Animated.View key={c.id} entering={FadeInDown.delay(i * 40)} style={{ flexDirection: "row", gap: 10 }}>
+                  <Avatar src={u.avatar} name={u.name} size={30} />
+                  <View style={{ flex: 1, gap: 2 }}>
+                    <Text style={{ fontFamily: F.semibold, fontSize: 14, color: C.ink }}>
+                      {u.name} <Text style={{ fontFamily: F.regular, color: C.mute }}>{timeAgo(c.createdAt)}</Text>
+                    </Text>
+                    <Text style={[T.body, { fontSize: 15, lineHeight: 21 }]}>{c.text}</Text>
+                  </View>
+                </Animated.View>
+              );
+            })}
+          </View>
+        )}
+
+        {!post.isDemo && (
+          <Pressable
+            onPress={() =>
+              Alert.alert("Flag this proof?", "Squad moderators will review it. Fake proofs lose their Seeds.", [
+                { text: "Cancel", style: "cancel" },
+                { text: "Flag", style: "destructive" },
+              ])
+            }
+            style={{ alignSelf: "center", paddingTop: 8 }}
+            accessibilityRole="button"
+          >
+            <Mono>Doesn’t look real? Flag proof</Mono>
+          </Pressable>
+        )}
       </ScrollView>
 
-      <View
-        style={{
-          flexDirection: "row",
-          gap: 8,
-          alignItems: "center",
-          paddingHorizontal: 16,
-          paddingTop: 10,
-          paddingBottom: bottom + 10,
-          borderTopWidth: 1,
-          borderTopColor: C.line,
-          backgroundColor: C.bg,
-        }}
-      >
-        <TextInput
-          value={text}
-          onChangeText={setText}
-          placeholder="Add a comment…"
-          placeholderTextColor={C.mute}
-          style={{ flex: 1, height: 44, borderRadius: R.pill, backgroundColor: C.card, paddingHorizontal: 16, fontSize: 15, fontFamily: F.regular, color: C.ink }}
-          returnKeyType="send"
-          onSubmitEditing={send}
-        />
-        <Pressable
-          accessibilityLabel="Send comment"
-          disabled={!text.trim()}
-          onPress={send}
-          style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: text.trim() ? C.forest : C.card, alignItems: "center", justifyContent: "center" }}
+      {!post.isDemo && (
+        <View
+          style={{
+            flexDirection: "row",
+            gap: 8,
+            alignItems: "center",
+            paddingHorizontal: 16,
+            paddingTop: 10,
+            paddingBottom: bottom + 10,
+            borderTopWidth: 1,
+            borderTopColor: C.line,
+            backgroundColor: C.bg,
+          }}
         >
-          <Icon name="send" size={17} color={text.trim() ? C.lime : C.faint} />
-        </Pressable>
-      </View>
+          <TextInput
+            value={text}
+            onChangeText={setText}
+            placeholder="Add a comment…"
+            placeholderTextColor={C.mute}
+            style={{
+              flex: 1,
+              height: 44,
+              borderRadius: R.pill,
+              backgroundColor: C.card,
+              paddingHorizontal: 16,
+              fontSize: 15,
+              fontFamily: F.regular,
+              color: C.ink,
+            }}
+            returnKeyType="send"
+            onSubmitEditing={send}
+          />
+          <Pressable
+            accessibilityLabel="Send comment"
+            disabled={!text.trim()}
+            onPress={send}
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 22,
+              backgroundColor: text.trim() ? C.forest : C.card,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Icon name="send" size={17} color={text.trim() ? C.lime : C.faint} />
+          </Pressable>
+        </View>
+      )}
     </KeyboardAvoidingView>
   );
 }

@@ -3,199 +3,376 @@ import "expo-sqlite/localStorage/install";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
+import { toast } from "@/components/ui";
 import { ACTIONS, type ActionId } from "@/data/actions";
-import { DEMO_CLIP, FRIENDS, HERO_PHOTOS, ME_ID, SEED_POSTS, SEED_SQUADS, USERS, WEEKLY } from "@/data/seed";
-import type { Audience, Comment, Explain, Post, Role, Squad } from "@/data/types";
+import { DEMO_AUTHOR } from "@/data/demo";
+import type { Audience, Comune, Explain, Post, Role, Squad, User } from "@/data/types";
+import { saveComune } from "@/services/comuni";
+import type { Drop } from "@/services/drop";
 import { DEFAULT_PLACE, type Place, type Pulse } from "@/services/env";
+import {
+  addComment,
+  addVerification,
+  countMyVerifications,
+  fetchFeed,
+  fetchProfiles,
+  fetchSquads,
+  HandleTaken,
+  insertSquad,
+  joinByCode,
+  publishPost,
+  saveProfile,
+  setReaction,
+} from "@/services/social";
+import { ensureSession, hasBackend } from "@/services/supabase";
 
 export type Profile = { name: string; handle: string; role: Role };
 export type ThemePref = "system" | "light" | "dark";
 
 type State = {
   onboarded: boolean;
+  // Supabase user id, or a device-only id when no backend is configured.
+  userId: string;
   profile: Profile;
   explain: Explain;
   theme: ThemePref;
+  comune: Comune | null;
   place: Place;
   pulse: Pulse | null;
-  myPosts: Post[];
-  verified: Record<string, true>;
+  challenge: Drop | null;
+  // Everything we know about: your proofs and the shared feed. A cache of the backend.
+  posts: Post[];
+  profiles: Record<string, User>;
   reacted: Record<string, string>;
-  comments: Record<string, Comment[]>;
   squads: Squad[];
-  bonusSeeds: number;
+  localSquads: Squad[];
+  verifiedCount: number;
   nudged: Record<string, number>;
+  syncedAt: number;
+};
+
+type NewPost = {
+  action: ActionId;
+  photo: string | number;
+  proof: string | number;
+  caption: string;
+  audience: Audience;
+  place: string;
+  challengeId?: string;
+  squadId?: string;
 };
 
 type Actions = {
-  finishOnboarding: (p: Profile, withDemo: boolean) => void;
+  finishOnboarding: (p: Profile) => void;
   setExplain: (e: Explain) => void;
   setTheme: (t: ThemePref) => void;
-  setPlace: (p: Place) => void;
+  setComune: (c: Comune) => void;
   setPulse: (p: Pulse) => void;
-  addPost: (p: {
-    action: ActionId;
-    photo: string | number;
-    proof: string | number;
-    caption: string;
-    audience: Audience;
-    place: string;
-    isDrop: boolean;
-    squadId?: string;
-  }) => Post;
+  setChallenge: (d: Drop) => void;
+  addPost: (p: NewPost) => Post;
   verify: (postId: string) => void;
   react: (postId: string, emoji: string) => void;
   comment: (postId: string, text: string) => void;
-  createSquad: (s: Pick<Squad, "name" | "kind" | "place">) => Squad;
-  joinSquad: (code: string) => Squad | null;
+  createSquad: (s: Pick<Squad, "name" | "kind" | "place" | "quest">) => Promise<Squad>;
+  joinSquad: (code: string) => Promise<Squad | null>;
   nudge: (userId: string) => void;
   reset: () => void;
 };
 
+const localId = () => `local-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+
 const initial: State = {
   onboarded: false,
+  userId: "",
   profile: { name: "", handle: "", role: "student" },
   explain: "me",
   theme: "system",
+  comune: null,
   place: DEFAULT_PLACE,
   pulse: null,
-  myPosts: [],
-  verified: {},
+  challenge: null,
+  posts: [],
+  profiles: {},
   reacted: {},
-  comments: {},
-  squads: SEED_SQUADS,
-  bonusSeeds: 0,
+  squads: [],
+  localSquads: [],
+  verifiedCount: 0,
   nudged: {},
+  syncedAt: 0,
 };
 
 const D = 864e5;
 
-// A short history so a fresh demo has a streak and Memories to look at.
-function demoHistory(): Post[] {
-  const acts: ActionId[] = ["move", "refill", "sort", "move", "plant", "rewear", "move", "spot", "sort"];
-  const days = [1, 2, 3, 5, 6, 9, 11, 12, 15];
-  return days.map((d, i) => ({
-    id: `me-demo-${d}`,
-    authorId: ME_ID,
-    action: acts[i],
-    photo: HERO_PHOTOS[i % HERO_PHOTOS.length],
-    proof: DEMO_CLIP,
-    caption: "",
-    place: DEFAULT_PLACE.name,
-    createdAt: Date.now() - d * D - 3 * 3600e3,
-    verifiedBy: ["giulia", "marco", "nico"].slice(0, 2 + (i % 2)),
-    reactions: { "💚": 4 + i },
-    comments: [],
-    audience: "friends",
-  }));
+function fail(e: unknown) {
+  if (__DEV__) console.warn(e);
+  toast("Couldn’t reach BeGreen. Try again in a moment.", "refresh");
 }
+
+const patchPost = (posts: Post[], id: string, f: (p: Post) => Post) => posts.map((p) => (p.id === id ? f(p) : p));
 
 export const useApp = create<State & Actions>()(
   persist(
     (set, get) => ({
       ...initial,
-      finishOnboarding: (profile, withDemo) =>
+      finishOnboarding: (profile) =>
         set({
           onboarded: true,
           profile,
+          userId: get().userId || localId(),
           explain: profile.role === "student" ? "me" : profile.role === "comune" ? "comune" : "class",
-          myPosts: withDemo ? demoHistory() : [],
         }),
       setExplain: (explain) => set({ explain }),
       setTheme: (theme) => set({ theme }),
-      setPlace: (place) => set({ place }),
+      setComune: (comune) => {
+        const same = get().comune?.id === comune.id;
+        set({
+          comune,
+          place: { lat: comune.lat, lon: comune.lon, name: comune.name },
+          ...(same ? {} : { challenge: null, pulse: null, localSquads: [] }),
+        });
+        // During onboarding there's no session yet: registerProfile saves the Comune.
+        if (!hasBackend || !get().onboarded) return;
+        saveComune(comune)
+          .then(() => {
+            const s = get();
+            if (s.onboarded && s.userId) return saveProfile(s.userId, s.profile, comune);
+          })
+          .then(() => syncSocial())
+          .catch(fail);
+      },
       setPulse: (pulse) => set({ pulse }),
+      setChallenge: (challenge) => set({ challenge }),
       addPost: (input) => {
+        const s = get();
         const post: Post = {
-          id: `me-${Date.now()}`,
-          authorId: ME_ID,
+          id: localId(),
+          authorId: s.userId,
           verifiedBy: [],
           reactions: {},
           comments: [],
           createdAt: Date.now(),
+          comuneId: s.comune?.id,
+          isDrop: !!input.challengeId,
+          pending: hasBackend,
           ...input,
         };
         set({
-          myPosts: [post, ...get().myPosts],
+          posts: [post, ...s.posts],
           squads: input.squadId
-            ? get().squads.map((s) =>
-                s.id === input.squadId
+            ? s.squads.map((q) =>
+                q.id === input.squadId
                   ? {
-                      ...s,
-                      points: s.points + ACTIONS[input.action].seeds,
-                      quest: s.quest.action === input.action ? { ...s.quest, progress: s.quest.progress + 1 } : s.quest,
-                      monthly: { ...s.monthly, [input.action]: (s.monthly[input.action] ?? 0) + 1 },
+                      ...q,
+                      points: q.points + ACTIONS[input.action].seeds + (input.challengeId ? 10 : 0),
+                      quest: q.quest.action === input.action ? { ...q.quest, progress: q.quest.progress + 1 } : q.quest,
+                      monthly: { ...q.monthly, [input.action]: (q.monthly[input.action] ?? 0) + 1 },
                     }
-                  : s,
+                  : q,
               )
-            : get().squads,
+            : s.squads,
         });
+        if (hasBackend) void publish(post);
         return post;
       },
       verify: (postId) => {
-        if (get().verified[postId]) return;
-        set({ verified: { ...get().verified, [postId]: true }, bonusSeeds: get().bonusSeeds + 2 });
+        const s = get();
+        const post = s.posts.find((p) => p.id === postId);
+        if (!post || post.isDemo || post.pending || post.authorId === s.userId || post.verifiedBy.includes(s.userId)) return;
+        set({
+          posts: patchPost(s.posts, postId, (p) => ({ ...p, verifiedBy: [...p.verifiedBy, s.userId] })),
+          verifiedCount: s.verifiedCount + 1,
+        });
+        if (hasBackend) addVerification(postId).catch(fail);
       },
       react: (postId, emoji) => {
-        const r = { ...get().reacted };
-        if (r[postId] === emoji) delete r[postId];
-        else r[postId] = emoji;
-        set({ reacted: r });
+        const s = get();
+        const post = s.posts.find((p) => p.id === postId);
+        if (!post || post.isDemo) return;
+        const prev = s.reacted[postId];
+        const next = prev === emoji ? null : emoji;
+        const reactions = { ...post.reactions };
+        if (prev) reactions[prev] = Math.max(0, (reactions[prev] ?? 1) - 1);
+        if (next) reactions[next] = (reactions[next] ?? 0) + 1;
+        const reacted = { ...s.reacted };
+        if (next) reacted[postId] = next;
+        else delete reacted[postId];
+        set({ reacted, posts: patchPost(s.posts, postId, (p) => ({ ...p, reactions })) });
+        if (hasBackend && !post.pending) setReaction(s.userId, postId, next).catch(fail);
       },
       comment: (postId, text) => {
-        const c: Comment = { id: `c-${Date.now()}`, authorId: ME_ID, text, createdAt: Date.now() };
-        set({ comments: { ...get().comments, [postId]: [...(get().comments[postId] ?? []), c] } });
+        const s = get();
+        const post = s.posts.find((p) => p.id === postId);
+        if (!post || post.isDemo) return;
+        const c = { id: localId(), authorId: s.userId, text, createdAt: Date.now() };
+        set({ posts: patchPost(s.posts, postId, (p) => ({ ...p, comments: [...p.comments, c] })) });
+        if (hasBackend && !post.pending) addComment(postId, text).catch(fail);
       },
-      createSquad: ({ name, kind, place }) => {
-        const s: Squad = {
-          id: `s-${Date.now()}`,
+      createSquad: async ({ name, kind, place, quest }) => {
+        const s = get();
+        const code =
+          name
+            .replace(/[^a-z0-9]/gi, "")
+            .slice(0, 6)
+            .toUpperCase()
+            .padEnd(4, "X") + Math.floor(Math.random() * 90 + 10);
+        const draft: Squad = {
+          id: localId(),
           name,
           kind,
           place,
-          memberIds: [ME_ID],
+          comuneId: s.comune?.id,
+          memberIds: [s.userId],
           memberCount: 1,
-          code:
-            name
-              .replace(/[^a-z0-9]/gi, "")
-              .slice(0, 6)
-              .toUpperCase() + Math.floor(Math.random() * 90 + 10),
+          code,
           points: 0,
-          quest: { title: "First 10 proofs", action: "sort", goal: 10, progress: 0, endsInDays: 7 },
+          quest: { ...quest, progress: 0 },
           monthly: {},
         };
-        set({ squads: [s, ...get().squads] });
-        return s;
+        const squad = hasBackend ? await insertSquad(s.userId, draft) : draft;
+        set({ squads: [squad, ...get().squads], localSquads: [squad, ...get().localSquads] });
+        return squad;
       },
-      joinSquad: (code) => {
+      joinSquad: async (code) => {
         const c = code.trim().toUpperCase();
-        return get().squads.find((s) => s.code === c) ?? null;
+        const s = get();
+        const known = s.squads.find((q) => q.code === c);
+        if (known) return known;
+        if (!hasBackend) return null;
+        const squad = await joinByCode(s.userId, c);
+        if (squad) set({ squads: [squad, ...get().squads.filter((q) => q.id !== squad.id)] });
+        return squad;
       },
       nudge: (userId) => set({ nudged: { ...get().nudged, [userId]: Date.now() } }),
       // The theme is a device preference, not demo data: it survives a reset.
       reset: () => set({ ...initial, theme: get().theme }),
     }),
     {
-      name: "begreen-v1",
+      name: "begreen-v2",
       storage: createJSONStorage(() => localStorage),
       // Bundled assets (numbers) are stable across reloads in the same build.
-      partialize: (s) => ({
+      partialize: (s): State => ({
         onboarded: s.onboarded,
+        userId: s.userId,
         profile: s.profile,
         explain: s.explain,
         theme: s.theme,
+        comune: s.comune,
         place: s.place,
         pulse: s.pulse,
-        myPosts: s.myPosts,
-        verified: s.verified,
+        challenge: s.challenge,
+        posts: s.posts,
+        profiles: s.profiles,
         reacted: s.reacted,
-        comments: s.comments,
         squads: s.squads,
-        bonusSeeds: s.bonusSeeds,
+        localSquads: s.localSquads,
+        verifiedCount: s.verifiedCount,
         nudged: s.nudged,
+        syncedAt: s.syncedAt,
       }),
     },
   ),
 );
+
+// ---------- sync with the shared backend ----------
+
+// A post being uploaded must not be sent again by a sync running at the same time.
+const publishing = new Set<string>();
+// Server id → when this device finished publishing it, so a sync that started earlier doesn't drop it.
+const published = new Map<string, number>();
+
+async function publish(post: Post) {
+  if (publishing.has(post.id)) return;
+  publishing.add(post.id);
+  try {
+    await send(post);
+  } finally {
+    publishing.delete(post.id);
+  }
+}
+
+async function send(post: Post): Promise<void> {
+  try {
+    const saved = await publishPost(useApp.getState().userId, post);
+    published.set(saved.id, Date.now());
+    // Keep the local files on screen: no flicker while the uploaded copies load.
+    useApp.setState({ posts: patchPost(useApp.getState().posts, post.id, () => ({ ...saved, photo: post.photo, proof: post.proof })) });
+  } catch (e) {
+    // Already did today's challenge (e.g. from another phone): post it as a regular proof.
+    if ((e as { code?: string }).code === "23505" && post.challengeId) return send({ ...post, challengeId: undefined, isDrop: false });
+    if (__DEV__) console.warn(e);
+    toast("Saved on this phone. It’ll post when you’re back online.", "refresh");
+  }
+}
+
+let syncing: Promise<void> | null = null;
+
+export function syncSocial(): Promise<void> {
+  if (!hasBackend) return Promise.resolve();
+  if (syncing) return syncing;
+  syncing = (async () => {
+    const startedAt = Date.now();
+    const s = useApp.getState();
+    if (!s.onboarded || !s.comune) return;
+    const uid = await ensureSession();
+    if (!uid) return;
+    if (uid !== s.userId) {
+      // A new anonymous account (e.g. the session was cleared): carry the profile over.
+      useApp.setState({ userId: uid, posts: s.posts.map((p) => (p.authorId === s.userId ? { ...p, authorId: uid } : p)) });
+      await registerProfile(s.profile, s.comune);
+    }
+    for (const p of useApp.getState().posts.filter((x) => x.pending)) await publish(p);
+
+    const { mine, local } = await fetchSquads(uid, s.comune.id);
+    const [feed, verifiedCount] = await Promise.all([
+      fetchFeed(
+        uid,
+        s.comune.id,
+        mine.map((q) => q.id),
+      ),
+      countMyVerifications(uid),
+    ]);
+    const known = { ...useApp.getState().profiles, ...feed.profiles };
+    const missing = [...new Set([...mine, ...local].flatMap((q) => q.memberIds))].filter((id) => !known[id]);
+    const members = await fetchProfiles(missing).catch(() => ({}));
+    // Keep what's still uploading, and your proofs that finished uploading after the feed was fetched.
+    const fetched = new Set(feed.posts.map((p) => p.id));
+    const keep = useApp.getState().posts.filter((p) => p.pending || ((published.get(p.id) ?? 0) >= startedAt && !fetched.has(p.id)));
+    useApp.setState({
+      posts: [...keep, ...feed.posts],
+      profiles: { ...known, ...members },
+      reacted: feed.myReactions,
+      squads: mine,
+      localSquads: local,
+      verifiedCount,
+      syncedAt: Date.now(),
+    });
+  })()
+    .catch((e) => {
+      if (__DEV__) console.warn(e);
+    })
+    .finally(() => {
+      syncing = null;
+    });
+  return syncing;
+}
+
+// Creates (or updates) your public profile. Throws HandleTaken if someone has your handle.
+export async function registerProfile(profile: Profile, comune: Comune | null) {
+  if (!hasBackend) return;
+  const uid = await ensureSession();
+  if (!uid) return;
+  useApp.setState({ userId: uid });
+  if (comune) await saveComune(comune);
+  try {
+    await saveProfile(uid, profile, comune);
+  } catch (e) {
+    if (!(e instanceof HandleTaken) || useApp.getState().onboarded === false) throw e;
+    // Re-registering after a lost session: keep the name, pick a free variant of the handle.
+    const handle = `${profile.handle.slice(0, 20)}${Math.floor(Math.random() * 900 + 100)}`;
+    await saveProfile(uid, { ...profile, handle }, comune);
+    useApp.setState({ profile: { ...profile, handle } });
+  }
+}
 
 // ---------- derived ----------
 
@@ -219,25 +396,32 @@ export function streakOf(posts: Post[]) {
   return n;
 }
 
-export function seedsOf(posts: Post[], bonus: number) {
-  return posts.reduce((a, p) => a + ACTIONS[p.action].seeds + (p.isDrop ? 10 : 0), 0) + bonus;
+const seedsFor = (p: Post) => ACTIONS[p.action].seeds + (p.isDrop ? 10 : 0);
+
+// Two seeds for every proof you verify.
+export function seedsOf(posts: Post[], verified: number) {
+  return posts.reduce((a, p) => a + seedsFor(p), 0) + verified * 2;
 }
 
-export function withInteractions(p: Post, s: Pick<State, "verified" | "reacted" | "comments">): Post {
-  const v = s.verified[p.id] && !p.verifiedBy.includes(ME_ID) ? [...p.verifiedBy, ME_ID] : p.verifiedBy;
-  const mine = s.reacted[p.id];
-  const reactions = mine ? { ...p.reactions, [mine]: (p.reactions[mine] ?? 0) + 1 } : p.reactions;
-  return { ...p, verifiedBy: v, reactions, comments: [...p.comments, ...(s.comments[p.id] ?? [])] };
+export function useMyPosts(): Post[] {
+  const posts = useApp((s) => s.posts);
+  const me = useApp((s) => s.userId);
+  return mineOf(posts, me);
 }
 
-export function useAllPosts(): Post[] {
-  const myPosts = useApp((s) => s.myPosts);
-  const verified = useApp((s) => s.verified);
-  const reacted = useApp((s) => s.reacted);
-  const comments = useApp((s) => s.comments);
-  return [...myPosts, ...SEED_POSTS]
-    .map((p) => withInteractions(p, { verified, reacted, comments }))
-    .sort((a, b) => b.createdAt - a.createdAt);
+export function mineOf(posts: Post[], me: string) {
+  return posts.filter((p) => p.authorId === me && !p.isDemo);
+}
+
+export function useAuthor() {
+  const profiles = useApp((s) => s.profiles);
+  const me = useApp((s) => s.userId);
+  const profile = useApp((s) => s.profile);
+  return (id: string): User => {
+    if (id === DEMO_AUTHOR.id) return DEMO_AUTHOR;
+    if (id === me) return { id, name: profile.name || "You", handle: profile.handle || "you", role: profile.role, tag: "You" };
+    return profiles[id] ?? { id, name: "BeGreen user", handle: "someone" };
+  };
 }
 
 // ---------- competition ----------
@@ -246,31 +430,38 @@ const WEEK = 7 * D;
 
 export function weeklyOf(posts: Post[]) {
   const since = Date.now() - WEEK;
-  return posts.filter((p) => p.createdAt > since).reduce((a, p) => a + ACTIONS[p.action].seeds + (p.isDrop ? 10 : 0), 0);
+  return posts.filter((p) => p.createdAt > since).reduce((a, p) => a + seedsFor(p), 0);
 }
 
 export type Racer = { id: string; name: string; avatar?: number | string; points: number; me: boolean; postedToday: boolean };
 
-// This week's friends race. Friends' totals are demo values; yours is real.
-export function leagueOf(myPosts: Post[], meName: string): Racer[] {
-  const recent = (id: string) => SEED_POSTS.some((p) => p.authorId === id && Date.now() - p.createdAt < D);
-  const friends: Racer[] = FRIENDS.map((id) => ({
+// This week's race between everyone posting in your Comune, from real proofs.
+export function leagueOf(posts: Post[], me: string, comuneId: string | undefined, name: (id: string) => string): Racer[] {
+  const since = Date.now() - WEEK;
+  const byAuthor = new Map<string, Post[]>();
+  byAuthor.set(me, []);
+  for (const p of posts) {
+    if (p.isDemo || p.createdAt <= since) continue;
+    if (p.authorId !== me && p.comuneId !== comuneId) continue;
+    byAuthor.set(p.authorId, [...(byAuthor.get(p.authorId) ?? []), p]);
+  }
+  const racers = [...byAuthor].map(([id, ps]) => ({
     id,
-    name: USERS[id].name,
-    avatar: USERS[id].avatar,
-    points: WEEKLY[id] ?? 0,
-    me: false,
-    postedToday: recent(id),
+    name: name(id),
+    points: ps.reduce((a, p) => a + seedsFor(p), 0),
+    me: id === me,
+    postedToday: postedToday(ps),
   }));
-  const me: Racer = { id: ME_ID, name: meName || "You", points: weeklyOf(myPosts), me: true, postedToday: postedToday(myPosts) };
   // Ties go to you: it feels better and you earned it.
-  return [...friends, me].sort((a, b) => b.points - a.points || (a.me ? -1 : b.me ? 1 : 0));
+  return racers.sort((a, b) => b.points - a.points || (a.me ? -1 : b.me ? 1 : 0));
 }
 
 export function useLeague() {
-  const myPosts = useApp((s) => s.myPosts);
-  const name = useApp((s) => s.profile.name);
-  return leagueOf(myPosts, name);
+  const posts = useApp((s) => s.posts);
+  const me = useApp((s) => s.userId);
+  const comuneId = useApp((s) => s.comune?.id);
+  const author = useAuthor();
+  return leagueOf(posts, me, comuneId, (id) => author(id).name);
 }
 
 export function sdgsOf(posts: Post[]) {
@@ -279,7 +470,7 @@ export function sdgsOf(posts: Post[]) {
   return set;
 }
 
-// One nudge per friend every 6 hours. Memes, not spam.
+// One nudge per person every 6 hours. Memes, not spam.
 export function nudgedRecently(at?: number) {
   return !!at && Date.now() - at < 6 * 3600e3;
 }
