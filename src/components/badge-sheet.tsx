@@ -31,7 +31,7 @@ export function BadgeTile({ badge: b, stats, equipped, size, onOpen }: {
       <View style={{ gap: 3, alignItems: "center" }}>
         <Text numberOfLines={2} style={{ fontFamily: F.medium, fontSize: 13, lineHeight: 17, textAlign: "center", color: earned ? C.white : C.ink }}>{t(b.name)}</Text>
         {equipped && <Text style={{ fontFamily: F.medium, fontSize: 11, color: C.lime }}>{t("badges.active")}</Text>}
-        {!earned && <Text numberOfLines={2} style={{ fontFamily: F.regular, fontSize: 11, lineHeight: 14, textAlign: "center", color: C.mute }}>{progress}</Text>}
+        {!earned && <Text numberOfLines={2} style={{ fontFamily: F.regular, fontSize: 11, lineHeight: 14, textAlign: "center", color: C.mute, fontVariant: ["tabular-nums"] }}>{progress}</Text>}
       </View>
     </Pressable>
   );
@@ -78,7 +78,7 @@ export function BadgeSheet({ badge: b, stats, equipped, onEquip, onUnequip, onCl
                 aria-valuemin={0} aria-valuemax={progress.goal} aria-valuenow={current}
                 accessibilityLabel={t(progress.key, { n: current, goal: progress.goal })} style={{ gap: 10 }}>
                 <Bar value={current / progress.goal} />
-                <Text style={T.callout}>{t(progress.key, { n: current, goal: progress.goal })}</Text>
+                <Text style={[T.callout, { fontVariant: ["tabular-nums"] }]}>{t(progress.key, { n: current, goal: progress.goal })}</Text>
               </View>
             )}
             {earned ? (

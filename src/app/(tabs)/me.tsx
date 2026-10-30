@@ -110,9 +110,9 @@ export default function Me() {
               <Avatar name={profileName(profile.name, t)} seed={seed} seeds={seeds} size={80} />
             </View>
             <View style={s.nameBlock}>
-              <TitledName name={profileName(profile.name, t)} badgeId={profile.badgeId} align="center" lines={2} style={s.name} />
+              <TitledName name={profileName(profile.name, t)} badgeId={profile.badgeId} align="center" lines={2} headingLevel={1} style={s.name} />
               <Text style={s.subline}>
-                @{profile.handle} · {t("groups.profilePlace", { place })}
+                @{profile.handle}
               </Text>
             </View>
             <View style={s.identityTags}>
@@ -127,14 +127,12 @@ export default function Me() {
                 </Text>
               </View>
             </View>
+            <FollowCounts userId={userId} following={following} followers={followers} />
           </View>
           <View style={s.stats}>
             <Stat value={streak} label={t("me.streak")} />
             <Stat value={seeds} label={t("common.seeds")} middle />
             <Stat value={verified} label={t("me.verified")} />
-          </View>
-          <View style={s.friends}>
-            <FollowCounts userId={userId} following={following} followers={followers} />
           </View>
           <View style={s.growth}>
             <GrowthCard seed={seed} seeds={seeds} streak={streak} />
@@ -153,8 +151,8 @@ export default function Me() {
                 }}
                 style={[s.tab, tab === item.id && s.activeTab]}
               >
-                <Icon name={item.icon} size={17} color={tab === item.id ? C.leaf : C.mute} />
-                <Text style={[s.tabText, tab === item.id && { color: C.leaf, fontFamily: F.semibold }]}>{t(item.label)}</Text>
+                <Icon name={item.icon} size={17} color={tab === item.id ? C.ink : C.mute} />
+                <Text style={[s.tabText, tab === item.id && { color: C.ink, fontFamily: F.semibold }]}>{t(item.label)}</Text>
               </Pressable>
             ))}
           </View>
@@ -467,7 +465,7 @@ const styles = (C: Palette) =>
     page: { width: "100%", maxWidth: 620, alignSelf: "center" },
     cover: { height: 132, marginHorizontal: 16, borderRadius: 24, overflow: "hidden", backgroundColor: C.forest },
     coverActions: { position: "absolute", right: 12, top: 12, flexDirection: "row", alignItems: "center", gap: 8 },
-    identity: { alignItems: "center", marginTop: -44, paddingHorizontal: 20, gap: 10 },
+    identity: { alignItems: "center", marginTop: -44, paddingHorizontal: 16, gap: 10 },
     avatarFrame: { borderRadius: 60, padding: 5, backgroundColor: C.bg },
     nameBlock: { width: "100%", alignItems: "center", gap: 4 },
     name: { fontFamily: F.semibold, fontSize: 28, lineHeight: 33, letterSpacing: -1, color: C.ink, textAlign: "center" },
@@ -484,14 +482,13 @@ const styles = (C: Palette) =>
     roleText: { fontFamily: F.medium, fontSize: 12, color: C.forestInk },
     city: { flexDirection: "row", alignItems: "center", gap: 4, maxWidth: "55%" },
     subline: { fontFamily: F.regular, fontSize: 13, lineHeight: 19, color: C.mute },
-    growth: { marginHorizontal: 20, marginTop: 12 },
-    friends: { marginHorizontal: 20, marginTop: 8 },
-    stats: { flexDirection: "row", paddingVertical: 16, marginHorizontal: 20, marginTop: 16, backgroundColor: C.card, borderRadius: 20 },
+    growth: { marginHorizontal: 16, marginTop: 12 },
+    stats: { flexDirection: "row", paddingVertical: 16, marginHorizontal: 16, marginTop: 16, backgroundColor: C.card, borderRadius: 20 },
     stat: { flex: 1, alignItems: "center", gap: 4 },
     middleStat: { borderLeftWidth: 1, borderRightWidth: 1, borderColor: C.line },
-    statValue: { fontFamily: F.medium, fontSize: 28, letterSpacing: -0.8, color: C.ink, fontVariant: ["tabular-nums"] },
+    statValue: { fontFamily: F.regular, fontSize: 28, letterSpacing: -0.8, color: C.ink, fontVariant: ["tabular-nums"] },
     statLabel: { fontFamily: F.regular, fontSize: 12, color: C.mute },
-    tabs: { flexDirection: "row", marginHorizontal: 20, marginTop: 12, borderBottomWidth: 1, borderBottomColor: C.line },
+    tabs: { flexDirection: "row", marginHorizontal: 16, marginTop: 12, borderBottomWidth: 1, borderBottomColor: C.line },
     tab: {
       flex: 1,
       flexDirection: "row",
@@ -502,9 +499,9 @@ const styles = (C: Palette) =>
       borderBottomWidth: 2,
       borderBottomColor: "transparent",
     },
-    activeTab: { borderBottomColor: C.leaf, backgroundColor: C.mint, borderTopLeftRadius: 12, borderTopRightRadius: 12 },
+    activeTab: { borderBottomColor: C.leaf },
     tabText: { fontFamily: F.medium, fontSize: 13, color: C.mute },
-    panel: { paddingHorizontal: 20, paddingTop: 24 },
+    panel: { paddingHorizontal: 16, paddingTop: 24 },
     modalRoot: { flex: 1, justifyContent: "flex-end", backgroundColor: C.scrim },
     sheet: {
       width: "100%",

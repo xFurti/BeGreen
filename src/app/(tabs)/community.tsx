@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { RefreshControl, ScrollView, Text, View, type ScrollViewInstance } from "react-native";
+import { Platform, RefreshControl, ScrollView, Text, View, type ScrollViewInstance } from "react-native";
 import Animated, { FadeIn, useReducedMotion } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -42,8 +42,7 @@ export default function CommunityTab() {
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       <View style={{ paddingTop: top + 18, paddingHorizontal: 20, paddingBottom: 18, gap: 20, backgroundColor: C.bg }}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-          <Text style={T.display}>{t("community.title")}</Text>
-          <View style={{ width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", backgroundColor: C.mint }}><Icon name="people" size={18} color={C.leaf} /></View>
+          <Text accessibilityRole="header" {...(Platform.OS === "web" ? { "aria-level": 1 } : {})} style={T.display}>{t("community.title")}</Text>
         </View>
         <CommunitySections value={section} count={groups.length} onChange={(next) => {
           scroll.current?.scrollTo({ y: 0, animated: false });
@@ -60,12 +59,11 @@ export default function CommunityTab() {
       >
         {section === "territory" && <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
           <View style={{ flex: 1, gap: 4 }}>
-            <Text style={[T.label, { color: C.leaf }]}>{t("community.hub.yourCity")}</Text>
-            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ fontFamily: F.medium, fontSize: 38, lineHeight: 44, letterSpacing: -1.7, color: C.ink }}>{comune?.name}</Text>
+            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ fontFamily: F.medium, fontSize: 28, lineHeight: 34, letterSpacing: -1, color: C.ink }}>{comune?.name}</Text>
           </View>
-          <Press scale={reduced ? 1 : 0.97} onPress={() => router.navigate("/comune")} accessibilityLabel={t("community.hub.changeCity")} style={{ minHeight: 44, paddingHorizontal: 15, gap: 7, flexDirection: "row", alignItems: "center", borderRadius: R.pill, borderWidth: 1, borderColor: C.line, backgroundColor: C.card }}>
+          <Press scale={reduced ? 1 : 0.97} onPress={() => router.navigate("/comune")} accessibilityLabel={t("community.hub.changeCity")} style={{ minHeight: 44, paddingHorizontal: 15, gap: 7, flexDirection: "row", alignItems: "center", borderRadius: R.pill, backgroundColor: C.card }}>
             <Text style={{ fontFamily: F.medium, fontSize: 13, color: C.ink2 }}>{t("community.hub.changeCity")}</Text>
-            <Icon name="swap" size={14} color={C.leaf} />
+            <Icon name="swap" size={14} color={C.ink2} />
           </Press>
         </View>}
 

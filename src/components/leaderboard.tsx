@@ -43,7 +43,7 @@ function Row({ r, rank, index }: { r: Standing; rank: number; index: number }) {
         <TitledName name={name} badgeId={who.badgeId} style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3, color: C.white }} />
         {r.postedToday && <Text style={{ fontFamily: F.regular, fontSize: 12, color: C.forestMute }}>{t("community.board.today")}</Text>}
       </View>
-      <Text style={{ fontFamily: F.medium, fontSize: 18, letterSpacing: -0.5, color: r.me ? C.lime : C.white, fontVariant: ["tabular-nums"] }}>
+      <Text style={{ fontFamily: F.regular, fontSize: 18, letterSpacing: -0.5, color: r.me ? C.lime : C.white, fontVariant: ["tabular-nums"] }}>
         {formatNumber(r.points, language)}
       </Text>
     </Animated.View>
@@ -82,7 +82,7 @@ export function Leaderboard({ community, limit, title }: { community: Community;
           <Text style={{ fontFamily: F.regular, fontSize: 14, lineHeight: 20, color: C.forestMute }}>{t("community.hub.emptyRankingBody")}</Text>
         </View>
       ) : <><View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
-        <Text style={{ fontFamily: F.medium, fontSize: 44, lineHeight: 46, letterSpacing: -2, color: C.white, fontVariant: ["tabular-nums"] }}>#{rank}</Text>
+        <Text style={{ fontFamily: F.regular, fontSize: 44, lineHeight: 46, letterSpacing: -2, color: C.white, fontVariant: ["tabular-nums"] }}>#{rank}</Text>
         <Text style={{ flex: 1, fontFamily: F.regular, fontSize: 14, lineHeight: 19, color: C.forestMute }}>{line}</Text>
         <Button label={t("community.board.post")} kind="inverse" size="sm" icon="camera" onPress={() => router.push(isCity(community) ? "/capture" : { pathname: "/capture", params: { group: community.id } })} />
       </View>

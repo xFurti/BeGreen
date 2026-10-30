@@ -65,24 +65,24 @@ export function Agenda({ posts }: { posts: Post[] }) {
                   justifyContent: "space-between",
                 }}
               >
-                <Text style={{ fontFamily: F.medium, fontSize: 20, letterSpacing: -0.8, color: on ? C.onLeaf : C.forestMute }}>{g}</Text>
+                <Text style={{ fontFamily: F.regular, fontSize: 20, letterSpacing: -0.8, color: on ? C.onLeaf : C.forestMute, fontVariant: ["tabular-nums"] }}>{g}</Text>
                 {on && (
-                  <Text style={{ fontFamily: F.monoMedium, fontSize: 9, color: C.mint, alignSelf: "flex-end" }}>×{counts.get(g)}</Text>
+                  <Text style={{ fontFamily: F.regular, fontSize: 11, color: C.mint, alignSelf: "flex-end", fontVariant: ["tabular-nums"] }}>×{counts.get(g)}</Text>
                 )}
               </Pressable>
             </Animated.View>
           );
         })}
         <View
-          style={{ width: cell, height: cell, borderRadius: 12, backgroundColor: C.forest, padding: 7, justifyContent: "space-between" }}
+          style={{ width: cell, height: cell, borderRadius: 12, backgroundColor: C.forest, paddingVertical: 7, paddingHorizontal: 2, justifyContent: "space-between" }}
         >
-          <Text numberOfLines={1} style={{ fontFamily: F.medium, fontSize: 15, letterSpacing: -0.7, color: C.lime }}>
+          <Text numberOfLines={1} style={{ fontFamily: F.regular, fontSize: 15, letterSpacing: -0.7, color: C.lime, fontVariant: ["tabular-nums"] }}>
             {days}
           </Text>
-          <Text style={{ fontFamily: F.monoMedium, fontSize: 8, color: C.forestMute, lineHeight: 10 }}>{t("me.daysTo")}</Text>
+          <Text style={{ fontFamily: F.monoMedium, fontSize: 11, color: C.forestMute, lineHeight: 12 }}>{t("me.daysTo")}</Text>
         </View>
       </View>
-      <Text style={[T.callout, { minHeight: 42 }]}>
+      <Text style={[T.callout, { minHeight: 42, fontVariant: ["tabular-nums"] }]}>
         {sel ? (
           <>
             <Text style={{ fontFamily: F.medium, color: C.ink }}>

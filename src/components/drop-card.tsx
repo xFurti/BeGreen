@@ -1,7 +1,7 @@
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { Text, View } from "react-native";
+import { Platform, Text, View } from "react-native";
 
 import { Icon } from "@/components/icon";
 import { Blobs, LeafMark } from "@/components/nature";
@@ -119,20 +119,24 @@ export function DailyCard() {
           </View>
         </View>
 
-        <Text style={{ fontFamily: F.medium, fontSize: 32, lineHeight: 34, letterSpacing: -1.4, color: C.white }}>
+        <Text
+          accessibilityRole="header"
+          {...(Platform.OS === "web" ? { "aria-level": 1 } : {})}
+          style={{ fontFamily: F.medium, fontSize: 32, lineHeight: 34, letterSpacing: -1.4, color: C.white }}
+        >
           {ready ? drop.title : t("dropCard.reading", { place })}
         </Text>
       </Press>
 
       {ready ? (
         <View style={{ gap: 14 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <Icon name={action.icon} size={14} color={C.lime} />
-            <Text style={{ fontFamily: F.medium, fontSize: 14, color: C.white }}>{action.label}</Text>
-            <Text style={{ flex: 1, flexShrink: 1, fontFamily: F.regular, fontSize: 13, lineHeight: 18, color: C.forestMute }}>
-              · {drop.metric}
-            </Text>
-            <SdgTags goals={action.sdgs.slice(0, 1)} dark />
+          <View style={{ gap: 5 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <Icon name={action.icon} size={14} color={C.lime} />
+              <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 14, color: C.white }}>{action.label}</Text>
+              <SdgTags goals={action.sdgs.slice(0, 1)} dark />
+            </View>
+            <Text style={{ marginLeft: 22, fontFamily: F.regular, fontSize: 13, lineHeight: 18, color: C.forestMute }}>{drop.metric}</Text>
           </View>
 
           {mineToday ? (
@@ -149,11 +153,11 @@ export function DailyCard() {
                 priority="low"
               />
               <View style={{ flex: 1, gap: 3 }}>
-                <Mono color={C.lime}>{t("dropCard.yours")}</Mono>
+                <Text style={{ fontFamily: F.medium, fontSize: 13, color: C.lime }}>{t("dropCard.yours")}</Text>
                 <Text numberOfLines={1} style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3, color: C.white }}>
                   {actionCopy(t, mineToday.action).label}
                 </Text>
-                <Text style={{ fontFamily: F.regular, fontSize: 12, color: C.forestMute }}>
+                <Text style={{ fontFamily: F.regular, fontSize: 12, color: C.white }}>
                   {mineToday.verifiedBy.length >= 3 ? t("me.verified") : `${t("post.waiting")} · ${mineToday.verifiedBy.length}/3`}
                 </Text>
               </View>

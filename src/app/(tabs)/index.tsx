@@ -9,7 +9,7 @@ import { Icon } from "@/components/icon";
 import { Sprout } from "@/components/nature";
 import { PostCard } from "@/components/post-card";
 import { SeedTip } from "@/components/seed-ui";
-import { Avatar, Button, Logo, Mono, Press, TextTabs } from "@/components/ui";
+import { Avatar, Button, Logo, Press, TextTabs } from "@/components/ui";
 import { demoPostsFor } from "@/data/demo";
 import type { Post } from "@/data/types";
 import { usePulse } from "@/hooks/use-pulse";
@@ -34,14 +34,10 @@ function CommunityEntry({ place }: { place: string }) {
       scale={0.985}
       onPress={() => router.navigate("/(tabs)/community")}
       accessibilityLabel={t("community.title")}
-      style={{ backgroundColor: C.card, borderRadius: R.xl, borderCurve: "continuous", padding: 18, gap: 14 }}
+      style={{ backgroundColor: C.card, borderRadius: R.xl, borderCurve: "continuous", padding: 16 }}
     >
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <Mono style={{ flex: 1 }}>{t("community.title")}</Mono>
-        <Icon name="arrowRight" color={C.forestInk} size={18} />
-      </View>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
-        <Icon name="map" color={C.forestInk} size={30} />
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+        <Icon name="map" color={C.ink2} size={20} />
         <View style={{ flex: 1, gap: 4 }}>
           <Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3, color: C.ink }} numberOfLines={1}>
             {t("groups.feedTitle", { place })}
@@ -50,6 +46,7 @@ function CommunityEntry({ place }: { place: string }) {
             {t("groups.feedBody")}
           </Text>
         </View>
+        <Icon name="arrowRight" color={C.ink2} size={18} />
       </View>
     </Press>
   );
