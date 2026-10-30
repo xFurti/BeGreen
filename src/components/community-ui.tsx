@@ -89,7 +89,7 @@ export function StatusBadge({ spot }: { spot: Spot }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 4, flexShrink: 1 }}>
       <Icon name={st.icon} size={11} color={st.color} />
-      <Text numberOfLines={1} style={{ fontFamily: F.monoMedium, fontSize: 10.5, letterSpacing: 0.3, color: st.color, textTransform: "uppercase", flexShrink: 1 }}>
+      <Text numberOfLines={1} style={{ fontFamily: F.monoMedium, fontSize: 11, letterSpacing: 0.3, color: st.color, textTransform: "uppercase", flexShrink: 1 }}>
         {st.label}
       </Text>
     </View>
@@ -103,7 +103,7 @@ export function CategoryTag({ category, muted }: { category: SpotCategory; muted
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
       <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: muted ? PAST : c.color }} />
-      <Text numberOfLines={1} style={{ fontFamily: F.monoMedium, fontSize: 10.5, letterSpacing: 0.3, color: C.ink2, textTransform: "uppercase" }}>
+      <Text numberOfLines={1} style={{ fontFamily: F.monoMedium, fontSize: 11, letterSpacing: 0.3, color: C.ink2, textTransform: "uppercase" }}>
         {t(`community.categories.${category}`)}
       </Text>
     </View>

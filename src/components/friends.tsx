@@ -3,13 +3,14 @@ import { useState } from "react";
 import { router } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 
+import { Icon } from "@/components/icon";
 import { TitledName } from "@/components/titled-name";
-import { Avatar, Button, Mono, Press, Tag } from "@/components/ui";
+import { Avatar, Button, Press, Tag } from "@/components/ui";
 import type { Post, User } from "@/data/types";
 import { formatNumber } from "@/i18n/format";
 import { useI18n } from "@/i18n/use-i18n";
 import { useApp, useFollowing } from "@/store/app-store";
-import { F, R } from "@/theme/tokens";
+import { F } from "@/theme/tokens";
 import { useTheme } from "@/theme/use-theme";
 import { haptic } from "@/utils/format";
 
@@ -75,36 +76,25 @@ export function FollowCounts({ userId, following, followers }: { userId: string;
   const { C } = useTheme();
   const { t, language } = useI18n();
   const open = (tab: "following" | "followers") => router.push({ pathname: "/friends", params: { id: userId, tab } });
+  const item = (tab: "following" | "followers", n: number, label: string) => (
+    <Press
+      key={tab}
+      scale={0.98}
+      onPress={() => open(tab)}
+      accessibilityLabel={`${formatNumber(n, language)} ${label}`}
+      style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 4, minHeight: 44, paddingHorizontal: 8 }}
+    >
+      <Text style={{ fontFamily: F.regular, fontSize: 16, color: C.ink, fontVariant: ["tabular-nums"] }}>
+        {formatNumber(n, language)}
+      </Text>
+      <Text style={{ fontFamily: F.regular, fontSize: 14, color: C.mute }}>{label}</Text>
+    </Press>
+  );
   return (
-    <View style={{ flexDirection: "row", gap: 8 }}>
-      {(
-        [
-          ["following", following, t("profile.friends.following")],
-          ["followers", followers, t("profile.friends.followers")],
-        ] as const
-      ).map(([tab, n, label]) => (
-        <Press
-          key={tab}
-          scale={0.98}
-          onPress={() => open(tab)}
-          accessibilityLabel={`${formatNumber(n, language)} ${label}`}
-          style={{
-            flex: 1,
-            flexDirection: "row",
-            alignItems: "baseline",
-            justifyContent: "center",
-            gap: 6,
-            backgroundColor: C.card,
-            borderRadius: R.md,
-            paddingVertical: 12,
-          }}
-        >
-          <Text style={{ fontFamily: F.medium, fontSize: 20, letterSpacing: -0.6, color: C.ink, fontVariant: ["tabular-nums"] }}>
-            {formatNumber(n, language)}
-          </Text>
-          <Text style={{ fontFamily: F.regular, fontSize: 13, color: C.mute }}>{label}</Text>
-        </Press>
-      ))}
+    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center" }}>
+      {item("following", following, t("profile.friends.following"))}
+      <Text style={{ fontFamily: F.regular, fontSize: 14, color: C.mute, paddingHorizontal: 2 }}>·</Text>
+      {item("followers", followers, t("profile.friends.followers"))}
     </View>
   );
 }
@@ -156,9 +146,7 @@ export function PhotoGrid({ posts, empty }: { posts: Post[]; empty: string }) {
                 justifyContent: "center",
               }}
             >
-              <Mono color={C.white} size={9}>
-                ✓
-              </Mono>
+              <Icon name="check" size={11} color={C.white} />
             </View>
           )}
         </Pressable>

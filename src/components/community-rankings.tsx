@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Modal, Platform, Pressable, ScrollView, Text, View } from "react-native";
 import { useReducedMotion } from "react-native-reanimated";
 
 import { Icon } from "@/components/icon";
@@ -52,17 +52,17 @@ export function CommunityRankings({ groups, onContextChange }: { groups: Communi
   return (
     <View style={{ gap: 22 }}>
       <View style={{ gap: 8 }}>
-        <Text style={{ fontFamily: F.medium, fontSize: 31, lineHeight: 35, letterSpacing: -1.1, color: C.ink }}>{t("community.hub.rankingsHeadline")}</Text>
+        <Text accessibilityRole="header" {...(Platform.OS === "web" ? { "aria-level": 2 } : {})} style={{ fontFamily: F.medium, fontSize: 31, lineHeight: 35, letterSpacing: -1.1, color: C.ink }}>{t("community.hub.rankingsHeadline")}</Text>
         <Text style={[T.callout, { maxWidth: 340 }]}>{t("community.hub.rankingsBody")}</Text>
       </View>
 
-      <Press scale={reduced ? 1 : 0.985} onPress={() => setChoosing(true)} accessibilityLabel={t("community.hub.chooseRanking")} style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 16, borderRadius: R.lg, borderWidth: 1, borderColor: C.line, backgroundColor: C.card }}>
-        <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: C.mint, alignItems: "center", justifyContent: "center" }}><Icon name={COMMUNITY_KIND_ICON[selected.kind]} size={20} color={C.leaf} /></View>
+      <Press scale={reduced ? 1 : 0.985} onPress={() => setChoosing(true)} accessibilityLabel={t("community.hub.chooseRanking")} style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 16, borderRadius: R.lg, backgroundColor: C.card }}>
+        <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.bg, alignItems: "center", justifyContent: "center" }}><Icon name={COMMUNITY_KIND_ICON[selected.kind]} size={20} color={C.ink2} /></View>
         <View style={{ flex: 1, gap: 4 }}>
-          <Text style={[T.label, { fontSize: 9 }]}>{t("community.hub.rankingContext")}</Text>
+          <Text style={[T.label, { fontSize: 11 }]}>{t("community.hub.rankingContext")}</Text>
           <Text numberOfLines={2} style={{ fontFamily: F.medium, fontSize: 18, letterSpacing: -0.5, color: C.ink }}>{selected.name}</Text>
         </View>
-        <Icon name="swap" size={18} color={C.leaf} />
+        <Icon name="swap" size={18} color={C.ink2} />
       </Press>
 
       {phase === "loading" ? (
@@ -87,7 +87,7 @@ export function CommunityRankings({ groups, onContextChange }: { groups: Communi
               {[...(city ? [city] : []), ...groups].map((c) => (
                 <Pressable key={c.id} accessibilityRole="radio" accessibilityLabel={c.name} accessibilityState={{ checked: c.id === id }} onPress={() => choose(c)} style={{ flexDirection: "row", alignItems: "center", gap: 13, padding: 16, borderRadius: R.md, backgroundColor: c.id === id ? C.mint : C.card }}>
                   <Icon name={COMMUNITY_KIND_ICON[c.kind]} size={21} color={C.leaf} />
-                  <View style={{ flex: 1, gap: 4 }}><Text style={T.headline}>{c.name}</Text><Mono size={9}>{isCity(c) ? t("community.hub.yourCity") : t(`community.visibility.${c.visibility === "private" ? "private" : "public"}`)}</Mono></View>
+                  <View style={{ flex: 1, gap: 4 }}><Text style={T.headline}>{c.name}</Text><Mono size={11}>{isCity(c) ? t("community.hub.yourCity") : t(`community.visibility.${c.visibility === "private" ? "private" : "public"}`)}</Mono></View>
                   {c.id === id && <Icon name="check" size={18} color={C.leaf} />}
                 </Pressable>
               ))}

@@ -16,6 +16,7 @@ import Animated, {
 import Svg, { Circle } from "react-native-svg";
 import { scheduleOnRN } from "react-native-worklets";
 
+import { Icon } from "@/components/icon";
 import { LeafMark } from "@/components/nature";
 
 import { SeedBuddy } from "@/components/seed-buddy";
@@ -114,7 +115,10 @@ export function SeedTip({ id, text, stage, style }: { id: TipId; text: string; s
           accessibilityLabel={t("seed.tips.ok")}
           style={{ alignSelf: "flex-start" }}
         >
-          <Mono color={C.leaf}>{t("seed.tips.ok")} ✓</Mono>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <Text style={{ fontFamily: F.medium, fontSize: 14, color: C.leaf }}>{t("seed.tips.ok")}</Text>
+            <Icon name="check" size={14} color={C.leaf} />
+          </View>
         </Pressable>
       </View>
     </Animated.View>

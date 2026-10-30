@@ -31,7 +31,7 @@ export function Logo({ size = 28, color }: { size?: number; color?: string }) {
   const { C, scheme } = useTheme();
   const fill = color ?? (scheme === "dark" ? C.white : fixed.canopy);
   return (
-    <View accessible accessibilityRole="header" accessibilityLabel="BeGreen">
+    <View accessible accessibilityRole="image" accessibilityLabel="BeGreen">
       <Svg width={(size * LOCKUP_BOX.w) / LOCKUP_BOX.h} height={size} viewBox={`0 0 ${LOCKUP_BOX.w} ${LOCKUP_BOX.h}`}>
         <G scale={0.8859} fill={fill}>
           {MARK.map((d) => (

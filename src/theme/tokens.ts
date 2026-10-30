@@ -53,7 +53,7 @@ const lightRoles = {
   bg: "#FFFFFF",
   ink: "#0A0A0A",
   ink2: "#3A3A3C",
-  mute: "#8E8E93",
+  mute: "#6B6B70",
   faint: "#C7C7CC",
   line: "#ECECEC",
   card: "#F5F5F4",

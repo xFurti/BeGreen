@@ -1,11 +1,11 @@
 import { router } from "expo-router";
 import { useEffect } from "react";
-import { Text, View } from "react-native";
+import { Platform, Text, View } from "react-native";
 import { useReducedMotion } from "react-native-reanimated";
 
 import { CommunityCover, SpotRow } from "@/components/community-ui";
 import { Icon } from "@/components/icon";
-import { Mono, Press } from "@/components/ui";
+import { Press } from "@/components/ui";
 import { useI18n } from "@/i18n/use-i18n";
 import { useApp } from "@/store/app-store";
 import { comuneCommunity, previewCity, syncCommunity, useCommunity, useCommunitySpots } from "@/store/community-store";
@@ -40,13 +40,13 @@ export function TerritoryCard() {
           <View style={{ width: 43, height: 43, borderRadius: 22, alignItems: "center", justifyContent: "center", backgroundColor: C.lime }}><Icon name="arrowRight" size={21} color={C.forest} /></View>
         </Press>
       </View>
-      <Press scale={reduced ? 1 : 0.985} onPress={() => open()} accessibilityLabel={t("groups.openCity", { name: city.name })} style={{ flexDirection: "row", alignItems: "center", gap: 13, padding: 16, borderRadius: R.lg, borderWidth: 1, borderColor: C.line, backgroundColor: C.card }}>
-        <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: C.mint, alignItems: "center", justifyContent: "center" }}><Icon name="people" size={21} color={C.leaf} /></View>
+      <Press scale={reduced ? 1 : 0.985} onPress={() => open()} accessibilityLabel={t("groups.openCity", { name: city.name })} style={{ flexDirection: "row", alignItems: "center", gap: 13, padding: 16, borderRadius: R.lg, backgroundColor: C.card }}>
+        <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.bg, alignItems: "center", justifyContent: "center" }}><Icon name="people" size={21} color={C.ink2} /></View>
         <View style={{ flex: 1, gap: 4 }}><Text style={{ fontFamily: F.medium, fontSize: 16, letterSpacing: -0.3, color: C.ink }}>{t("community.hub.localCommunity")}</Text><Text style={{ fontFamily: F.regular, fontSize: 12, color: C.mute }}>{t("community.hub.localHint")}</Text></View>
-        <Icon name="chevron" size={16} color={C.leaf} />
+        <Icon name="chevron" size={16} color={C.mute} />
       </Press>
       <View style={{ gap: 13 }}>
-        <Mono>{t("community.hub.nearby")}</Mono>
+        <Text accessibilityRole="header" {...(Platform.OS === "web" ? { "aria-level": 2 } : {})} style={{ fontFamily: F.medium, fontSize: 17, color: C.ink }}>{t("community.hub.nearby")}</Text>
         {recent.map((spot) => <SpotRow key={spot.id} spot={spot} />)}
         {!recent.length && <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 10 }}><Icon name="pin" size={18} color={C.leaf} /><Text style={[T.caption, { flex: 1 }]}>{t("community.hub.firstPlace")}</Text></View>}
       </View>

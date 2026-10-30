@@ -208,7 +208,7 @@ function TabItem({ label, icon, focused, onPress }: { label: string; icon: IconN
       style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 4, paddingTop: 10 }}
     >
       <Animated.View style={iconStyle}>
-        <Icon name={icon} size={22} color={focused ? C.forestInk : C.faint} />
+        <Icon name={icon} size={22} color={focused ? C.forestInk : C.mute} />
       </Animated.View>
       <View style={{ flexDirection: "row", alignItems: "center", maxWidth: "100%" }}>
         <Animated.View style={[{ alignItems: "flex-start", transformOrigin: "0% 100%" }, leaf]}>
@@ -218,7 +218,7 @@ function TabItem({ label, icon, focused, onPress }: { label: string; icon: IconN
           numberOfLines={1}
           adjustsFontSizeToFit
           minimumFontScale={0.8}
-          style={{ flexShrink: 1, fontFamily: F.medium, fontSize: 10.5, letterSpacing: -0.1, color: focused ? C.forestInk : C.mute }}
+          style={{ flexShrink: 1, fontFamily: F.medium, fontSize: 11, letterSpacing: -0.1, color: focused ? C.forestInk : C.mute }}
         >
           {label}
         </Text>

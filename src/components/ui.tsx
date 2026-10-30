@@ -182,9 +182,9 @@ export function IconButton({
     <Press
       onPress={onPress}
       accessibilityLabel={label}
-      style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: bg ?? C.mint, alignItems: "center", justifyContent: "center" }}
+      style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: bg ?? C.card, alignItems: "center", justifyContent: "center" }}
     >
-      <Icon name={icon} size={size * 0.42} color={color ?? C.forestInk} />
+      <Icon name={icon} size={size * 0.42} color={color ?? C.ink} />
     </Press>
   );
 }
@@ -325,7 +325,7 @@ export function Tag({ label, dark, solid, onPress, accessibilityLabel }: {
   const body = (
     <View
       style={{
-        height: 20,
+        height: 22,
         paddingHorizontal: 6,
         borderRadius: 5,
         borderWidth: solid ? 0 : 1,
@@ -334,7 +334,7 @@ export function Tag({ label, dark, solid, onPress, accessibilityLabel }: {
         justifyContent: "center",
       }}
     >
-      <Text style={{ fontFamily: F.monoMedium, fontSize: 10, letterSpacing: 0.4, color: fg }}>{label}</Text>
+      <Text style={{ fontFamily: F.monoMedium, fontSize: 11, letterSpacing: 0.4, color: fg }}>{label}</Text>
     </View>
   );
   return onPress ? <Press onPress={onPress} accessibilityLabel={accessibilityLabel ?? label} hitSlop={10}>{body}</Press> : body;
@@ -359,7 +359,7 @@ export function SourceBadge({ id, onPress, dark }: { id: SourceId; onPress?: () 
   const body = (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 6, height: 22, flexShrink: 1 }}>
       <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: SOURCE_KINDS[src.kind].color }} />
-      <Text numberOfLines={1} style={{ fontFamily: F.monoMedium, fontSize: 10.5, letterSpacing: 0.4, color: dark ? C.nightMute : C.mute, flexShrink: 1 }}>
+      <Text numberOfLines={1} style={{ fontFamily: F.monoMedium, fontSize: 11, letterSpacing: 0.4, color: dark ? C.nightMute : C.mute, flexShrink: 1 }}>
         {kind.short.toUpperCase()} · {src.mark}
       </Text>
     </View>
@@ -464,11 +464,11 @@ export function TextTabs<V extends string>({
             }}
             style={{ flexDirection: "row", alignItems: "flex-start", gap: 3 }}
           >
-            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ fontFamily: F.medium, fontSize: 22, letterSpacing: -0.8, color: on ? C.ink : C.faint }}>
+            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ fontFamily: F.medium, fontSize: 22, letterSpacing: -0.8, color: on ? C.ink : C.mute }}>
               {o.label}
             </Text>
             {o.count !== undefined && (
-              <Text style={{ fontFamily: F.monoMedium, fontSize: 10, color: on ? C.ink : C.faint, marginTop: 2 }}>{o.count}</Text>
+              <Text style={{ fontFamily: F.monoMedium, fontSize: 11, color: on ? C.ink : C.mute, marginTop: 2 }}>{o.count}</Text>
             )}
             {on && <LeafMark size={10} color={C.leaf} vein="transparent" />}
           </Pressable>

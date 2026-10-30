@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { StyleSheet, Text, View, type StyleProp, type TextStyle } from "react-native";
+import { Platform, StyleSheet, Text, View, type StyleProp, type TextStyle } from "react-native";
 
 import { BadgeArt } from "@/components/badge-art";
 import { badgeById, isBadgeId, type BadgeId } from "@/data/badges";
@@ -14,6 +14,7 @@ export function TitledName({
   align,
   after,
   lines = 1,
+  headingLevel,
 }: {
   name: string;
   badgeId?: BadgeId | null;
@@ -21,16 +22,21 @@ export function TitledName({
   align?: "center";
   after?: ReactNode;
   lines?: number;
+  headingLevel?: 1 | 2;
 }) {
   const { C } = useTheme();
   const { t } = useI18n();
-  if (!isBadgeId(badgeId)) return <Text numberOfLines={lines} style={[{ color: C.ink }, style]}>{name}{after}</Text>;
+  const headingProps = headingLevel
+    ? { accessibilityRole: "header" as const, ...(Platform.OS === "web" ? { "aria-level": headingLevel } : {}) }
+    : {};
+  if (!isBadgeId(badgeId)) return <Text numberOfLines={lines} {...headingProps} style={[{ color: C.ink }, style]}>{name}{after}</Text>;
   const fontSize = StyleSheet.flatten(style)?.fontSize ?? 15;
   const h = Math.round(fontSize * 0.8);
   const badge = badgeById(badgeId);
   return (
     <View
       accessible
+      {...headingProps}
       accessibilityLabel={t("badges.titled", { name, badge: t(badge.name) })}
       style={{ flexDirection: "row", alignItems: "center", gap: fontSize * 0.3, justifyContent: align === "center" ? "center" : undefined }}
     >

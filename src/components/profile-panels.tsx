@@ -21,7 +21,7 @@ export function PanelTitle({ title, detail, action }: { title: string; detail?: 
       <Text accessibilityRole="header" {...(Platform.OS === "web" ? { "aria-level": 2 } : {})} style={s.title}>
         {title}
       </Text>
-      {action ?? (detail && <Text style={T.caption}>{detail}</Text>)}
+      {action ?? (detail && <Text style={[T.caption, { fontVariant: ["tabular-nums"] }]}>{detail}</Text>)}
     </View>
   );
 }
